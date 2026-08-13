@@ -382,6 +382,14 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
+const CE_SECTION_COLORS: Record<string, string> = {
+  firewall: '#C65793',
+  secure_config: '#7b5ea7',
+  user_access: '#4494D1',
+  malware: '#059669',
+  patching: '#f59e0b',
+};
+
 export default function CEReadiness({ accountName }: { accountName: string }) {
   const [answers, setAnswers] = useState<Answers>({});
   const [currentSection, setCurrentSection] = useState(0);
@@ -432,37 +440,37 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
   if (!started) {
     return (
       <div className="space-y-6">
-        <div className="bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/20 rounded-2xl p-6">
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 border-l-4 border-l-[#C65793]">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-gradient-to-br from-pink-500/30 to-blue-500/30 rounded-xl">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="p-3 bg-[#4494D112] rounded-xl">
+              <Shield className="w-6 h-6 text-[#1f2937]" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-white mb-2">Cyber Essentials Readiness Assessment</h2>
-              <p className="text-white/70 text-sm leading-relaxed mb-4">
+              <h2 className="text-xl font-bold text-[#1f2937] mb-2">Cyber Essentials Readiness Assessment</h2>
+              <p className="text-[#6b7280] text-sm leading-relaxed mb-4">
                 This assessment covers the five NCSC Cyber Essentials controls. Answer yes/no to {TOTAL_QUESTIONS} questions to identify gaps before formal certification. A downloadable PDF report with recommendations is generated at the end.
               </p>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
                 {CE_SECTIONS.map(s => (
-                  <div key={s.id} className="bg-white/5 rounded-xl p-3 text-center">
-                    <div className="text-xs text-white/50 mb-1">{s.control}</div>
-                    <div className="text-xs font-semibold text-white">{s.title}</div>
+                  <div key={s.id} className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-3 text-center">
+                    <div className="text-xs text-[#6b7280] mb-1">{s.control}</div>
+                    <div className="text-xs font-semibold text-[#1f2937]">{s.title}</div>
                   </div>
                 ))}
               </div>
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-sm text-white/60">Assessment level:</span>
+                <span className="text-sm text-[#6b7280]">Assessment level:</span>
                 <div className="flex gap-2">
                   {(['CE', 'CE+'] as const).map(l => (
                     <button key={l} onClick={() => setCeLevel(l)}
-                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${ceLevel === l ? 'bg-gradient-to-r from-pink-500 to-blue-500 text-white' : 'bg-white/10 text-white/60 hover:bg-white/15'}`}>
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${ceLevel === l ? 'gradient-cta text-white' : 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'}`}>
                       {l}
                     </button>
                   ))}
                 </div>
               </div>
               <button onClick={() => setStarted(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                className="flex items-center gap-2 px-6 py-3 gradient-cta text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
                 Start Assessment <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -481,26 +489,26 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
     return (
       <div className="space-y-6">
         {/* Score header */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-white/10 rounded-2xl p-6">
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 border-l-4 border-l-[#4494D1]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-white">Readiness Assessment Complete</h2>
-              <p className="text-white/50 text-sm mt-1">{ceLevel} Gap Analysis · {accountName}</p>
+              <h2 className="text-xl font-bold text-[#1f2937]">Readiness Assessment Complete</h2>
+              <p className="text-[#6b7280] text-sm mt-1">{ceLevel} Gap Analysis · {accountName}</p>
             </div>
             <div className="text-right">
               <div className={`text-4xl font-bold ${score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>{score}%</div>
-              <div className="text-sm text-white/50">{passedCount}/{TOTAL_QUESTIONS} controls met</div>
+              <div className="text-sm text-[#6b7280]">{passedCount}/{TOTAL_QUESTIONS} controls met</div>
             </div>
           </div>
 
           {/* Section breakdown */}
           <div className="grid grid-cols-5 gap-2 mb-4">
             {sectionScores.map(s => (
-              <div key={s.id} className="bg-white/5 rounded-xl p-3">
-                <div className="text-xs text-white/40 mb-1">{s.control}</div>
-                <div className="text-xs font-medium text-white mb-2">{s.title}</div>
+              <div key={s.id} className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-3">
+                <div className="text-xs text-[#9ca3af] mb-1">{s.control}</div>
+                <div className="text-xs font-medium text-[#1f2937] mb-2">{s.title}</div>
                 <div className="text-sm font-bold" style={{ color: s.pct === 100 ? '#34d399' : s.pct >= 60 ? '#fbbf24' : '#f87171' }}>{s.pct}%</div>
-                <div className="h-1 bg-white/10 rounded-full mt-1">
+                <div className="h-1 bg-[#f3f4f6] rounded-full mt-1">
                   <div className="h-1 rounded-full transition-all" style={{ width: `${s.pct}%`, backgroundColor: s.pct === 100 ? '#34d399' : s.pct >= 60 ? '#fbbf24' : '#f87171' }} />
                 </div>
               </div>
@@ -509,10 +517,10 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
 
           <div className="flex gap-3">
             <button onClick={() => generateCEPDF(answers, accountName, ceLevel)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
+              className="flex items-center gap-2 px-5 py-2.5 gradient-cta text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
               <Download className="w-4 h-4" /> Download PDF Report
             </button>
-            <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white/70 rounded-xl text-sm hover:bg-white/15 transition-colors">
+            <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-[#f3f4f6] text-[#6b7280] rounded-xl text-sm hover:bg-[#e5e7eb] transition-colors">
               <RotateCcw className="w-4 h-4" /> Restart
             </button>
           </div>
@@ -521,7 +529,7 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
         {/* Gaps detail */}
         {failedIds.length > 0 && (
           <div>
-            <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-base font-bold text-[#1f2937] mb-3 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400" /> {failedIds.length} Gap{failedIds.length !== 1 ? 's' : ''} Identified
             </h3>
             <div className="space-y-3">
@@ -529,15 +537,15 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
                 const sectionFails = section.questions.filter(q => answers[q.id] === false);
                 if (sectionFails.length === 0) return null;
                 return (
-                  <div key={section.id} className="bg-white/5 border border-red-500/20 rounded-xl p-4">
+                  <div key={section.id} className="bg-white border border-red-200 shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-xl p-4 border-l-4 border-l-red-500">
                     <div className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">{section.title} — {section.control}</div>
                     {sectionFails.map(q => (
                       <div key={q.id} className="mb-3 last:mb-0">
                         <div className="flex items-start gap-2 mb-1">
                           <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-white">{q.text}</span>
+                          <span className="text-sm text-[#1f2937]">{q.text}</span>
                         </div>
-                        <div className="ml-6 text-xs text-white/50 leading-relaxed">{RECOMMENDATIONS[q.id]}</div>
+                        <div className="ml-6 text-xs text-[#6b7280] leading-relaxed">{RECOMMENDATIONS[q.id]}</div>
                       </div>
                     ))}
                   </div>
@@ -548,11 +556,11 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
         )}
 
         {failedIds.length === 0 && (
-          <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-5 flex items-center gap-3">
+          <div className="bg-[#10b98112] border border-[#10b98130] rounded-xl p-5 flex items-center gap-3">
             <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
             <div>
               <div className="text-sm font-semibold text-emerald-300">No gaps identified</div>
-              <div className="text-xs text-white/50 mt-1">Your responses indicate you are well-positioned for {ceLevel} certification. Contact your account manager to arrange formal accreditation.</div>
+              <div className="text-xs text-[#6b7280] mt-1">Your responses indicate you are well-positioned for {ceLevel} certification. Contact your account manager to arrange formal accreditation.</div>
             </div>
           </div>
         )}
@@ -565,41 +573,41 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
     <div className="space-y-4">
       {/* Progress */}
       <div>
-        <div className="flex justify-between text-xs text-white/50 mb-2">
+        <div className="flex justify-between text-xs text-[#6b7280] mb-2">
           <span>{section.title} · Question {currentQ + 1} of {section.questions.length}</span>
           <span>{progress}% complete · {TOTAL_QUESTIONS - Object.keys(answers).length} remaining</span>
         </div>
-        <div className="h-1.5 bg-white/10 rounded-full">
-          <div className="h-1.5 rounded-full bg-gradient-to-r from-pink-500 to-blue-500 transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-1.5 bg-[#f3f4f6] rounded-full">
+          <div className="h-1.5 rounded-full gradient-cta transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {/* Section tabs */}
       <div className="flex gap-1.5">
         {CE_SECTIONS.map((s, i) => (
-          <div key={s.id} className={`flex-1 h-1 rounded-full transition-all ${i < currentSection ? 'bg-emerald-500' : i === currentSection ? 'bg-gradient-to-r from-pink-500 to-blue-500' : 'bg-white/10'}`} />
+          <div key={s.id} className={`flex-1 h-1 rounded-full transition-all ${i < currentSection ? 'bg-emerald-500' : i === currentSection ? 'gradient-cta' : 'bg-[#f3f4f6]'}`} />
         ))}
       </div>
 
       {/* Question card */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+      <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 border-l-4" style={{ borderLeftColor: CE_SECTION_COLORS[section.id] }}>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs font-semibold text-pink-400 uppercase tracking-wide">{section.control} — {section.title}</span>
+          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: CE_SECTION_COLORS[section.id] }}>{section.control} — {section.title}</span>
         </div>
-        <h3 className="text-lg font-semibold text-white mb-3 leading-snug">{question.text}</h3>
+        <h3 className="text-lg font-semibold text-[#1f2937] mb-3 leading-snug">{question.text}</h3>
         {question.guidance && (
-          <div className="flex items-start gap-2 p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl mb-5">
+          <div className="flex items-start gap-2 p-3 bg-[#4494D112] border border-[#4494D130] rounded-xl mb-5">
             <Info className="w-4 h-4 text-blue-300 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-white/60 leading-relaxed">{question.guidance}</p>
+            <p className="text-xs text-[#6b7280] leading-relaxed">{question.guidance}</p>
           </div>
         )}
         <div className="flex gap-3">
           <button onClick={() => answer(true)}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl font-semibold text-sm hover:bg-emerald-500/30 transition-all">
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#f0fdf4] border-2 border-[#10b981] text-[#059669] rounded-xl font-semibold text-sm hover:bg-[#dcfce7] transition-all">
             <CheckCircle className="w-5 h-5" /> Yes — In place
           </button>
           <button onClick={() => answer(false)}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl font-semibold text-sm hover:bg-red-500/30 transition-all">
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#fef2f2] border-2 border-[#ef4444] text-[#dc2626] rounded-xl font-semibold text-sm hover:bg-[#fee2e2] transition-all">
             <XCircle className="w-5 h-5" /> No — Not in place
           </button>
         </div>
@@ -608,11 +616,11 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
       {/* Previous answers in section */}
       {currentQ > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-white/30 uppercase tracking-wide">Previous answers in this section</div>
+          <div className="text-xs text-[#9ca3af] uppercase tracking-wide">Previous answers in this section</div>
           {section.questions.slice(0, currentQ).map(q => (
-            <div key={q.id} className="flex items-center gap-3 p-2.5 bg-white/3 rounded-lg">
+            <div key={q.id} className="flex items-center gap-3 p-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg">
               {answers[q.id] === true ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" /> : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
-              <span className="text-xs text-white/50 truncate">{q.text}</span>
+              <span className="text-xs text-[#6b7280] truncate">{q.text}</span>
             </div>
           ))}
         </div>

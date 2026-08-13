@@ -118,8 +118,8 @@ const CATEGORY_VENDORS: Record<string, string[]> = {
 };
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === 'active') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">● Active</span>;
-  if (status === 'expired') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">⚠ Expired</span>;
+  if (status === 'active') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#10b98112] text-[#059669] border border-[#10b98130]">● Active</span>;
+  if (status === 'expired') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ef444412] text-[#dc2626] border border-[#ef444430]">⚠ Expired</span>;
   return null;
 }
 
@@ -130,32 +130,32 @@ function CategoryCard({ entry, onClick }: { entry: CategoryEntry; onClick: () =>
     <button
       data-testid={`category-card-${entry.category.replace(/\s+/g, '-').toLowerCase()}`}
       onClick={onClick}
-      className={`relative flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all hover:scale-[1.02] hover:shadow-xl group ${
+      className={`relative flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] group ${
         isOwned
-          ? 'bg-white/10 border-white/20 hover:border-white/40 cursor-pointer'
-          : 'bg-white/5 border-white/10 hover:border-white/20 opacity-60 cursor-pointer'
+          ? 'bg-white border-[#e5e7eb] hover:border-[#4494D1] cursor-pointer shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
+          : 'bg-white border-[#e5e7eb] hover:border-[#4494D1] opacity-70 cursor-pointer shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
       }`}
     >
       <div className="flex items-start justify-between">
-        <div className={`p-2 rounded-xl ${isOwned ? 'bg-gradient-to-br from-pink-500/30 to-blue-500/30' : 'bg-white/10'}`}>
-          <Icon className={`w-5 h-5 ${isOwned ? 'text-white' : 'text-white/40'}`} />
+        <div className={`p-2 rounded-xl ${isOwned ? 'bg-[#4494D112]' : 'bg-[#f3f4f6]'}`}>
+          <Icon className={`w-5 h-5 ${isOwned ? 'text-[#4494D1]' : 'text-[#9ca3af]'}`} />
         </div>
         <StatusBadge status={entry.status} />
       </div>
       <div>
-        <h3 className="font-semibold text-white text-sm leading-tight">{entry.category}</h3>
-        <p className="text-white/50 text-xs mt-1 leading-snug">{CATEGORY_DESCRIPTIONS[entry.category]}</p>
+        <h3 className="font-semibold text-[#1f2937] text-sm leading-tight">{entry.category}</h3>
+        <p className="text-[#6b7280] text-xs mt-1 leading-snug">{CATEGORY_DESCRIPTIONS[entry.category]}</p>
       </div>
       {isOwned && entry.products.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-auto">
           {entry.products.slice(0, 2).map(p => (
-            <span key={p.name} className="text-xs bg-white/10 text-white/70 px-2 py-0.5 rounded-full">{p.vendor}</span>
+            <span key={p.name} className="text-xs bg-[#4494D112] text-[#4494D1] border border-[#4494D130] px-2 py-0.5 rounded-lg">{p.vendor}</span>
           ))}
-          {entry.products.length > 2 && <span className="text-xs bg-white/10 text-white/70 px-2 py-0.5 rounded-full">+{entry.products.length - 2}</span>}
+          {entry.products.length > 2 && <span className="text-xs bg-[#4494D112] text-[#4494D1] border border-[#4494D130] px-2 py-0.5 rounded-lg">+{entry.products.length - 2}</span>}
         </div>
       )}
       {!isOwned && (
-        <p className="text-xs text-white/30 mt-auto">Not currently subscribed</p>
+        <p className="text-xs text-[#9ca3af] mt-auto">Not currently subscribed</p>
       )}
     </button>
   );
@@ -172,26 +172,26 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-slate-900/95 border border-white/20 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+      <div className="bg-white border border-[#e5e7eb] shadow-xl rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-[#e5e7eb] flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white">{entry.category}</h2>
+            <h2 className="text-xl font-bold text-[#1f2937]">{entry.category}</h2>
             <StatusBadge status={entry.status} />
           </div>
-          <button onClick={onClose} className="text-white/50 hover:text-white"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#1f2937]"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-6 space-y-6">
           {/* Your products */}
           {entry.products.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-3">Your Products</h3>
+              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">Your Products</h3>
               <div className="space-y-2">
                 {entry.products.map(p => (
-                  <div key={p.name} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                  <div key={p.name} className="flex items-center gap-3 p-3 bg-[#f9fafb] rounded-xl border border-[#e5e7eb]">
                     <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
                     <div>
-                      <div className="text-sm font-medium text-white">{p.name}</div>
-                      <div className="text-xs text-white/50">{p.vendor}</div>
+                      <div className="text-sm font-medium text-[#1f2937]">{p.name}</div>
+                      <div className="text-xs text-[#6b7280]">{p.vendor}</div>
                     </div>
                   </div>
                 ))}
@@ -201,16 +201,16 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
 
           {/* Further Research */}
           {research && (
-            <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-500/20 rounded-xl p-4">
+            <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="w-4 h-4 text-purple-300" />
-                <h3 className="text-sm font-semibold text-purple-200">Further Research & Business Case</h3>
+                <BookOpen className="w-4 h-4 text-[#4494D1]" />
+                <h3 className="text-sm font-semibold text-[#1f2937]">Further Research & Business Case</h3>
               </div>
-              <p className="text-white/80 text-sm leading-relaxed mb-4">{research.summary}</p>
+              <p className="text-[#6b7280] text-sm leading-relaxed mb-4">{research.summary}</p>
               <div className="space-y-2">
                 {research.stats.map((stat, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-white/70">
-                    <span className="text-purple-400 mt-0.5 flex-shrink-0">▸</span>
+                  <div key={i} className="flex items-start gap-2 text-xs text-[#6b7280]">
+                    <span className="text-[#7b5ea7] mt-0.5 flex-shrink-0">▸</span>
                     <span>{stat}</span>
                   </div>
                 ))}
@@ -221,14 +221,14 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
           {/* Admin-uploaded research docs */}
           {docs.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-3">Supporting Documents</h3>
+              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">Supporting Documents</h3>
               <div className="space-y-2">
                 {docs.map(d => (
                   <a key={d.id} href={d.url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
-                    <FileText className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                    <span className="text-sm text-white">{d.title}</span>
-                    <ExternalLink className="w-3 h-3 text-white/40 ml-auto flex-shrink-0" />
+                    className="flex items-center gap-3 p-3 bg-[#f9fafb] hover:bg-[#f3f4f6] rounded-xl transition-colors border border-[#e5e7eb]">
+                    <FileText className="w-4 h-4 text-[#4494D1] flex-shrink-0" />
+                    <span className="text-sm text-[#1f2937]">{d.title}</span>
+                    <ExternalLink className="w-3 h-3 text-[#9ca3af] ml-auto flex-shrink-0" />
                   </a>
                 ))}
               </div>
@@ -237,11 +237,11 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
 
           {/* Vendors in this category */}
           <div>
-            <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-3">Vendor Expertise</h3>
+            <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">Vendor Expertise</h3>
             <div className="flex flex-wrap gap-2">
               {vendors.map(v => (
                 <a key={v} href={VENDOR_RESOURCE_LIBRARY[v]} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/15 rounded-full text-sm text-white/80 transition-colors">
+                  className="vendor-badge flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors">
                   {v} <ExternalLink className="w-3 h-3 opacity-50" />
                 </a>
               ))}
@@ -255,33 +255,33 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
 
 function AccountManagerCard({ owner }: { owner: AccountOwner }) {
   return (
-    <div className="bg-white/10 border border-white/20 rounded-2xl p-5 flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wide">Your Account Manager</h3>
+    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-5 flex flex-col gap-4">
+      <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">Your Account Manager</h3>
       <div className="flex items-center gap-4">
         {owner.photo ? (
-          <img src={owner.photo} alt={owner.name} className="w-14 h-14 rounded-full object-cover border-2 border-white/20" />
+          <img src={owner.photo} alt={owner.name} className="w-14 h-14 rounded-full object-cover border-2 border-[#e5e7eb]" />
         ) : (
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500/40 to-blue-500/40 flex items-center justify-center text-xl font-bold text-white border-2 border-white/20">
+          <div className="w-14 h-14 rounded-full gradient-cta flex items-center justify-center text-xl font-bold text-white border-2 border-white">
             {owner.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
         )}
         <div>
-          <div className="text-lg font-bold text-white">{owner.name}</div>
-          <div className="text-sm text-white/60">Broad Peak Cyber</div>
+          <div className="text-lg font-bold text-[#1f2937]">{owner.name}</div>
+          <div className="text-sm text-[#6b7280]">Broad Peak Cyber</div>
         </div>
       </div>
       <div className="space-y-2 text-sm">
-        <a href={`mailto:${owner.email}`} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-          <Mail className="w-4 h-4 text-pink-400" /> {owner.email}
+        <a href={`mailto:${owner.email}`} className="flex items-center gap-2 text-[#6b7280] hover:text-[#4494D1] transition-colors">
+          <Mail className="w-4 h-4 text-[#C65793]" /> {owner.email}
         </a>
         {owner.phone && (
-          <a href={`tel:${owner.phone}`} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <Phone className="w-4 h-4 text-blue-400" /> {owner.phone}
+          <a href={`tel:${owner.phone}`} className="flex items-center gap-2 text-[#6b7280] hover:text-[#4494D1] transition-colors">
+            <Phone className="w-4 h-4 text-[#4494D1]" /> {owner.phone}
           </a>
         )}
         {owner.calendly && (
-          <a href={owner.calendly} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <Calendar className="w-4 h-4 text-purple-400" /> Book a meeting
+          <a href={owner.calendly} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#6b7280] hover:text-[#4494D1] transition-colors">
+            <Calendar className="w-4 h-4 text-[#7b5ea7]" /> Book a meeting
           </a>
         )}
       </div>
@@ -330,12 +330,12 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-blue-500 flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
+              <div className="w-7 h-7 rounded-full gradient-cta flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
                 <Shield className="w-3.5 h-3.5 text-white" />
               </div>
             )}
             <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-              msg.role === 'user' ? 'bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-br-sm' : 'bg-white/10 text-white/90 rounded-bl-sm'
+              msg.role === 'user' ? 'gradient-cta text-white rounded-br-sm' : 'bg-white text-[#1f2937] border border-[#e5e7eb] shadow-sm rounded-bl-sm'
             }`} style={{ whiteSpace: 'pre-wrap' }}>
               {msg.content}
             </div>
@@ -343,11 +343,11 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-blue-500 flex items-center justify-center mr-2">
+            <div className="w-7 h-7 rounded-full gradient-cta flex items-center justify-center mr-2">
               <Shield className="w-3.5 h-3.5 text-white" />
             </div>
-            <div className="bg-white/10 px-4 py-2.5 rounded-2xl rounded-bl-sm">
-              <Loader2 className="w-4 h-4 text-white/60 animate-spin" />
+            <div className="bg-white px-4 py-2.5 rounded-2xl rounded-bl-sm border border-[#e5e7eb]">
+              <Loader2 className="w-4 h-4 text-[#6b7280] animate-spin" />
             </div>
           </div>
         )}
@@ -355,7 +355,7 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
           <div className="flex flex-wrap gap-2 mt-2">
             {ALL_VENDORS.map(v => (
               <button key={v} onClick={() => { setSelectedVendor(v); sendMessage(vendorPrompt.originalQ, v); }}
-                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-sm text-white transition-colors">
+                className="vendor-badge px-3 py-1.5 text-sm transition-colors">
                 {v}
               </button>
             ))}
@@ -363,17 +363,17 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
         )}
         <div ref={bottomRef} />
       </div>
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-[#e5e7eb]">
         <form onSubmit={e => { e.preventDefault(); sendMessage(input); }} className="flex gap-2">
           <input
             data-testid="chat-input"
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder="Ask about your security products..."
-            className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/40"
+            className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] rounded-[10px] px-4 py-2.5 text-sm text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1]"
           />
           <button type="submit" disabled={loading || !input.trim()} data-testid="chat-send"
-            className="bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl px-4 py-2.5 disabled:opacity-40 hover:opacity-90 transition-opacity">
+            className="gradient-cta text-white rounded-xl px-4 py-2.5 disabled:opacity-40 hover:opacity-90 transition-opacity">
             <Send className="w-4 h-4" />
           </button>
         </form>
@@ -400,13 +400,13 @@ function NewsTab({ domain }: { domain: string }) {
     <div className="space-y-8">
       {/* Vendor Resource Libraries */}
       <div>
-        <h2 className="text-lg font-bold text-white mb-4">Vendor Resource Libraries</h2>
+        <h2 className="text-lg font-bold text-[#1f2937] mb-4">Vendor Resource Libraries</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {VENDOR_NEWS.map(v => (
             <a key={v.vendor} href={v.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-between gap-2 p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all group">
-              <span className="text-sm text-white/80 font-medium leading-tight">{v.vendor} — Resource Library</span>
-              <ExternalLink className="w-3.5 h-3.5 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
+              className="flex items-center justify-between gap-2 p-3.5 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
+              <span className="text-sm text-[#1f2937] font-medium leading-tight">{v.vendor} — Resource Library</span>
+              <ExternalLink className="w-3.5 h-3.5 text-[#9ca3af] group-hover:text-[#4494D1] flex-shrink-0 transition-colors" />
             </a>
           ))}
         </div>
@@ -415,17 +415,17 @@ function NewsTab({ domain }: { domain: string }) {
       {/* Broad Peak Newsletters */}
       {newsletters?.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-white mb-4">Broad Peak Newsletters</h2>
+          <h2 className="text-lg font-bold text-[#1f2937] mb-4">Broad Peak Newsletters</h2>
           <div className="space-y-3">
             {newsletters.map((n: any) => (
-              <div key={n.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl">
-                <FileText className="w-5 h-5 text-pink-400 flex-shrink-0" />
+              <div key={n.id} className="flex items-center gap-4 p-4 bg-white border border-[#e5e7eb] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+                <FileText className="w-5 h-5 text-[#C65793] flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-white">{n.title}</div>
-                  <div className="text-xs text-white/40">{new Date(n.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                  <div className="text-sm font-medium text-[#1f2937]">{n.title}</div>
+                  <div className="text-xs text-[#9ca3af]">{new Date(n.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                 </div>
                 <a href={`/uploads/${n.filename}`} target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-blue-300 hover:text-blue-200 flex items-center gap-1">
+                  className="text-xs text-[#4494D1] hover:text-blue-200 flex items-center gap-1">
                   View <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
@@ -435,7 +435,7 @@ function NewsTab({ domain }: { domain: string }) {
       )}
 
       {(!newsletters || newsletters.length === 0) && (
-        <div className="text-center py-12 text-white/30">
+        <div className="text-center py-12 text-[#9ca3af]">
           <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p className="text-sm">No newsletters uploaded yet</p>
         </div>
@@ -465,8 +465,8 @@ const DATASHEETS = [
 ];
 
 const VENDOR_COLORS: Record<string, string> = {
-  Barracuda: 'text-red-300', Keepit: 'text-sky-300', 'Arctic Wolf': 'text-blue-300',
-  Boxphish: 'text-purple-300', BullWall: 'text-orange-300', CyberSmart: 'text-emerald-300',
+  Barracuda: 'text-red-300', Keepit: 'text-sky-300', 'Arctic Wolf': 'text-[#4494D1]',
+  Boxphish: 'text-[#4494D1]', BullWall: 'text-orange-300', CyberSmart: 'text-emerald-300',
   Druva: 'text-teal-300', WatchGuard: 'text-amber-300',
 };
 
@@ -477,18 +477,18 @@ function ResourcesTab({ domain }: { domain: string }) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-bold text-white mb-4">Vendor Datasheets & Product Guides</h2>
+        <h2 className="text-lg font-bold text-[#1f2937] mb-4">Vendor Datasheets & Product Guides</h2>
         <div className="space-y-6">
           {Object.entries(grouped).map(([vendor, sheets]) => (
             <div key={vendor}>
-              <h3 className={`text-sm font-semibold uppercase tracking-wide mb-2 ${VENDOR_COLORS[vendor] || 'text-white/60'}`}>{vendor}</h3>
+              <h3 className={`text-sm font-semibold uppercase tracking-wide mb-2 ${VENDOR_COLORS[vendor] || 'text-[#4494D1]'}`}>{vendor}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {sheets.map(s => (
                   <a key={s.product} href={s.url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all group">
-                    <FileText className="w-4 h-4 text-white/40 group-hover:text-white/60 flex-shrink-0" />
-                    <span className="text-sm text-white/80">{s.product}</span>
-                    <ExternalLink className="w-3 h-3 text-white/30 group-hover:text-white/60 ml-auto flex-shrink-0" />
+                    className="flex items-center gap-3 p-3 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
+                    <FileText className="w-4 h-4 text-[#9ca3af] group-hover:text-[#4494D1] flex-shrink-0" />
+                    <span className="text-sm text-[#1f2937]">{s.product}</span>
+                    <ExternalLink className="w-3 h-3 text-[#9ca3af] group-hover:text-[#4494D1] ml-auto flex-shrink-0" />
                   </a>
                 ))}
               </div>
@@ -499,17 +499,17 @@ function ResourcesTab({ domain }: { domain: string }) {
 
       {adminSheets?.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-white mb-4">Uploaded Resources</h2>
+          <h2 className="text-lg font-bold text-[#1f2937] mb-4">Uploaded Resources</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {adminSheets.map((s: any) => (
               <a key={s.id} href={`/uploads/${s.filename}`} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group">
+                className="flex items-center gap-3 p-3 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
                 <FileText className="w-4 h-4 text-pink-300 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-white truncate">{s.product}</div>
-                  <div className="text-xs text-white/40">{s.vendor}</div>
+                  <div className="text-sm font-medium text-[#1f2937] truncate">{s.product}</div>
+                  <div className="text-xs text-[#9ca3af]">{s.vendor}</div>
                 </div>
-                <ExternalLink className="w-3 h-3 text-white/30 group-hover:text-white/60 ml-auto flex-shrink-0" />
+                <ExternalLink className="w-3 h-3 text-[#9ca3af] group-hover:text-[#4494D1] ml-auto flex-shrink-0" />
               </a>
             ))}
           </div>
@@ -569,8 +569,8 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
 
   if (!selectedCat) {
     return (
-      <div className="space-y-6">
-        <p className="text-white/60 text-sm">Select a security category to get technical support</p>
+      <div className="space-y-6 gradient-bg rounded-2xl p-6">
+        <p className="text-white/88 text-sm">Select a security category to get technical support</p>
         <div className="grid grid-cols-3 gap-3">
           {SUPPORT_CATEGORIES.map(({ cat, vendors }) => {
             const Icon = CATEGORY_ICONS[cat] || Shield;
@@ -578,16 +578,16 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
             return (
               <button key={cat} data-testid={`support-cat-${cat.replace(/\s+/g, '-').toLowerCase()}`}
                 onClick={() => { if (vendors.length === 1) startSupport(cat, vendors[0]); else setSelectedCat(cat); }}
-                className="flex flex-col gap-2 p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-left transition-all">
-                <Icon className="w-5 h-5 text-white/60" />
+                className="flex flex-col gap-2 p-4 bg-black/22 hover:bg-black/30 border border-white/20 rounded-2xl text-left backdrop-blur-[10px] transition-all">
+                <Icon className="w-5 h-5 text-[#4494D1]" />
                 <div className="text-sm font-medium text-white leading-tight">{cat}</div>
                 <div className="flex flex-wrap gap-1">
                   {vendors.map(v => (
-                    <span key={v} className={`text-xs px-2 py-0.5 rounded-full ${VENDOR_KB[v]?.hasKB ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white/40'}`}>
+                    <span key={v} className={`text-xs px-2 py-0.5 rounded-full ${VENDOR_KB[v]?.hasKB ? 'bg-[#10b98112] text-[#059669]' : 'bg-[#f3f4f6] text-[#9ca3af]'}`}>
                       {VENDOR_KB[v]?.hasKB ? v : `${v} (soon)`}
                     </span>
                   ))}
-                  {vendors.length === 0 && <span className="text-xs text-white/30">Coming soon</span>}
+                  {vendors.length === 0 && <span className="text-xs text-[#9ca3af]">Coming soon</span>}
                 </div>
               </button>
             );
@@ -601,21 +601,21 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
     const vendors = CATEGORY_VENDORS[selectedCat] || [];
     return (
       <div className="space-y-4">
-        <button onClick={() => setSelectedCat(null)} className="text-sm text-white/50 hover:text-white flex items-center gap-1">← Back</button>
-        <h3 className="text-lg font-bold text-white">{selectedCat} — Select Vendor</h3>
+        <button onClick={() => setSelectedCat(null)} className="text-sm text-[#9ca3af] hover:text-[#1f2937] flex items-center gap-1">← Back</button>
+        <h3 className="text-lg font-bold text-[#1f2937]">{selectedCat} — Select Vendor</h3>
         <div className="grid grid-cols-2 gap-3">
           {vendors.map(v => {
             const kb = VENDOR_KB[v];
             return (
               <button key={v} onClick={() => startSupport(selectedCat, v)}
-                className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all text-left">
+                className="flex items-center justify-between p-4 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all text-left">
                 <div>
-                  <div className="text-sm font-medium text-white">{v}</div>
-                  <div className={`text-xs mt-1 ${kb?.hasKB ? 'text-emerald-400' : 'text-white/30'}`}>
+                  <div className="text-sm font-medium text-[#1f2937]">{v}</div>
+                  <div className={`text-xs mt-1 ${kb?.hasKB ? 'text-[#059669]' : 'text-[#9ca3af]'}`}>
                     {kb?.hasKB ? `KB: ${kb.label}` : 'In Development'}
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-white/30" />
+                <ChevronRight className="w-4 h-4 text-[#9ca3af]" />
               </button>
             );
           })}
@@ -629,30 +629,30 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
     <div className="flex flex-col h-[420px]">
       <div className="flex items-center gap-3 mb-3">
         <button onClick={() => { setSelectedCat(null); setSelectedVendor(null); setMessages([]); setInitDone(false); }}
-          className="text-sm text-white/50 hover:text-white">← Back</button>
-        <span className="text-sm font-medium text-white">{selectedCat} — {selectedVendor}</span>
+          className="text-sm text-[#9ca3af] hover:text-[#1f2937]">← Back</button>
+        <span className="text-sm font-medium text-[#1f2937]">{selectedCat} — {selectedVendor}</span>
         {kb?.url && (
           <a href={kb.url} target="_blank" rel="noopener noreferrer"
-            className="ml-auto text-xs text-blue-300 hover:text-blue-200 flex items-center gap-1">
+            className="ml-auto text-xs text-[#4494D1] hover:text-[#357eb2] flex items-center gap-1">
             {kb.label} <ExternalLink className="w-3 h-3" />
           </a>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto bg-white/5 rounded-xl p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto bg-[#f9fafb] rounded-xl border border-[#e5e7eb] p-4 space-y-3">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-blue-500 flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
+              <div className="w-7 h-7 rounded-full gradient-cta flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
                 <Shield className="w-3.5 h-3.5 text-white" />
               </div>
             )}
             <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-              msg.role === 'user' ? 'bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-br-sm' : 'bg-white/10 text-white/90 rounded-bl-sm'
+              msg.role === 'user' ? 'gradient-cta text-white rounded-br-sm' : 'bg-white text-[#1f2937] border border-[#e5e7eb] shadow-sm rounded-bl-sm'
             }`} style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
           </div>
         ))}
         {loading && (
-          <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 text-white/50 animate-spin" /><span className="text-xs text-white/40">Searching {kb?.label}...</span></div>
+          <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 text-[#6b7280] animate-spin" /><span className="text-xs text-[#9ca3af]">Searching {kb?.label}...</span></div>
         )}
         <div ref={bottomRef} />
       </div>
@@ -660,9 +660,9 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
         <div className="mt-3">
           <form onSubmit={e => { e.preventDefault(); sendSupportMsg(); }} className="flex gap-2">
             <input value={input} onChange={e => setInput(e.target.value)} placeholder={`Ask a ${selectedVendor} question...`}
-              className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/40" />
+              className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] rounded-[10px] px-4 py-2.5 text-sm text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1]" />
             <button type="submit" disabled={loading || !input.trim()}
-              className="bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl px-4 py-2.5 disabled:opacity-40">
+              className="gradient-cta text-white rounded-xl px-4 py-2.5 disabled:opacity-40">
               <Send className="w-4 h-4" />
             </button>
           </form>
@@ -692,17 +692,17 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #16213e 40%, #0a1628 100%)' }}>
+    <div className="min-h-screen flex flex-col bg-[#f0f2f5]">
       {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo-white-text.jpg" alt="Broad Peak Cyber" className="h-8 object-contain" />
+            <img src="/logo-black-text.jpg" alt="Broad Peak Cyber" className="h-8 object-contain" />
           </div>
           <div className="flex items-center gap-3">
-            {customer && <span className="text-sm text-white/60 hidden md:block">{customer.accountName}</span>}
+            {customer && <span className="text-sm text-[#6b7280] hidden md:block">{customer.accountName}</span>}
             <button onClick={onLogout} data-testid="logout-button"
-              className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
+              className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#1f2937] transition-colors">
               <LogOut className="w-4 h-4" /> Sign out
             </button>
           </div>
@@ -712,27 +712,27 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
       <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
         {/* Welcome */}
         {customer && (
-          <div>
+          <div className="gradient-cta rounded-2xl px-6 py-5 shadow-[0_8px_24px_rgba(123,94,167,0.20)]">
             <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-            <p className="text-white/50 text-sm mt-1">{customer.accountName} · {customer.grid.filter(g => g.status === 'active').length} active security services</p>
+            <p className="text-white/80 text-sm mt-1">{customer.accountName} · {customer.grid.filter(g => g.status === 'active').length} active security services</p>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/10 w-fit">
+        <div className="flex gap-1 bg-[#f3f4f6] p-1 rounded-xl border border-[#e5e7eb] w-fit overflow-x-auto max-w-full">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)} data-testid={`tab-${t.id}`}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === t.id ? 'bg-white/15 text-white shadow-sm' : 'text-white/50 hover:text-white'
+                activeTab === t.id ? 'bg-white text-[#1f2937] shadow-sm' : 'text-[#6b7280] hover:text-[#1f2937]'
               }`}>{t.label}</button>
           ))}
         </div>
 
         {/* Content */}
         {isLoading ? (
-          <div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-white/40 animate-spin" /></div>
+          <div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#C65793] animate-spin" /></div>
         ) : !customer ? (
-          <div className="flex-1 flex items-center justify-center text-white/40 text-sm">No data found for this account</div>
+          <div className="flex-1 flex items-center justify-center text-[#9ca3af] text-sm">No data found for this account</div>
         ) : (
           <>
             {/* MY PRODUCTS TAB */}
@@ -756,12 +756,12 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                   )}
 
                   {/* Ask Broad Peak AI */}
-                  <div className="bg-white/5 border border-white/10 rounded-2xl flex flex-col" style={{ height: '420px' }}>
-                    <div className="px-4 pt-4 pb-3 border-b border-white/10 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-blue-500 flex items-center justify-center">
+                  <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '420px' }}>
+                    <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
                         <Shield className="w-3 h-3 text-white" />
                       </div>
-                      <span className="text-sm font-semibold text-white">Ask Broad Peak AI</span>
+                      <span className="text-sm font-semibold text-[#1f2937]">Ask Broad Peak AI</span>
                     </div>
                     <div className="flex-1 min-h-0">
                       <ChatBot domain={domain} accountName={customer.accountName} />

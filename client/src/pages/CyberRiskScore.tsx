@@ -490,30 +490,31 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
   if (!started) {
     return (
       <div className="space-y-4">
-        <div className="bg-gradient-to-br from-slate-900 to-blue-950 border border-white/10 rounded-2xl p-6">
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 overflow-hidden relative">
+          <div className="absolute inset-x-0 top-0 h-1.5 gradient-cta" />
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-gradient-to-br from-pink-500/30 to-blue-500/30 rounded-xl flex-shrink-0">
-              <TrendingUp className="w-6 h-6 text-white" />
+            <div className="p-3 bg-[#4494D112] rounded-xl flex-shrink-0">
+              <TrendingUp className="w-6 h-6 text-[#1f2937]" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-white mb-2">Cyber Risk Score</h2>
-              <p className="text-white/70 text-sm leading-relaxed mb-4">
+              <h2 className="text-xl font-bold text-[#1f2937] mb-2">Cyber Risk Score</h2>
+              <p className="text-[#6b7280] text-sm leading-relaxed mb-4">
                 An adaptive assessment based on the <span className="text-blue-300">NIST Cybersecurity Framework 2.0</span>, the globally recognised standard for cyber risk management. Questions adapt based on your answers. Your score is benchmarked against recognised frameworks including NCSC, ISO 27001, and UK GDPR.
               </p>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-5">
                 {NIST_FUNCTIONS.map(fn => (
                   <div key={fn.id} className="rounded-xl p-2.5 text-center" style={{ background: fn.color+'22', border: `1px solid ${fn.color}44` }}>
                     <div className="text-xs font-bold mb-0.5" style={{ color: fn.color }}>{fn.ref}</div>
-                    <div className="text-xs text-white/70">{fn.name}</div>
+                    <div className="text-xs text-[#6b7280]">{fn.name}</div>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl mb-4">
+              <div className="flex items-center gap-3 p-3 bg-[#4494D112] border border-[#4494D130] rounded-xl mb-4">
                 <Info className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                <p className="text-xs text-white/60">Questions are adaptive — your answers determine what is asked next. The assessment takes approximately 5–8 minutes. A branded PDF report with Broad Peak recommendations is generated at the end.</p>
+                <p className="text-xs text-[#6b7280]">Questions are adaptive — your answers determine what is asked next. The assessment takes approximately 5–8 minutes. A branded PDF report with Broad Peak recommendations is generated at the end.</p>
               </div>
               <button onClick={() => setStarted(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                className="flex items-center gap-2 px-6 py-3 gradient-cta text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
                 Start Risk Assessment <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -540,15 +541,15 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
     return (
       <div className="space-y-5">
         {/* Score header */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-white/10 rounded-2xl p-5">
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-5">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-white">Cyber Risk Score</h2>
-              <p className="text-white/40 text-sm">{accountName} · NIST CSF 2.0</p>
+              <h2 className="text-xl font-bold text-[#1f2937]">Cyber Risk Score</h2>
+              <p className="text-[#9ca3af] text-sm">{accountName} · NIST CSF 2.0</p>
             </div>
             <div className="text-right">
               <div className="text-5xl font-bold" style={{ color: risk.color }}>{overallScore}</div>
-              <div className="text-xs text-white/40">/ 100</div>
+              <div className="text-xs text-[#9ca3af]">/ 100</div>
             </div>
           </div>
 
@@ -556,7 +557,7 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
             <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: risk.color }} />
             <div>
               <span className="text-sm font-bold" style={{ color: risk.color }}>{risk.label}</span>
-              <span className="text-sm text-white/60 ml-2">{risk.description}</span>
+              <span className="text-sm text-[#6b7280] ml-2">{risk.description}</span>
             </div>
           </div>
 
@@ -565,14 +566,14 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
             {fnScores.map(fn => {
               const fnRisk = getRiskLevel(fn.score);
               return (
-                <div key={fn.id} className="bg-white/5 rounded-xl p-3">
+                <div key={fn.id} className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="text-xs font-bold" style={{ color: fn.color }}>{fn.ref}: {fn.name}</div>
                     </div>
                     <div className="text-lg font-bold" style={{ color: fnRisk.color }}>{fn.score}%</div>
                   </div>
-                  <div className="h-1.5 bg-white/10 rounded-full">
+                  <div className="h-1.5 bg-[#f3f4f6] rounded-full">
                     <div className="h-1.5 rounded-full transition-all" style={{ width: `${fn.score}%`, backgroundColor: fnRisk.color }} />
                   </div>
                 </div>
@@ -582,10 +583,10 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
 
           <div className="flex gap-3 flex-wrap">
             <button onClick={() => generateRiskPDF(answers, accountName)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
+              className="flex items-center gap-2 px-5 py-2.5 gradient-cta text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
               <Download className="w-4 h-4" /> Download PDF Report
             </button>
-            <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white/70 rounded-xl text-sm hover:bg-white/15 transition-colors">
+            <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-[#f3f4f6] text-[#6b7280] rounded-xl text-sm hover:bg-[#e5e7eb] transition-colors">
               <RotateCcw className="w-4 h-4" /> Retake
             </button>
           </div>
@@ -594,21 +595,21 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
         {/* Weakest areas */}
         {weakest.filter(f => f.score < 80).length > 0 && (
           <div>
-            <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-base font-bold text-[#1f2937] mb-3 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400" /> Priority Improvement Areas
             </h3>
             <div className="space-y-3">
               {weakest.filter(f => f.score < 80).map(fn => (
-                <div key={fn.id} className="bg-white/5 border border-white/10 rounded-xl p-4" style={{ borderLeftColor: fn.color, borderLeftWidth: 3 }}>
+                <div key={fn.id} className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-xl p-4" style={{ borderLeftColor: fn.color, borderLeftWidth: 3 }}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-bold" style={{ color: fn.color }}>{fn.ref}: {fn.name}</span>
                     <span className="text-lg font-bold" style={{ color: getRiskLevel(fn.score).color }}>{fn.score}%</span>
                   </div>
-                  <p className="text-xs text-white/50 mb-2">{fn.description}</p>
+                  <p className="text-xs text-[#6b7280] mb-2">{fn.description}</p>
                   {fn.bpProducts.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {fn.bpProducts.slice(0,3).map(p => (
-                        <span key={p} className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-blue-500/20 border border-pink-500/20 text-white/70">{p}</span>
+                        <span key={p} className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-blue-500/20 border border-pink-500/20 text-[#6b7280]">{p}</span>
                       ))}
                     </div>
                   )}
@@ -621,15 +622,15 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
         {/* BP recommendations */}
         {topProds.length > 0 && (
           <div>
-            <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-base font-bold text-[#1f2937] mb-3 flex items-center gap-2">
               <Shield className="w-4 h-4 text-pink-400" /> Broad Peak Recommendations
             </h3>
             <div className="space-y-2">
               {topProds.map(([prod, count]) => (
-                <div key={prod} className="flex items-center gap-3 p-3 bg-gradient-to-r from-pink-900/20 to-blue-900/20 border border-pink-500/20 rounded-xl">
+                <div key={prod} className="flex items-center gap-3 p-3 bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-xl">
                   <div className="w-2 h-2 rounded-full bg-gradient-to-br from-pink-400 to-blue-400 flex-shrink-0" />
-                  <span className="text-sm text-white font-medium flex-1">{prod}</span>
-                  <span className="text-xs text-white/40">Addresses {count} gap{count>1?'s':''}</span>
+                  <span className="text-sm text-[#1f2937] font-medium flex-1">{prod}</span>
+                  <span className="text-xs text-[#9ca3af]">Addresses {count} gap{count>1?'s':''}</span>
                 </div>
               ))}
             </div>
@@ -639,23 +640,23 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
         {/* All gaps */}
         {gaps.length > 0 && (
           <div>
-            <h3 className="text-base font-bold text-white mb-3">All Gaps ({gaps.length})</h3>
+            <h3 className="text-base font-bold text-[#1f2937] mb-3">All Gaps ({gaps.length})</h3>
             <div className="space-y-2">
               {NIST_FUNCTIONS.map(fn => {
                 const fnGaps = gaps.filter(g => g.fn.id === fn.id);
                 if (fnGaps.length === 0) return null;
                 return (
-                  <div key={fn.id} className="bg-white/3 border border-white/10 rounded-xl overflow-hidden">
+                  <div key={fn.id} className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-xl overflow-hidden">
                     <div className="px-4 py-2 flex items-center gap-2" style={{ background: fn.color+'18', borderBottom: `1px solid ${fn.color}30` }}>
                       <span className="text-xs font-bold" style={{ color: fn.color }}>{fn.ref}: {fn.name}</span>
-                      <span className="text-xs text-white/30 ml-auto">{fnGaps.length} gap{fnGaps.length>1?'s':''}</span>
+                      <span className="text-xs text-[#9ca3af] ml-auto">{fnGaps.length} gap{fnGaps.length>1?'s':''}</span>
                     </div>
                     <div className="p-3 space-y-2">
                       {fnGaps.map(({ q }) => (
                         <div key={q.id} className="flex items-start gap-2">
                           <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
                           <div>
-                            <div className="text-xs text-white/80">{q.text}</div>
+                            <div className="text-xs text-[#1f2937]">{q.text}</div>
                             {(PRODUCT_MAP[q.id]||[]).length > 0 && (
                               <div className="text-xs text-pink-400/70 mt-0.5">→ {(PRODUCT_MAP[q.id]||[]).join(' · ')}</div>
                             )}
@@ -671,11 +672,11 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
         )}
 
         {gaps.length === 0 && (
-          <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-5 flex items-center gap-3">
+          <div className="bg-[#10b98112] border border-[#10b98130] rounded-xl p-5 flex items-center gap-3">
             <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
             <div>
               <div className="text-sm font-semibold text-emerald-300">Excellent posture — no gaps identified</div>
-              <div className="text-xs text-white/50 mt-1">Your organisation demonstrates strong alignment with NIST CSF 2.0. Continue regular reviews to maintain this posture.</div>
+              <div className="text-xs text-[#6b7280] mt-1">Your organisation demonstrates strong alignment with NIST CSF 2.0. Continue regular reviews to maintain this posture.</div>
             </div>
           </div>
         )}
@@ -684,7 +685,7 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
   }
 
   // ── Question view (adaptive) ───────────────────────────────────────────────
-  if (!currentQuestion) return <div className="text-white/40 text-sm">Loading...</div>;
+  if (!currentQuestion) return <div className="text-[#9ca3af] text-sm">Loading...</div>;
 
   const recentAnswers = queuedQuestions.slice(Math.max(0, currentIdx-3), currentIdx).map(q => ({
     q, ans: answers[q.id], fn: getFunctionForQuestion(q.id)
@@ -694,12 +695,12 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
     <div className="space-y-4">
       {/* Progress */}
       <div>
-        <div className="flex justify-between text-xs text-white/40 mb-2">
+        <div className="flex justify-between text-xs text-[#9ca3af] mb-2">
           <span>{currentFn?.ref}: {currentFn?.name} · Question {currentIdx+1} of ~{queuedQuestions.length}</span>
           <span>{progress}% complete</span>
         </div>
-        <div className="h-1.5 bg-white/10 rounded-full">
-          <div className="h-1.5 rounded-full bg-gradient-to-r from-pink-500 to-blue-500 transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-1.5 bg-[#f3f4f6] rounded-full">
+          <div className="h-1.5 rounded-full gradient-cta transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
@@ -712,7 +713,7 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
       </div>
 
       {/* Question card */}
-      <div ref={cardRef} className={`bg-white/5 border border-white/10 rounded-2xl p-6 transition-all duration-180 ${transition ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'}`}
+      <div ref={cardRef} className={`bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 transition-all duration-200 ${transition ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'}`}
         style={{ borderLeftColor: currentFn?.color, borderLeftWidth: 3 }}>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xs font-bold uppercase tracking-wide" style={{ color: currentFn?.color }}>
@@ -721,25 +722,25 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
           {Array.from({ length: currentQuestion.weight }).map((_, i) => (
             <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: currentFn?.color }} />
           ))}
-          <span className="text-xs text-white/30 ml-1">(importance {currentQuestion.weight === 3 ? 'high' : currentQuestion.weight === 2 ? 'medium' : 'standard'})</span>
+          <span className="text-xs text-[#9ca3af] ml-1">(importance {currentQuestion.weight === 3 ? 'high' : currentQuestion.weight === 2 ? 'medium' : 'standard'})</span>
         </div>
 
-        <h3 className="text-base font-semibold text-white mb-3 leading-snug">{currentQuestion.text}</h3>
+        <h3 className="text-base font-semibold text-[#1f2937] mb-3 leading-snug">{currentQuestion.text}</h3>
 
         {currentQuestion.guidance && (
-          <div className="flex items-start gap-2 p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl mb-5">
+          <div className="flex items-start gap-2 p-3 bg-[#4494D112] border border-[#4494D130] rounded-xl mb-5">
             <Info className="w-3.5 h-3.5 text-blue-300 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-white/60 leading-relaxed">{currentQuestion.guidance}</p>
+            <p className="text-xs text-[#6b7280] leading-relaxed">{currentQuestion.guidance}</p>
           </div>
         )}
 
         <div className="flex gap-3">
           <button onClick={() => answerQuestion(true)}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl font-semibold text-sm hover:bg-emerald-500/30 transition-all">
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#f0fdf4] border-2 border-[#10b981] text-[#059669] rounded-xl font-semibold text-sm hover:bg-[#dcfce7] transition-all">
             <CheckCircle className="w-4 h-4" /> Yes
           </button>
           <button onClick={() => answerQuestion(false)}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl font-semibold text-sm hover:bg-red-500/30 transition-all">
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#fef2f2] border-2 border-[#ef4444] text-[#dc2626] rounded-xl font-semibold text-sm hover:bg-[#fee2e2] transition-all">
             <XCircle className="w-4 h-4" /> No
           </button>
         </div>
@@ -748,12 +749,12 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
       {/* Recent answers trail */}
       {recentAnswers.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-xs text-white/25 uppercase tracking-wide">Recent answers</div>
+          <div className="text-xs text-[#9ca3af] uppercase tracking-wide">Recent answers</div>
           {recentAnswers.map(({ q, ans, fn }) => (
-            <div key={q.id} className="flex items-center gap-2.5 p-2 bg-white/3 rounded-lg">
+            <div key={q.id} className="flex items-center gap-2.5 p-2 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg">
               {ans === true ? <CheckCircle className="w-3 h-3 text-emerald-400 flex-shrink-0" /> : <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />}
               <span className="text-xs font-medium flex-shrink-0" style={{ color: fn?.color+'cc' }}>{fn?.ref}</span>
-              <span className="text-xs text-white/40 truncate">{q.text}</span>
+              <span className="text-xs text-[#9ca3af] truncate">{q.text}</span>
             </div>
           ))}
         </div>

@@ -13,13 +13,13 @@ const ALL_VENDORS = ['Barracuda', 'Keepit', 'Arctic Wolf', 'Boxphish', 'BullWall
 function Section({ title, icon: Icon, children, defaultOpen = true }: { title: string; icon: any; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-white/5 transition-colors">
-        <Icon className="w-5 h-5 text-pink-400" />
-        <span className="font-semibold text-white flex-1">{title}</span>
-        {open ? <ChevronUp className="w-4 h-4 text-white/40" /> : <ChevronDown className="w-4 h-4 text-white/40" />}
+    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-[#f9fafb] transition-colors">
+        <Icon className="w-5 h-5 text-[#C65793]" />
+        <span className="font-semibold text-[#1f2937] flex-1">{title}</span>
+        {open ? <ChevronUp className="w-4 h-4 text-[#9ca3af]" /> : <ChevronDown className="w-4 h-4 text-[#9ca3af]" />}
       </button>
-      {open && <div className="px-6 pb-6 border-t border-white/10">{children}</div>}
+      {open && <div className="px-6 pb-6 border-t border-[#e5e7eb]">{children}</div>}
     </div>
   );
 }
@@ -105,24 +105,24 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
   // ── Cache Stats ───────────────────────────────────────────
   const { data: stats } = useQuery({ queryKey: ['/api/admin/cache-stats'], queryFn: () => apiFetch("/api/admin/cache-stats").then(r => r.json()) });
 
-  const inputCls = 'bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/40 w-full';
-  const btnCls = 'flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40';
-  const selectCls = 'bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white/40 w-full';
+  const inputCls = 'bg-[#f9fafb] border border-[#e5e7eb] rounded-[10px] px-4 py-2.5 text-sm text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1] w-full';
+  const btnCls = 'flex items-center gap-2 px-4 py-2.5 gradient-cta text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40';
+  const selectCls = 'bg-[#f9fafb] border border-[#e5e7eb] rounded-[10px] px-4 py-2.5 text-sm text-[#1f2937] focus:outline-none focus:border-[#4494D1] w-full';
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #16213e 40%, #0a1628 100%)' }}>
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm sticky top-0 z-40">
+    <div className="min-h-screen flex flex-col bg-[#f0f2f5]">
+      <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo-white-text.jpg" alt="Broad Peak Cyber" className="h-8 object-contain" />
-            <span className="text-white/40 text-sm">/ Admin</span>
+            <img src="/logo-black-text.jpg" alt="Broad Peak Cyber" className="h-8 object-contain" />
+            <span className="text-[#9ca3af] text-sm">/ Admin</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-xs text-white/40 hidden md:block">
-              Password: <span className="font-mono text-white/60">BPAdmin2024!</span> · 
-              URL: <span className="font-mono text-white/60">/#admin</span>
+            <div className="text-xs text-[#9ca3af] hidden md:block">
+              Password: <span className="font-mono text-[#6b7280]">BPAdmin2024!</span> ·
+              URL: <span className="font-mono text-[#6b7280]">/#admin</span>
             </div>
-            <button onClick={onLogout} className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
+            <button onClick={onLogout} className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#1f2937] transition-colors">
               <LogOut className="w-4 h-4" /> Sign out
             </button>
           </div>
@@ -131,8 +131,8 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
 
       <div className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Admin Portal</h1>
-          {stats && <p className="text-white/40 text-sm mt-1">{stats.count} customer accounts cached · Last updated: {stats.lastUpdated ? new Date(stats.lastUpdated).toLocaleString() : 'never'}</p>}
+          <h1 className="text-2xl font-bold text-[#1f2937]">Admin Portal</h1>
+          {stats && <p className="text-[#9ca3af] text-sm mt-1">{stats.count} customer accounts cached · Last updated: {stats.lastUpdated ? new Date(stats.lastUpdated).toLocaleString() : 'never'}</p>}
         </div>
 
         {/* Account Manager Profiles */}
@@ -142,23 +142,23 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
             {(accountManagers as any[]).length > 0 && (
               <div className="space-y-3 mb-4">
                 {(accountManagers as any[]).map((am: any) => (
-                  <div key={am.email} className="flex items-center gap-4 p-3 bg-white/5 rounded-xl border border-white/10">
+                  <div key={am.email} className="flex items-center gap-4 p-3 bg-[#f9fafb] rounded-xl border border-[#e5e7eb]">
                     {am.photo_path ? (
                       <img src={`/uploads/${am.photo_path.split('/').pop()}`} className="w-10 h-10 rounded-full object-cover" alt={am.name} />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/40 to-blue-500/40 flex items-center justify-center text-sm font-bold text-white">
+                      <div className="w-10 h-10 rounded-full gradient-cta flex items-center justify-center text-sm font-bold text-white">
                         {am.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white">{am.display_name || am.name}</div>
-                      <div className="text-xs text-white/50 flex items-center gap-2">
+                      <div className="text-sm font-medium text-[#1f2937]">{am.display_name || am.name}</div>
+                      <div className="text-xs text-[#6b7280] flex items-center gap-2">
                         <span>{am.email}</span>
                         {am.phone && <span>· {am.phone}</span>}
-                        {am.calendly && <a href={am.calendly} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200">Calendly ↗</a>}
+                        {am.calendly && <a href={am.calendly} target="_blank" rel="noopener noreferrer" className="text-[#4494D1] hover:text-[#357eb2]">Calendly ↗</a>}
                       </div>
                     </div>
-                    <button onClick={() => deleteAM(am.email)} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => deleteAM(am.email)} className="text-[#dc2626] hover:text-[#991b1b] p-1"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 ))}
               </div>
@@ -171,7 +171,7 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
               <input className={inputCls} placeholder="Phone" value={amForm.phone} onChange={e => setAmForm(f => ({ ...f, phone: e.target.value }))} />
               <input className={inputCls} placeholder="Calendly URL (optional)" value={amForm.calendly} onChange={e => setAmForm(f => ({ ...f, calendly: e.target.value }))} />
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => amPhotoRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white/70 rounded-xl text-sm border border-white/20 hover:bg-white/15 transition-colors w-full">
+                <button type="button" onClick={() => amPhotoRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-[#f9fafb] text-[#6b7280] rounded-[10px] text-sm border border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors w-full">
                   <Upload className="w-4 h-4" /> {amPhoto ? amPhoto.name : 'Upload photo'}
                 </button>
                 <input type="file" ref={amPhotoRef} accept="image/*" className="hidden" onChange={e => setAmPhoto(e.target.files?.[0] || null)} />
@@ -180,7 +180,7 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
             <button onClick={saveAM} disabled={amSaving || !amForm.email || !amForm.name} className={btnCls}>
               {amSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Save Account Manager
             </button>
-            <p className="text-xs text-white/30 mt-2">Account owners are auto-detected from Salesforce. Add profiles here to enrich with photo, phone, and Calendly link.</p>
+            <p className="text-xs text-[#9ca3af] mt-2">Account owners are auto-detected from Salesforce. Add profiles here to enrich with photo, phone, and Calendly link.</p>
           </div>
         </Section>
 
@@ -190,20 +190,20 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
             {(newsletters as any[]).length > 0 && (
               <div className="space-y-2 mb-4">
                 {(newsletters as any[]).map((n: any) => (
-                  <div key={n.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
-                    <FileText className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                  <div key={n.id} className="flex items-center gap-3 p-3 bg-[#f9fafb] rounded-xl border border-[#e5e7eb]">
+                    <FileText className="w-4 h-4 text-[#C65793] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white truncate">{n.title}</div>
-                      <div className="text-xs text-white/40">{new Date(n.uploaded_at).toLocaleDateString()}</div>
+                      <div className="text-sm text-[#1f2937] truncate">{n.title}</div>
+                      <div className="text-xs text-[#9ca3af]">{new Date(n.uploaded_at).toLocaleDateString()}</div>
                     </div>
-                    <button onClick={() => deleteNl.mutate(n.id)} className="text-red-400 hover:text-red-300 p-1 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => deleteNl.mutate(n.id)} className="text-[#dc2626] hover:text-[#991b1b] p-1 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 ))}
               </div>
             )}
             <input className={inputCls} placeholder="Newsletter title" value={nlTitle} onChange={e => setNlTitle(e.target.value)} />
             <div className="flex gap-3">
-              <button type="button" onClick={() => nlRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white/70 rounded-xl text-sm border border-white/20 hover:bg-white/15 transition-colors flex-1">
+              <button type="button" onClick={() => nlRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-[#f9fafb] text-[#6b7280] rounded-[10px] text-sm border border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors flex-1">
                 <Upload className="w-4 h-4" /> {nlFile ? nlFile.name : 'Choose file (PDF)'}
               </button>
               <input type="file" ref={nlRef} accept=".pdf,.docx" className="hidden" onChange={e => setNlFile(e.target.files?.[0] || null)} />
@@ -217,7 +217,7 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
         {/* Research Docs */}
         <Section title="Research & Business Case Docs" icon={BookOpen}>
           <div className="space-y-4 mt-4">
-            <p className="text-sm text-white/50">Upload supporting documents (Gartner reports, whitepapers, business case PDFs) per security category. They appear in the "Further Research" panel when customers click a category.</p>
+            <p className="text-sm text-[#6b7280]">Upload supporting documents (Gartner reports, whitepapers, business case PDFs) per security category. They appear in the "Further Research" panel when customers click a category.</p>
             <div className="grid grid-cols-2 gap-3">
               <select className={selectCls} value={rdCat} onChange={e => setRdCat(e.target.value)}>
                 <option value="">Select category</option>
@@ -226,7 +226,7 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
               <input className={inputCls} placeholder="Document title" value={rdTitle} onChange={e => setRdTitle(e.target.value)} />
             </div>
             <div className="flex gap-3">
-              <button type="button" onClick={() => rdRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white/70 rounded-xl text-sm border border-white/20 hover:bg-white/15 transition-colors flex-1">
+              <button type="button" onClick={() => rdRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-[#f9fafb] text-[#6b7280] rounded-[10px] text-sm border border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors flex-1">
                 <Upload className="w-4 h-4" /> {rdFile ? rdFile.name : 'Choose PDF / document'}
               </button>
               <input type="file" ref={rdRef} accept=".pdf,.docx,.pptx" className="hidden" onChange={e => setRdFile(e.target.files?.[0] || null)} />
@@ -243,13 +243,13 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
             {(datasheets as any[]).length > 0 && (
               <div className="space-y-2 mb-4">
                 {(datasheets as any[]).map((d: any) => (
-                  <div key={d.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                  <div key={d.id} className="flex items-center gap-3 p-3 bg-[#f9fafb] rounded-xl border border-[#e5e7eb]">
                     <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white truncate">{d.product}</div>
-                      <div className="text-xs text-white/40">{d.vendor} · {d.category}</div>
+                      <div className="text-sm text-[#1f2937] truncate">{d.product}</div>
+                      <div className="text-xs text-[#9ca3af]">{d.vendor} · {d.category}</div>
                     </div>
-                    <button onClick={() => deleteDs.mutate(d.id)} className="text-red-400 hover:text-red-300 p-1 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => deleteDs.mutate(d.id)} className="text-[#dc2626] hover:text-[#991b1b] p-1 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 ))}
               </div>
@@ -266,7 +266,7 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
               </select>
             </div>
             <div className="flex gap-3">
-              <button type="button" onClick={() => dsRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white/70 rounded-xl text-sm border border-white/20 hover:bg-white/15 transition-colors flex-1">
+              <button type="button" onClick={() => dsRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 bg-[#f9fafb] text-[#6b7280] rounded-[10px] text-sm border border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors flex-1">
                 <Upload className="w-4 h-4" /> {dsFile ? dsFile.name : 'Choose PDF'}
               </button>
               <input type="file" ref={dsRef} accept=".pdf" className="hidden" onChange={e => setDsFile(e.target.files?.[0] || null)} />
