@@ -1,23 +1,29 @@
-import { build } from 'esbuild';
-import { execSync } from 'child_process';
+import { build as esbuild } from 'esbuild';
+import { build as viteBuild } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
-async function main() {
-  // 1. Build frontend with Vite — run from ROOT so node_modules is found
+async function buildAll() {
+  // 1. Build frontend using Vite programmatic API (runs from ROOT, finds node_modules correctly)
   console.log('Building frontend…');
-  execSync(`npx vite build --config ${path.join(ROOT, 'client/vite.config.ts')}`, {
-    cwd: ROOT,
-    stdio: 'inherit',
-    env: { ...process.env, VITE_API_BASE: '' },
+  await viteBuild({
+    configFile: path.join(ROOT, 'client/vite.config.ts'),
+    root: path.join(ROOT, 'client'),
+    build: {
+      outDir: path.join(ROOT, 'dist/public'),
+      emptyOutDir: true,
+    },
+    define: {
+      'import.meta.env.VITE_API_BASE': JSON.stringify(''),
+    },
   });
 
   // 2. Build backend with esbuild
   console.log('Building server…');
-  await build({
+  await esbuild({
     entryPoints: [path.join(ROOT, 'server/index.ts')],
     bundle: true,
     platform: 'node',
@@ -33,4 +39,4 @@ async function main() {
   console.log('Build complete.');
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+buildAll().catch(e => { console.error(e); process.exit(1); });
