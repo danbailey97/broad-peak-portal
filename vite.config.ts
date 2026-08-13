@@ -6,17 +6,20 @@ const root = import.meta.dirname;
 
 export default defineConfig({
   plugins: [react()],
-  root: path.resolve(root, 'client'),
+  // Root is the repo root — node_modules resolves correctly here
+  // We point Rollup at client/index.html as the entry
+  root: root,
   resolve: {
     alias: {
       '@': path.resolve(root, 'client/src'),
     },
-    // Tell Vite to find node_modules at the repo root, not inside client/
-    modules: [path.resolve(root, 'node_modules'), 'node_modules'],
   },
   build: {
     outDir: path.resolve(root, 'dist/public'),
     emptyOutDir: true,
+    rollupOptions: {
+      input: path.resolve(root, 'client/index.html'),
+    },
   },
   server: {
     proxy: {
