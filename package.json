@@ -7,7 +7,8 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite client",
     "build": "tsx script/build.ts",
-    "start": "NODE_ENV=production node dist/index.cjs"
+    "start": "NODE_ENV=production node dist/index.cjs",
+    "postinstall": "npm rebuild better-sqlite3"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
@@ -39,5 +40,8 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.12"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
