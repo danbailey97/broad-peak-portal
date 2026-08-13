@@ -7,9 +7,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
 async function main() {
-  // 1. Build frontend with Vite
+  // 1. Build frontend with Vite — run from ROOT so node_modules is found
   console.log('Building frontend…');
-  execSync('npx vite build', { cwd: path.join(ROOT, 'client'), stdio: 'inherit', env: { ...process.env, VITE_API_BASE: '' } });
+  execSync(`npx vite build --config ${path.join(ROOT, 'client/vite.config.ts')}`, {
+    cwd: ROOT,
+    stdio: 'inherit',
+    env: { ...process.env, VITE_API_BASE: '' },
+  });
 
   // 2. Build backend with esbuild
   console.log('Building server…');
