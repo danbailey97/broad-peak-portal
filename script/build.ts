@@ -9,7 +9,7 @@ const ROOT = path.resolve(__dirname, '..');
 async function main() {
   // 1. Build frontend with Vite
   console.log('Building frontend…');
-  execSync('npx vite build', { cwd: path.join(ROOT, 'client'), stdio: 'inherit' });
+  execSync('npx vite build', { cwd: path.join(ROOT, 'client'), stdio: 'inherit', env: { ...process.env, VITE_API_BASE: '' } });
 
   // 2. Build backend with esbuild
   console.log('Building server…');

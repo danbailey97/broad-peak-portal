@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 
 // DB at project root so publish_website persistence snapshots it automatically
-const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'data.db');
+const DB_PATH = process.env.DB_PATH || path.join(process.env.NODE_ENV === 'production' ? '/data' : process.cwd(), 'data.db');
 
 // Keep uploads in data/ subdirectory
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
