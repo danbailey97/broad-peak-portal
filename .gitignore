@@ -1,5 +1,5 @@
 node_modules/
-# dist/ - now committed for Render
+dist/
 data.db
 *.log
 .env
