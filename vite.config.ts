@@ -6,9 +6,7 @@ const root = import.meta.dirname;
 
 export default defineConfig({
   plugins: [react()],
-  // Root is the repo root — node_modules resolves correctly here
-  // We point Rollup at client/index.html as the entry
-  root: root,
+  root: path.resolve(root, 'client'),
   resolve: {
     alias: {
       '@': path.resolve(root, 'client/src'),
@@ -17,9 +15,6 @@ export default defineConfig({
   build: {
     outDir: path.resolve(root, 'dist/public'),
     emptyOutDir: true,
-    rollupOptions: {
-      input: path.resolve(root, 'client/index.html'),
-    },
   },
   server: {
     proxy: {
