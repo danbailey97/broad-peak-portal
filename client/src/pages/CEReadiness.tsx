@@ -410,37 +410,65 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
       const passed = ans === true;
       const failed = ans === false;
 
-      if (y > 260) { doc.addPage(); doc.setFillColor(...lightGrey); doc.rect(0, 0, W, 297, 'F'); y = 20; }
+      // Layout constants
+      const cardW = W - margin * 2;          // 174mm
+      const leftPad = 10;                    // 10mm from card left edge
+      const rightPad = 8;                    // 8mm from card right edge
+      const badgeLabel = passed ? '✓ COMPLIANT' : failed ? '✗ GAP' : '– N/A';
 
-      const cardH = failed ? 42 : 22;
+      // Measure badge width
+      doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+      const badgeW = doc.getTextWidth(badgeLabel) + 2;
+      const textAvail = cardW - leftPad - badgeW - rightPad - 4; // available for question text
+
+      // Measure question lines
+      doc.setFontSize(9); doc.setFont('helvetica', failed ? 'bold' : 'normal');
+      const qLines = doc.splitTextToSize(q.text, textAvail);
+
+      // Measure recommendation lines (full card width minus padding)
+      let recLines: string[] = [];
+      if (failed && RECOMMENDATIONS[q.id]) {
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+        recLines = doc.splitTextToSize('↳ ' + RECOMMENDATIONS[q.id], cardW - leftPad - rightPad);
+      }
+
+      const qBlockH = Math.max(10, qLines.length * 5);
+      const recBlockH = recLines.length > 0 ? recLines.length * 4.5 + 4 : 0;
+      const cardH = qBlockH + recBlockH + 10; // 5mm top + 5mm bottom padding
+
+      if (y + cardH > 272) { doc.addPage(); doc.setFillColor(...lightGrey); doc.rect(0, 0, W, 297, 'F'); y = 20; }
+
+      // Draw card
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(margin, y, W - margin * 2, cardH, 2, 2, 'F');
+      doc.roundedRect(margin, y, cardW, cardH, 2, 2, 'F');
       doc.setDrawColor(230, 230, 240);
-      doc.roundedRect(margin, y, W - margin * 2, cardH, 2, 2, 'S');
+      doc.roundedRect(margin, y, cardW, cardH, 2, 2, 'S');
 
-      if (passed) { doc.setFillColor(52, 211, 153); }
-      else if (failed) { doc.setFillColor(239, 68, 68); }
-      else { doc.setFillColor(200, 200, 220); }
+      // Left accent bar
+      if (passed) doc.setFillColor(52, 211, 153);
+      else if (failed) doc.setFillColor(239, 68, 68);
+      else doc.setFillColor(200, 200, 220);
       doc.rect(margin, y, 3, cardH, 'F');
 
-      doc.setFontSize(9);
-      doc.setFont('helvetica', ans === false ? 'bold' : 'normal');
+      // Question text
+      doc.setFontSize(9); doc.setFont('helvetica', failed ? 'bold' : 'normal');
       doc.setTextColor(40, 40, 60);
-      const qLines = doc.splitTextToSize(q.text, W - margin * 2 - 20);
-      doc.text(qLines, margin + 7, y + 7);
+      doc.text(qLines, margin + leftPad, y + 7);
 
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      if (passed) { doc.setTextColor(52, 211, 153); doc.text('✓ COMPLIANT', W - margin - 28, y + 7); }
-      else if (failed) { doc.setTextColor(239, 68, 68); doc.text('✗ GAP IDENTIFIED', W - margin - 32, y + 7); }
-      else { doc.setTextColor(150, 150, 170); doc.text('– NOT ANSWERED', W - margin - 32, y + 7); }
+      // Badge — right-aligned inside card
+      doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+      const badgeX = margin + cardW - rightPad - badgeW;
+      if (passed) { doc.setTextColor(52, 211, 153); }
+      else if (failed) { doc.setTextColor(239, 68, 68); }
+      else { doc.setTextColor(150, 150, 170); }
+      doc.text(badgeLabel, badgeX, y + 7);
 
-      if (failed && RECOMMENDATIONS[q.id]) {
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
+      // Recommendation text (below question block)
+      if (recLines.length > 0) {
+        const recY = y + 5 + qBlockH + 2;
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
         doc.setTextColor(...midGrey);
-        const recLines = doc.splitTextToSize('↳ ' + RECOMMENDATIONS[q.id], W - margin * 2 - 14);
-        doc.text(recLines.slice(0, 2), margin + 7, y + 18);
+        doc.text(recLines, margin + leftPad, recY);
       }
 
       y += cardH + 4;

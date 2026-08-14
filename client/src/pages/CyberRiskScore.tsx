@@ -519,38 +519,81 @@ function generateRiskPDF(answers: Answers, accountName: string) {
     fn.questions.forEach(q => {
       if (answers[q.id] === undefined) return;
       const ans = answers[q.id];
-      if (y > 258) { doc.addPage(); doc.setFillColor(...lightGrey); doc.rect(0, 0, W, 297, 'F'); y = 20; }
 
-      const cardH = ans === false ? 40 : 20;
+      // Layout constants
+      const cardW = W - margin * 2;   // 174mm
+      const leftPad = 8;
+      const rightPad = 8;
+      // Weight dots: up to 3 dots × 5mm each
+      const dotsW = q.weight * 5 + 4;
+      // Badge label
+      const badgeLabel = ans === true ? '✓ YES' : ans === false ? '✗ NO' : '–';
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+      const badgeW = doc.getTextWidth(badgeLabel) + 2;
+      const textAvail = cardW - leftPad - dotsW - badgeW - rightPad - 4;
+
+      // Question lines
+      doc.setFontSize(8.5); doc.setFont('helvetica', ans === false ? 'bold' : 'normal');
+      const qLines = doc.splitTextToSize(q.text, textAvail);
+
+      // Gap/why lines
+      let gLines: string[] = [];
+      let prodsLine = '';
+      if (ans === false) {
+        doc.setFontSize(7); doc.setFont('helvetica', 'italic');
+        gLines = doc.splitTextToSize('↳ ' + q.why, cardW - leftPad - rightPad);
+        const prods = PRODUCT_MAP[q.id] || [];
+        if (prods.length > 0) prodsLine = 'Broad Peak: ' + prods.join(' · ');
+      }
+
+      const qBlockH = Math.max(10, qLines.length * 5);
+      const gBlockH = gLines.length > 0 ? gLines.length * 4 + 3 : 0;
+      const prodsH = prodsLine ? 6 : 0;
+      const cardH = qBlockH + gBlockH + prodsH + 10;
+
+      if (y + cardH > 272) { doc.addPage(); doc.setFillColor(...lightGrey); doc.rect(0, 0, W, 297, 'F'); y = 20; }
+
+      // Draw card
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(margin, y, W - margin * 2, cardH, 2, 2, 'F');
+      doc.roundedRect(margin, y, cardW, cardH, 2, 2, 'F');
       doc.setDrawColor(230, 230, 240);
-      doc.roundedRect(margin, y, W - margin * 2, cardH, 2, 2, 'S');
+      doc.roundedRect(margin, y, cardW, cardH, 2, 2, 'S');
       if (ans === true) doc.setFillColor(52, 211, 153);
       else if (ans === false) doc.setFillColor(239, 68, 68);
       else doc.setFillColor(200, 200, 220);
       doc.rect(margin, y, 3, cardH, 'F');
 
+      // Question text
       doc.setFontSize(8.5); doc.setFont('helvetica', ans === false ? 'bold' : 'normal');
       doc.setTextColor(40, 40, 60);
-      const qLines = doc.splitTextToSize(q.text, W - margin * 2 - 38);
-      doc.text(qLines, margin + 6, y + 7);
-      for (let i = 0; i < q.weight; i++) { doc.setFillColor(...fnColor); doc.circle(W - margin - 4 - (i * 5), y + 5, 1.2, 'F'); }
+      doc.text(qLines, margin + leftPad, y + 7);
 
+      // Weight dots (top-right, inside card)
+      const dotsStartX = margin + cardW - rightPad - dotsW + 2;
+      for (let i = 0; i < q.weight; i++) {
+        doc.setFillColor(...fnColor);
+        doc.circle(dotsStartX + (i * 5), y + 5, 1.2, 'F');
+      }
+
+      // Badge (below dots, right-aligned)
       doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
-      if (ans === true) { doc.setTextColor(52, 211, 153); doc.text('✓ YES', W - margin - 20, y + 12); }
-      else if (ans === false) { doc.setTextColor(239, 68, 68); doc.text('✗ NO', W - margin - 20, y + 12); }
+      const badgeX = margin + cardW - rightPad - badgeW;
+      if (ans === true) { doc.setTextColor(52, 211, 153); }
+      else if (ans === false) { doc.setTextColor(239, 68, 68); }
+      else { doc.setTextColor(150, 150, 170); }
+      doc.text(badgeLabel, badgeX, y + 12);
 
-      if (ans === false) {
+      // Gap text
+      if (gLines.length > 0) {
+        const gY = y + 5 + qBlockH + 2;
         doc.setFontSize(7); doc.setFont('helvetica', 'italic'); doc.setTextColor(100, 100, 130);
-        const gLines = doc.splitTextToSize('↳ ' + q.why, W - margin * 2 - 14);
-        doc.text(gLines.slice(0, 2), margin + 6, y + 16);
-        const prods = PRODUCT_MAP[q.id] || [];
-        if (prods.length > 0) {
+        doc.text(gLines, margin + leftPad, gY);
+        if (prodsLine) {
           doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...pink);
-          doc.text('Broad Peak: ' + prods.slice(0, 2).join(' · '), margin + 6, y + 31);
+          doc.text(prodsLine, margin + leftPad, gY + gLines.length * 4 + 3);
         }
       }
+
       y += cardH + 3;
     });
   });
