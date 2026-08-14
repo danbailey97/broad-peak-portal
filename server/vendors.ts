@@ -214,7 +214,7 @@ export const PRODUCTS: VendorProduct[] = [
     id: 'boxphish-sat',
     vendor: 'Boxphish',
     name: 'Boxphish Security Awareness Training',
-    categories: ['Security Awareness', 'Email Protection'],
+    categories: ['Security Awareness'],
     description: 'Automated phishing simulation and security awareness training platform to build a human firewall across the organisation.',
     features: ['Automated phishing simulations', 'Engaging micro-learning modules', 'Personalised learning paths', 'Real-time reporting and dashboards', 'Microsoft 365 integration', 'GDPR-compliant'],
     datasheetUrl: 'https://www.boxphish.com/wp-content/uploads/2025/05/Complete-Service-Overview-Boxphish-2025.pdf',

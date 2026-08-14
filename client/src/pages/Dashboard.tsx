@@ -109,7 +109,7 @@ const VENDOR_RESOURCE_LIBRARY: Record<string, string> = {
 };
 
 const CATEGORY_VENDORS: Record<string, string[]> = {
-  'Email Protection': ['Barracuda', 'Boxphish'],
+  'Email Protection': ['Barracuda'],
   'Data Protection': ['Barracuda', 'Keepit', 'Druva'],
   'Network Protection': ['Barracuda', 'WatchGuard'],
   'Application Protection': ['WatchGuard'],
@@ -294,7 +294,45 @@ function AccountManagerCard({ owner }: { owner: AccountOwner }) {
   );
 }
 
-function ChatBot({ domain, accountName, onHighlight, onOpenCategory }: { domain: string; accountName: string; onHighlight?: (cats: string[]) => void; onOpenCategory?: (cat: string) => void }) {
+const CONTACT_ACTIONS = [
+  { label: 'Request Demo / POC', subject: 'Demo / Proof of Concept Request', icon: '🎯' },
+  { label: 'Get a Quote', subject: 'Quote Request', icon: '💼' },
+  { label: 'More Information', subject: 'Request for More Information', icon: '📋' },
+  { label: 'Book a Meeting', subject: 'Meeting Request', icon: '📅' },
+];
+
+function ContactActionButtons({ accountOwner, accountName, relevantCategories }: {
+  accountOwner?: AccountOwner;
+  accountName: string;
+  relevantCategories?: string[];
+}) {
+  const catContext = relevantCategories && relevantCategories.length > 0
+    ? `\n\nSecurity categories of interest: ${relevantCategories.join(', ')}` : '';
+
+  const email = accountOwner?.email || 'info@broadpeakcyber.com';
+  const recipientName = accountOwner?.name || 'the Broad Peak Cyber team';
+
+  return (
+    <div className="ml-9 mt-2 flex flex-wrap gap-1.5">
+      {CONTACT_ACTIONS.map(({ label, subject, icon }) => {
+        const body = encodeURIComponent(
+          `Hi ${recipientName},\n\nI'm reaching out from ${accountName} via the Broad Peak customer portal.${catContext}\n\nI'd like to ${label.toLowerCase()}.\n\nPlease get in touch at your earliest convenience.\n\nKind regards`
+        );
+        return (
+          <a
+            key={label}
+            href={`mailto:${email}?subject=${encodeURIComponent(subject + ' — ' + accountName)}&body=${body}`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#C65793] hover:text-[#C65793] hover:bg-[#fdf4f9] transition-all shadow-sm"
+          >
+            <span>{icon}</span> {label}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategory }: { domain: string; accountName: string; accountOwner?: AccountOwner; onHighlight?: (cats: string[]) => void; onOpenCategory?: (cat: string) => void }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: `Hi! I'm your Broad Peak AI assistant. I can answer questions about cybersecurity, your products, and our vendor portfolio. What would you like to know?` }
   ]);

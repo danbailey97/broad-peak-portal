@@ -11,13 +11,16 @@ import db from './db.js';
 export interface ProductEntry {
   name: string;
   vendor: string;
+  startedAt?: string | null;  // CloseDate of the opportunity
+  expiresAt?: string | null;  // Calculated from CloseDate + duration
 }
 
 export interface CategoryEntry {
   category: string;
   status: 'active' | 'expired' | 'not_owned';
   products: ProductEntry[];
-  expiresAt: string | null;
+  expiresAt: string | null;   // Latest expiry across all products in category
+  startedAt?: string | null;  // Earliest start date across all products in category
 }
 
 export interface AccountOwner {

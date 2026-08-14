@@ -93,27 +93,93 @@ router.get('/api/admin/cache-stats', (req, res) => {
 });
 
 // ── Account Manager management ────────────────────────────────
-const photoStorage = multer.diskStorage({
+const amMediaStorage = multer.diskStorage({
   destination: UPLOADS_DIR,
-  filename: (_, file, cb) => cb(null, `am-${Date.now()}-${file.originalname}`),
+  filename: (_, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `am-${Date.now()}${ext}`);
+  },
 });
-const photoUpload = multer({ storage: photoStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+const amMediaUpload = multer({ storage: amMediaStorage, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB for video
+
+function amToResponse(am: any) {
+  return {
+    ...am,
+    photo_url: am.photo_path ? `/uploads/${path.basename(am.photo_path)}` : null,
+    welcome_video_url: am.welcome_video_path ? `/uploads/${path.basename(am.welcome_video_path)}` : null,
+  };
+}
 
 router.get('/api/admin/account-managers', requireAdmin, (req, res) => {
-  const rows = db.prepare('SELECT * FROM account_managers ORDER BY name ASC').all();
-  res.json(rows);
+  const rows = db.prepare('SELECT * FROM account_managers ORDER BY name ASC').all() as any[];
+  res.json(rows.map(amToResponse));
 });
 
-router.post('/api/admin/account-managers', requireAdmin, photoUpload.single('photo'), (req, res) => {
+// Create or update (upsert) — handles photo upload
+router.post('/api/admin/account-managers', requireAdmin, amMediaUpload.single('photo'), (req, res) => {
   const { email, name, display_name, phone, calendly } = req.body;
   if (!email || !name) return res.status(400).json({ error: 'email and name required' });
   const photo_path = (req as any).file?.path || null;
   const now = new Date().toISOString();
-  db.prepare(`INSERT INTO account_managers (email, name, display_name, phone, photo_path, calendly, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(email) DO UPDATE SET name=excluded.name, display_name=excluded.display_name,
-    phone=excluded.phone, ${photo_path ? 'photo_path=excluded.photo_path,' : ''} calendly=excluded.calendly, updated_at=excluded.updated_at`
-  ).run(email, name, display_name || name, phone || null, photo_path, calendly || null, now);
+  const existing = db.prepare('SELECT * FROM account_managers WHERE email = ?').get(email) as any;
+  if (existing) {
+    const newPhoto = photo_path || existing.photo_path;
+    db.prepare(`UPDATE account_managers SET name=?, display_name=?, phone=?, photo_path=?, calendly=?, updated_at=? WHERE email=?`)
+      .run(name, display_name || name, phone || null, newPhoto, calendly || null, now, email);
+  } else {
+    db.prepare(`INSERT INTO account_managers (email, name, display_name, phone, photo_path, calendly, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .run(email, name, display_name || name, phone || null, photo_path, calendly || null, now);
+  }
+  const row = db.prepare('SELECT * FROM account_managers WHERE email = ?').get(email) as any;
+  res.json(amToResponse(row));
+});
+
+// PATCH — partial edit (name, phone, calendly, display_name only — no files)
+router.patch('/api/admin/account-managers/:email', requireAdmin, (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  const existing = db.prepare('SELECT * FROM account_managers WHERE email = ?').get(email) as any;
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  const { name, display_name, phone, calendly } = req.body;
+  const now = new Date().toISOString();
+  db.prepare(`UPDATE account_managers SET name=?, display_name=?, phone=?, calendly=?, updated_at=? WHERE email=?`)
+    .run(
+      name ?? existing.name,
+      display_name ?? existing.display_name,
+      phone !== undefined ? (phone || null) : existing.phone,
+      calendly !== undefined ? (calendly || null) : existing.calendly,
+      now, email
+    );
+  const row = db.prepare('SELECT * FROM account_managers WHERE email = ?').get(email) as any;
+  res.json(amToResponse(row));
+});
+
+// Upload / replace welcome video for an account manager
+router.post('/api/admin/account-managers/:email/video', requireAdmin, amMediaUpload.single('video'), (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  const existing = db.prepare('SELECT * FROM account_managers WHERE email = ?').get(email) as any;
+  if (!existing) return res.status(404).json({ error: 'Account manager not found. Save the profile first.' });
+  if (!(req as any).file) return res.status(400).json({ error: 'No video file provided' });
+  // Delete old video file if present
+  if (existing.welcome_video_path && fs.existsSync(existing.welcome_video_path)) {
+    try { fs.unlinkSync(existing.welcome_video_path); } catch {}
+  }
+  const video_path = (req as any).file.path;
+  db.prepare('UPDATE account_managers SET welcome_video_path=?, updated_at=? WHERE email=?')
+    .run(video_path, new Date().toISOString(), email);
+  const row = db.prepare('SELECT * FROM account_managers WHERE email = ?').get(email) as any;
+  res.json(amToResponse(row));
+});
+
+// DELETE welcome video only
+router.delete('/api/admin/account-managers/:email/video', requireAdmin, (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  const existing = db.prepare('SELECT * FROM account_managers WHERE email = ?').get(email) as any;
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  if (existing.welcome_video_path && fs.existsSync(existing.welcome_video_path)) {
+    try { fs.unlinkSync(existing.welcome_video_path); } catch {}
+  }
+  db.prepare('UPDATE account_managers SET welcome_video_path=NULL, updated_at=? WHERE email=?')
+    .run(new Date().toISOString(), email);
   res.json({ ok: true });
 });
 

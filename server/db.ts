@@ -49,8 +49,10 @@ db.exec(`
     phone TEXT,
     photo_path TEXT,
     calendly TEXT,
+    welcome_video_path TEXT,
     updated_at TEXT NOT NULL
   );
+
 
   CREATE TABLE IF NOT EXISTS research_docs (
     id TEXT PRIMARY KEY,
@@ -71,5 +73,8 @@ db.exec(`
     label TEXT
   );
 `);
+
+// Safe migrations for columns added after initial deployment
+try { db.exec('ALTER TABLE account_managers ADD COLUMN welcome_video_path TEXT'); } catch { /* already exists */ }
 
 export default db;
