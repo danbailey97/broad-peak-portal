@@ -434,3 +434,224 @@ router.get('/api/vendors', (_, res) => {
 router.get('/api/categories', (_, res) => res.json(ALL_CATEGORIES));
 
 export default router;
+
+// ─── VENDOR-SPECIFIC SUPPORT CHAT ────────────────────────────────────────────
+// Per-vendor KB search configurations
+const VENDOR_KB_CONFIG: Record<string, {
+  searchUrl: (q: string) => string;
+  contentUrl?: (id: string) => string;
+  baseUrl: string;
+  parseResults: (data: any) => { title: string; url: string; id: string }[];
+  systemPrompt: string;
+}> = {
+  Barracuda: {
+    baseUrl: 'https://documentation.campus.barracuda.com',
+    searchUrl: (q) => `https://documentation.campus.barracuda.com/wiki/rest/api/content/search?cql=${encodeURIComponent(`text ~ "${q}" AND type = page`)}&limit=5&expand=space`,
+    contentUrl: (id) => `https://documentation.campus.barracuda.com/wiki/rest/api/content/${id}?expand=body.view`,
+    parseResults: (data) => (data.results || []).slice(0, 4).map((r: any) => ({
+      title: r.title,
+      url: `https://documentation.campus.barracuda.com/wiki${r._links?.webui || ''}`,
+      id: r.id,
+    })),
+    systemPrompt: `You are a Barracuda Networks technical support specialist for Broad Peak Cyber customers.
+You answer questions specifically about Barracuda products: Email Gateway Defense (EGD), Cloud-to-Cloud Backup (CCB), CloudGen Firewall, Barracuda XDR, Email Security Premium, Incident Response, and related products.
+Rules:
+1. Give clear, numbered step-by-step instructions based on the Barracuda Campus documentation provided
+2. Be specific — reference the exact Barracuda product, menu paths, and settings
+3. Always cite the Barracuda Campus documentation URL when available
+4. Highlight important warnings or caveats
+5. If doc content is provided, use it as your primary source — do not guess settings
+6. Format with markdown: headers, numbered steps, code blocks for values
+7. If the question is ambiguous, answer for the most likely Barracuda product first, then note other possibilities`,
+  },
+  Keepit: {
+    baseUrl: 'https://help.keepit.com',
+    searchUrl: (q) => `https://help.keepit.com/api/v2/search/articles?query=${encodeURIComponent(q)}&locale=en-us`,
+    parseResults: (data) => (data.results || []).slice(0, 4).map((r: any) => ({
+      title: r.title || r.name,
+      url: r.html_url || r.url || `https://help.keepit.com`,
+      id: String(r.id || ''),
+    })),
+    systemPrompt: `You are a Keepit technical support specialist for Broad Peak Cyber customers.
+You answer questions specifically about Keepit cloud backup and recovery for Microsoft 365, Google Workspace, Salesforce, and other SaaS platforms.
+Rules:
+1. Give clear, numbered step-by-step instructions based on the Keepit Help Centre documentation provided
+2. Be specific — reference exact Keepit menus, backup policies, and restore procedures
+3. Always cite the Keepit Help Centre URL when available
+4. Cover backup jobs, restore operations, retention policies, and licensing
+5. Format with markdown: headers, numbered steps
+6. If doc content is provided, use it as your primary source`,
+  },
+  Boxphish: {
+    baseUrl: 'https://boxphishsupport.helpdocs.io',
+    searchUrl: (q) => `https://boxphishsupport.helpdocs.io/api/articles?query=${encodeURIComponent(q)}`,
+    parseResults: (data) => (data.articles || data.results || []).slice(0, 4).map((r: any) => ({
+      title: r.title || r.name,
+      url: r.url || r.html_url || 'https://boxphishsupport.helpdocs.io',
+      id: String(r.id || ''),
+    })),
+    systemPrompt: `You are a Boxphish technical support specialist for Broad Peak Cyber customers.
+You answer questions specifically about Boxphish phishing simulation and security awareness training.
+Rules:
+1. Give clear, numbered step-by-step instructions based on Boxphish HelpDocs documentation provided
+2. Cover campaign creation, user enrolment, phishing templates, reporting, and training modules
+3. Be specific — reference exact Boxphish menus and settings
+4. Format with markdown: headers, numbered steps
+5. If doc content is provided, use it as your primary source`,
+  },
+  Druva: {
+    baseUrl: 'https://help.druva.com',
+    searchUrl: (q) => `https://help.druva.com/api/v2/help_center/en-us/search?query=${encodeURIComponent(q)}&per_page=5`,
+    parseResults: (data) => (data.results || []).slice(0, 4).map((r: any) => ({
+      title: r.title || r.name,
+      url: r.html_url || `https://help.druva.com`,
+      id: String(r.id || ''),
+    })),
+    systemPrompt: `You are a Druva technical support specialist for Broad Peak Cyber customers.
+You answer questions specifically about Druva inSync (endpoint backup), Druva Phoenix (data centre backup), and Druva for Microsoft 365.
+Rules:
+1. Give clear, numbered step-by-step instructions based on Druva Help Centre documentation provided
+2. Be specific — reference exact Druva product names, menus, and policies
+3. Cover backup configuration, restore procedures, compliance, and reporting
+4. Format with markdown: headers, numbered steps
+5. If doc content is provided, use it as your primary source`,
+  },
+  WatchGuard: {
+    baseUrl: 'https://www.watchguard.com',
+    searchUrl: (q) => `https://www.watchguard.com/wgrd-support/find-answers?query=${encodeURIComponent(q)}`,
+    parseResults: (_data) => [],
+    systemPrompt: `You are a WatchGuard technical support specialist for Broad Peak Cyber customers.
+You answer questions specifically about WatchGuard Firebox (network security appliances), WatchGuard AuthPoint (MFA), WatchGuard EDR/EPDR (endpoint security), and WatchGuard MDR.
+Rules:
+1. Give clear, numbered step-by-step instructions based on WatchGuard documentation
+2. Be specific — reference exact WatchGuard product names, Policy Manager / Fireware settings, and menu paths
+3. Cover firewall rules, VPN configuration, AuthPoint policies, endpoint policies, and MDR
+4. Always recommend referring to WatchGuard Support Center at https://www.watchguard.com/wgrd-support/find-answers for official docs
+5. Format with markdown: headers, numbered steps, tables for settings`,
+  },
+};
+
+async function fetchKBContent(url: string): Promise<string> {
+  try {
+    const res = await directFetch(url, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(8000),
+      ...fetchOpts(),
+    });
+    if (!res.ok) return '';
+    const data = await res.json() as any;
+    // Zendesk / HelpDocs article content
+    const html = data?.body?.view?.value || data?.body || data?.body_html || data?.article?.body || '';
+    if (!html) return '';
+    return String(html)
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ').trim().slice(0, 4000);
+  } catch { return ''; }
+}
+
+async function searchVendorKB(vendor: string, question: string): Promise<{ title: string; url: string; content: string }[]> {
+  const cfg = VENDOR_KB_CONFIG[vendor];
+  if (!cfg) return [];
+  try {
+    const searchRes = await directFetch(cfg.searchUrl(question), {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(8000),
+      ...fetchOpts(),
+    });
+    if (!searchRes.ok) return [];
+    const data = await searchRes.json() as any;
+    const results = cfg.parseResults(data).slice(0, 3);
+
+    // Fetch content for top 2 results
+    const withContent = await Promise.all(results.slice(0, 2).map(async (r) => {
+      let content = '';
+      if (cfg.contentUrl && r.id) {
+        content = await fetchKBContent(cfg.contentUrl(r.id));
+      }
+      return { title: r.title, url: r.url, content };
+    }));
+    return withContent;
+  } catch { return []; }
+}
+
+async function* streamGroqSupport(
+  messages: { role: string; content: string }[],
+  apiKey: string
+): AsyncGenerator<string> {
+  const res = await directFetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1500, stream: true, messages }),
+    signal: AbortSignal.timeout(30000),
+    ...fetchOpts(),
+  }) as any;
+  if (!res.ok) { const err = await res.text(); throw new Error(`Groq error ${res.status}: ${err.slice(0, 200)}`); }
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6).trim();
+      if (raw === '[DONE]') return;
+      try { const evt = JSON.parse(raw); const text = evt.choices?.[0]?.delta?.content; if (text) yield text; } catch {}
+    }
+  }
+}
+
+router.post('/api/support-chat', async (req, res) => {
+  const { question, vendor, domain } = req.body;
+  if (!question || !vendor) return res.status(400).json({ error: 'Missing question or vendor' });
+
+  const cfg = VENDOR_KB_CONFIG[vendor];
+  const GROQ_KEY = process.env.GROQ_API_KEY || '';
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  const send = (d: object) => res.write(`data: ${JSON.stringify(d)}\n\n`);
+
+  try {
+    send({ type: 'status', text: `Searching ${vendor} knowledge base...` });
+    const kbResults = cfg ? await searchVendorKB(vendor, question) : [];
+
+    let docContext = '';
+    if (kbResults.length > 0) {
+      docContext = '\n\n## Knowledge Base Articles Found\n\n';
+      kbResults.forEach((r) => {
+        docContext += `### ${r.title}\nURL: ${r.url}\n\n`;
+        if (r.content) docContext += `${r.content}\n\n---\n\n`;
+      });
+    }
+
+    const systemPrompt = cfg?.systemPrompt || `You are a technical support specialist for ${vendor} products. Provide specific, accurate, step-by-step answers.`;
+    const userMessage = docContext ? `Question: ${question}\n${docContext}` : question;
+
+    send({ type: 'status', text: '' });
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ];
+
+    let fullResponse = '';
+    for await (const chunk of streamGroqSupport(messages, GROQ_KEY)) {
+      fullResponse += chunk;
+      send({ type: 'delta', text: chunk });
+    }
+
+    const sources = kbResults.filter(r => r.url && r.url !== cfg?.baseUrl).map(r => ({ title: r.title, url: r.url }));
+    send({ type: 'done', sources });
+    res.end();
+  } catch (err: any) {
+    send({ type: 'error', message: err.message });
+    res.end();
+  }
+});

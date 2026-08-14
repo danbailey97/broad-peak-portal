@@ -635,15 +635,15 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
     setLoading(true);
     const assistantIdx = { current: -1 };
     try {
-      const resp = await fetch('/api/chat', {
+      const resp = await fetch('/api/support-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, domain, vendor: selectedVendor }),
+        body: JSON.stringify({ question: q, vendor: selectedVendor, domain }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const reader = resp.body!.getReader();
       const decoder = new TextDecoder();
-      let buffer = '', fullText = '';
+      let buffer = '', fullText = '', statusText = '';
       // Add placeholder assistant message for streaming
       setMessages(m => { assistantIdx.current = m.length; return [...m, { role: 'assistant', content: '' }]; });
       while (true) {
@@ -654,15 +654,22 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
         buffer = lines.pop() || '';
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') break;
+          const raw = line.slice(6).trim();
+          if (raw === '[DONE]') break;
           try {
-            const parsed = JSON.parse(data);
-            if (parsed.content) {
-              fullText += parsed.content;
+            const parsed = JSON.parse(raw);
+            if (parsed.type === 'status' && parsed.text) {
+              statusText = parsed.text;
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: statusText } : msg));
+            } else if (parsed.type === 'delta' && parsed.text) {
+              if (statusText) { fullText = ''; statusText = ''; }
+              fullText += parsed.text;
               setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: fullText } : msg));
+            } else if (parsed.type === 'done') {
+              // Sources available in parsed.sources if needed
+            } else if (parsed.type === 'error') {
+              throw new Error(parsed.message);
             }
-            if (parsed.error) throw new Error(parsed.error);
           } catch (e: any) { if (e.message && !e.message.includes('JSON')) throw e; }
         }
       }
