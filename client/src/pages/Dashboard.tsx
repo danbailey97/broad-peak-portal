@@ -7,13 +7,22 @@ import remarkGfm from 'remark-gfm';
 import CEReadiness from './CEReadiness';
 import CyberRiskScore from './CyberRiskScore';
 
-interface ProductEntry { name: string; vendor: string; }
+interface ProductEntry { name: string; vendor: string; startedAt?: string | null; expiresAt?: string | null; }
 interface RelevantProduct { id: string; name: string; vendor: string; categories: string[]; }
-interface CategoryEntry { category: string; status: 'active' | 'expired' | 'not_owned'; products: ProductEntry[]; expiresAt: string | null; }
+interface CategoryEntry { category: string; status: 'active' | 'expired' | 'not_owned'; products: ProductEntry[]; expiresAt: string | null; startedAt?: string | null; }
 interface AccountOwner { name: string; email: string; phone?: string; photo?: string; calendly?: string; }
 interface CustomerData { accountName: string; domain: string; grid: CategoryEntry[]; accountOwner?: AccountOwner; }
 interface Message { role: 'user' | 'assistant'; content: string; relevantCategories?: string[]; relevantProducts?: RelevantProduct[]; }
 interface ResearchDoc { id: string; title: string; filename: string; url: string; uploadedAt: string; }
+
+function fmtDate(iso: string | null | undefined, opts?: Intl.DateTimeFormatOptions): string {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-GB', opts || { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtDateShort(iso: string | null | undefined): string {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+}
 
 const CATEGORY_ICONS: Record<string, any> = {
   'Email Protection': Mail,
@@ -152,11 +161,26 @@ function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; o
         <p className="text-[#6b7280] text-[10px] sm:text-xs mt-0.5 sm:mt-1 leading-snug hidden sm:block">{CATEGORY_DESCRIPTIONS[entry.category]}</p>
       </div>
       {isOwned && entry.products.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-auto">
+        <div className="flex flex-wrap gap-1">
           {entry.products.slice(0, 2).map(p => (
             <span key={p.name} className="text-xs bg-[#4494D112] text-[#4494D1] border border-[#4494D130] px-2 py-0.5 rounded-lg">{p.vendor}</span>
           ))}
           {entry.products.length > 2 && <span className="text-xs bg-[#4494D112] text-[#4494D1] border border-[#4494D130] px-2 py-0.5 rounded-lg">+{entry.products.length - 2}</span>}
+        </div>
+      )}
+      {isOwned && (entry.startedAt || entry.expiresAt) && (
+        <div className="mt-auto pt-1 border-t border-[#f3f4f6]">
+          <div className="flex items-center gap-1 text-[10px] text-[#9ca3af]">
+            <Calendar className="w-3 h-3 flex-shrink-0" />
+            <span>
+              {entry.startedAt ? fmtDateShort(entry.startedAt) : '—'}
+              {' → '}
+              {entry.expiresAt
+                ? <span className={new Date(entry.expiresAt) < new Date() ? 'text-[#ef4444] font-medium' : 'text-[#059669] font-medium'}>{fmtDateShort(entry.expiresAt)}</span>
+                : '—'
+              }
+            </span>
+          </div>
         </div>
       )}
       {!isOwned && (
@@ -179,11 +203,26 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white border border-[#e5e7eb] shadow-xl rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-[#e5e7eb] flex items-center justify-between">
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-[#1f2937]">{entry.category}</h2>
-            <StatusBadge status={entry.status} />
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <StatusBadge status={entry.status} />
+              {(entry.startedAt || entry.expiresAt) && (
+                <span className="flex items-center gap-1.5 text-xs text-[#6b7280]">
+                  <Calendar className="w-3.5 h-3.5 text-[#9ca3af]" />
+                  <span>Contract:</span>
+                  <span className="font-medium text-[#1f2937]">{entry.startedAt ? fmtDate(entry.startedAt) : '—'}</span>
+                  <span>→</span>
+                  {entry.expiresAt ? (
+                    <span className={`font-medium ${new Date(entry.expiresAt) < new Date() ? 'text-[#ef4444]' : 'text-[#059669]'}`}>
+                      {fmtDate(entry.expiresAt)}
+                    </span>
+                  ) : <span className="font-medium">—</span>}
+                </span>
+              )}
+            </div>
           </div>
-          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#1f2937]"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#1f2937] ml-4 flex-shrink-0"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-6 space-y-6">
           {/* Your products */}
@@ -191,15 +230,33 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
             <div>
               <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">Your Products</h3>
               <div className="space-y-2">
-                {entry.products.map(p => (
-                  <div key={p.name} className="flex items-center gap-3 p-3 bg-[#f9fafb] rounded-xl border border-[#e5e7eb]">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                    <div>
-                      <div className="text-sm font-medium text-[#1f2937]">{p.name}</div>
-                      <div className="text-xs text-[#6b7280]">{p.vendor}</div>
+                {entry.products.map(p => {
+                  const expired = p.expiresAt && new Date(p.expiresAt) < new Date();
+                  return (
+                    <div key={p.name} className="p-3 bg-[#f9fafb] rounded-xl border border-[#e5e7eb]">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${expired ? 'bg-red-400' : 'bg-emerald-400'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-[#1f2937]">{p.name}</div>
+                          <div className="text-xs text-[#6b7280]">{p.vendor}</div>
+                          {(p.startedAt || p.expiresAt) && (
+                            <div className="flex items-center gap-1.5 mt-1.5 text-xs">
+                              <Calendar className="w-3 h-3 text-[#9ca3af] flex-shrink-0" />
+                              <span className="text-[#6b7280]">Start:</span>
+                              <span className="font-medium text-[#1f2937]">{p.startedAt ? fmtDate(p.startedAt) : '—'}</span>
+                              <span className="text-[#9ca3af] mx-0.5">•</span>
+                              <span className="text-[#6b7280]">End:</span>
+                              <span className={`font-medium ${expired ? 'text-[#ef4444]' : 'text-[#059669]'}`}>
+                                {p.expiresAt ? fmtDate(p.expiresAt) : '—'}
+                              </span>
+                              {expired && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">Expired</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1150,7 +1207,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                 <div className="lg:col-span-2 lg:self-stretch">
                   <div className="grid grid-cols-3 gap-2 sm:gap-3 h-full" style={{ gridAutoRows: '1fr' }}>
                     {ALL_CATEGORIES.map(cat => {
-                      const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
+                      const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
                       return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
                     })}
                   </div>
@@ -1175,7 +1232,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                       <ChatBot domain={domain} accountName={customer.accountName}
                         onHighlight={(cats) => setHighlightedCategories(cats)}
                         onOpenCategory={(cat) => {
-                          const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
+                          const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
                           setSelectedCategory(entry);
                         }}
                       />
