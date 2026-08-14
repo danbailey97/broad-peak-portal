@@ -6,10 +6,11 @@ import CEReadiness from './CEReadiness';
 import CyberRiskScore from './CyberRiskScore';
 
 interface ProductEntry { name: string; vendor: string; }
+interface RelevantProduct { id: string; name: string; vendor: string; categories: string[]; }
 interface CategoryEntry { category: string; status: 'active' | 'expired' | 'not_owned'; products: ProductEntry[]; expiresAt: string | null; }
 interface AccountOwner { name: string; email: string; phone?: string; photo?: string; calendly?: string; }
 interface CustomerData { accountName: string; domain: string; grid: CategoryEntry[]; accountOwner?: AccountOwner; }
-interface Message { role: 'user' | 'assistant'; content: string; }
+interface Message { role: 'user' | 'assistant'; content: string; relevantCategories?: string[]; relevantProducts?: RelevantProduct[]; }
 interface ResearchDoc { id: string; title: string; filename: string; url: string; uploadedAt: string; }
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -123,7 +124,7 @@ function StatusBadge({ status }: { status: string }) {
   return null;
 }
 
-function CategoryCard({ entry, onClick }: { entry: CategoryEntry; onClick: () => void }) {
+function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; onClick: () => void; highlighted?: boolean }) {
   const Icon = CATEGORY_ICONS[entry.category] || Shield;
   const isOwned = entry.status === 'active' || entry.status === 'expired';
   return (
@@ -131,9 +132,11 @@ function CategoryCard({ entry, onClick }: { entry: CategoryEntry; onClick: () =>
       data-testid={`category-card-${entry.category.replace(/\s+/g, '-').toLowerCase()}`}
       onClick={onClick}
       className={`relative flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] group ${
-        isOwned
-          ? 'bg-white border-[#e5e7eb] hover:border-[#4494D1] cursor-pointer shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
-          : 'bg-white border-[#e5e7eb] hover:border-[#4494D1] opacity-70 cursor-pointer shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
+        highlighted
+          ? 'bg-[#fefce8] border-[#fbbf24] shadow-[0_0_0_2px_#fbbf2440] cursor-pointer'
+          : isOwned
+            ? 'bg-white border-[#e5e7eb] hover:border-[#4494D1] cursor-pointer shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
+            : 'bg-white border-[#e5e7eb] hover:border-[#4494D1] opacity-70 cursor-pointer shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
       }`}
     >
       <div className="flex items-start justify-between">
@@ -289,7 +292,7 @@ function AccountManagerCard({ owner }: { owner: AccountOwner }) {
   );
 }
 
-function ChatBot({ domain, accountName }: { domain: string; accountName: string }) {
+function ChatBot({ domain, accountName, onHighlight, onOpenCategory }: { domain: string; accountName: string; onHighlight?: (cats: string[]) => void; onOpenCategory?: (cat: string) => void }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: `Hi! I'm your Broad Peak AI assistant. I can answer questions about cybersecurity, your products, and our vendor portfolio. What would you like to know?` }
   ]);
@@ -321,7 +324,8 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
       const reader = resp.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = '', fullText = '';
-      // Add placeholder assistant message for streaming
+      let relevantCats: string[] = [];
+      let relevantProds: RelevantProduct[] = [];
       setMessages(m => { assistantIdx.current = m.length; return [...m, { role: 'assistant', content: '' }]; });
       setLoading(false);
       while (true) {
@@ -336,6 +340,12 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
           if (data === '[DONE]') break;
           try {
             const parsed = JSON.parse(data);
+            if (parsed.relevantProducts) {
+              relevantProds = parsed.relevantProducts;
+              relevantCats = [...new Set(parsed.relevantProducts.flatMap((p: RelevantProduct) => p.categories))];
+              if (onHighlight) onHighlight(relevantCats);
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, relevantCategories: relevantCats, relevantProducts: relevantProds } : msg));
+            }
             if (parsed.content) {
               fullText += parsed.content;
               setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: fullText } : msg));
@@ -357,17 +367,51 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
     <div className="flex flex-col h-full" data-testid="chatbot-container">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-full gradient-cta flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
-                <Shield className="w-3.5 h-3.5 text-white" />
+          <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
+              {msg.role === 'assistant' && (
+                <div className="w-7 h-7 rounded-full gradient-cta flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
+                  <Shield className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                msg.role === 'user' ? 'gradient-cta text-white rounded-br-sm' : 'bg-white text-[#1f2937] border border-[#e5e7eb] shadow-sm rounded-bl-sm'
+              }`} style={{ whiteSpace: 'pre-wrap' }}>
+                {msg.content}
+              </div>
+            </div>
+            {/* Category chips + business case for assistant messages */}
+            {msg.role === 'assistant' && msg.relevantCategories && msg.relevantCategories.length > 0 && (
+              <div className="ml-9 mt-2 space-y-2 max-w-[85%]">
+                {/* Clickable category tiles */}
+                <div className="flex flex-wrap gap-1.5">
+                  {msg.relevantCategories.map(cat => (
+                    <button key={cat} onClick={() => onOpenCategory && onOpenCategory(cat)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#fef9c3] border border-[#fbbf24] text-[#92400e] hover:bg-[#fef08a] transition-colors">
+                      <span>↗</span> {cat}
+                    </button>
+                  ))}
+                </div>
+                {/* Business case snippet for first category */}
+                {CATEGORY_RESEARCH[msg.relevantCategories[0]] && (
+                  <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold text-[#0369a1]">📊 Business Case — {msg.relevantCategories[0]}</span>
+                      <button onClick={() => onOpenCategory && onOpenCategory(msg.relevantCategories![0])}
+                        className="text-xs text-[#4494D1] hover:underline">View full ↗</button>
+                    </div>
+                    <p className="text-xs text-[#374151] leading-relaxed">{CATEGORY_RESEARCH[msg.relevantCategories[0]].summary.slice(0, 180)}…</p>
+                    <div className="mt-1.5 space-y-0.5">
+                      {CATEGORY_RESEARCH[msg.relevantCategories[0]].stats.slice(0, 2).map((s, si) => (
+                        <div key={si} className="flex items-start gap-1 text-xs text-[#6b7280]">
+                          <span className="text-[#4494D1] flex-shrink-0">▸</span><span>{s}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-            <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-              msg.role === 'user' ? 'gradient-cta text-white rounded-br-sm' : 'bg-white text-[#1f2937] border border-[#e5e7eb] shadow-sm rounded-bl-sm'
-            }`} style={{ whiteSpace: 'pre-wrap' }}>
-              {msg.content}
-            </div>
           </div>
         ))}
         {loading && (
@@ -791,6 +835,7 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
 export default function Dashboard({ domain, onLogout }: { domain: string; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<'products' | 'support' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
   const [selectedCategory, setSelectedCategory] = useState<CategoryEntry | null>(null);
+  const [highlightedCategories, setHighlightedCategories] = useState<string[]>([]);
 
   const { data: customer, isLoading } = useQuery<CustomerData>({
     queryKey: ['/api/customer', domain],
@@ -858,7 +903,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                   <div className="grid grid-cols-3 gap-3">
                     {ALL_CATEGORIES.map(cat => {
                       const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
-                      return <CategoryCard key={cat} entry={entry} onClick={() => setSelectedCategory(entry)} />;
+                      return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
                     })}
                   </div>
                 </div>
@@ -879,7 +924,13 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                       <span className="text-sm font-semibold text-[#1f2937]">Ask Broad Peak AI</span>
                     </div>
                     <div className="flex-1 min-h-0">
-                      <ChatBot domain={domain} accountName={customer.accountName} />
+                      <ChatBot domain={domain} accountName={customer.accountName}
+                      onHighlight={(cats) => setHighlightedCategories(cats)}
+                      onOpenCategory={(cat) => {
+                        const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
+                        setSelectedCategory(entry);
+                      }}
+                    />
                     </div>
                   </div>
                 </div>
