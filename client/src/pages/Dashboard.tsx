@@ -133,7 +133,7 @@ function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; o
     <button
       data-testid={`category-card-${entry.category.replace(/\s+/g, '-').toLowerCase()}`}
       onClick={onClick}
-      className={`relative flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] group ${
+      className={`relative flex flex-col gap-2 sm:gap-3 p-3 sm:p-5 rounded-xl sm:rounded-2xl border text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] group ${
         highlighted
           ? 'bg-[#fefce8] border-[#fbbf24] shadow-[0_0_0_2px_#fbbf2440] cursor-pointer'
           : isOwned
@@ -148,8 +148,8 @@ function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; o
         <StatusBadge status={entry.status} />
       </div>
       <div>
-        <h3 className="font-semibold text-[#1f2937] text-sm leading-tight">{entry.category}</h3>
-        <p className="text-[#6b7280] text-xs mt-1 leading-snug">{CATEGORY_DESCRIPTIONS[entry.category]}</p>
+        <h3 className="font-semibold text-[#1f2937] text-xs sm:text-sm leading-tight">{entry.category}</h3>
+        <p className="text-[#6b7280] text-[10px] sm:text-xs mt-0.5 sm:mt-1 leading-snug hidden sm:block">{CATEGORY_DESCRIPTIONS[entry.category]}</p>
       </div>
       {isOwned && entry.products.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-auto">
@@ -493,7 +493,7 @@ function NewsTab({ domain }: { domain: string }) {
           <h2 className="text-lg font-bold text-[#1f2937]">Broad Peak Newsletters</h2>
         </div>
         {newsletters?.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {newsletters.map((n: any) => (
               <a key={n.id} href={`/uploads/${n.filename}`} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-4 p-4 bg-white border border-[#e5e7eb] hover:border-[#C65793] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
@@ -621,7 +621,7 @@ function ResourcesTab({ domain }: { domain: string }) {
       {adminSheets?.length > 0 && (
         <div>
           <h2 className="text-lg font-bold text-[#1f2937] mb-4">Uploaded Resources</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {adminSheets.map((s: any) => (
               <a key={s.id} href={`/uploads/${s.filename}`} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
@@ -791,15 +791,15 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left: category tile picker */}
-        <div className="lg:col-span-2 gradient-bg rounded-2xl p-6 space-y-4">
+        <div className="lg:col-span-2 gradient-bg rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
           <p className="text-white/90 text-sm font-medium">Select a security category to get technical support</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             {SUPPORT_CATEGORIES.map(({ cat, vendors }) => {
               const Icon = CATEGORY_ICONS[cat] || Shield;
               return (
                 <button key={cat} data-testid={`support-cat-${cat.replace(/\s+/g, '-').toLowerCase()}`}
                   onClick={() => { if (vendors.length === 1) startSupport(cat, vendors[0]); else setSelectedCat(cat); }}
-                  className="flex flex-col gap-2 p-4 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-2xl text-left shadow-[0_1px_4px_rgba(0,0,0,0.10)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
+                  className="flex flex-col gap-2 p-3 sm:p-4 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl sm:rounded-2xl text-left shadow-[0_1px_4px_rgba(0,0,0,0.10)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
                   <div className="p-2 rounded-xl bg-[#4494D112] w-fit">
                     <Icon className="w-5 h-5 text-[#4494D1]" />
                   </div>
@@ -916,7 +916,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
 
   const kb = VENDOR_KB[selectedVendor!];
   return (
-    <div className="flex flex-col h-[420px]">
+    <div className="flex flex-col h-[500px] sm:h-[560px]">
       <div className="flex items-center gap-3 mb-3">
         <button onClick={() => { setSelectedCat(null); setSelectedVendor(null); setMessages([]); setInitDone(false); }}
           className="text-sm text-[#9ca3af] hover:text-[#1f2937]">← Back</button>
@@ -1063,7 +1063,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
     <div className="min-h-screen flex flex-col bg-[#f0f2f5]">
       {/* Header */}
       <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo-black-text.jpg" alt="Broad Peak Cyber" className="h-8 object-contain" />
           </div>
@@ -1077,23 +1077,25 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
         </div>
       </header>
 
-      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-8 flex flex-col gap-4 sm:gap-6">
         {/* Welcome */}
         {customer && (
-          <div className="gradient-cta rounded-2xl px-6 py-5 shadow-[0_8px_24px_rgba(123,94,167,0.20)]">
-            <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-            <p className="text-white/80 text-sm mt-1">{customer.accountName} · {customer.grid.filter(g => g.status === 'active').length} active security services</p>
+          <div className="gradient-cta rounded-2xl px-4 sm:px-6 py-4 sm:py-5 shadow-[0_8px_24px_rgba(123,94,167,0.20)]">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Welcome back</h1>
+            <p className="text-white/80 text-xs sm:text-sm mt-1">{customer.accountName} · {customer.grid.filter(g => g.status === 'active').length} active security services</p>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-[#f3f4f6] p-1 rounded-xl border border-[#e5e7eb] w-fit overflow-x-auto max-w-full">
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)} data-testid={`tab-${t.id}`}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === t.id ? 'bg-white text-[#1f2937] shadow-sm' : 'text-[#6b7280] hover:text-[#1f2937]'
-              }`}>{t.label}</button>
-          ))}
+        <div className="w-full bg-[#f3f4f6] p-1 rounded-xl border border-[#e5e7eb] overflow-x-auto">
+          <div className="flex gap-1 min-w-max sm:min-w-0">
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setActiveTab(t.id)} data-testid={`tab-${t.id}`}
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-1 sm:flex-none ${
+                  activeTab === t.id ? 'bg-white text-[#1f2937] shadow-sm' : 'text-[#6b7280] hover:text-[#1f2937]'
+                }`}>{t.label}</button>
+            ))}
+          </div>
         </div>
 
         {/* Content */}
@@ -1105,10 +1107,10 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
           <>
             {/* MY PRODUCTS TAB */}
             {activeTab === 'products' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
                 {/* Left: 3x3 tile grid — stretches to fill sidebar height */}
                 <div className="lg:col-span-2 lg:self-stretch">
-                  <div className="grid grid-cols-3 gap-3 h-full" style={{ gridAutoRows: '1fr' }}>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 h-full" style={{ gridAutoRows: '1fr' }}>
                     {ALL_CATEGORIES.map(cat => {
                       const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
                       return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
@@ -1117,14 +1119,14 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                 </div>
 
                 {/* Right: account manager + chatbot + risk score summary */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   {/* Account Manager */}
                   {customer.accountOwner && (
                     <AccountManagerCard owner={customer.accountOwner} />
                   )}
 
                   {/* Ask Broad Peak AI */}
-                  <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '420px' }}>
+                  <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '360px' }}>
                     <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
                         <Shield className="w-3 h-3 text-white" />
@@ -1208,7 +1210,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
             {activeTab === 'news' && <NewsTab domain={domain} />}
             {activeTab === 'resources' && <ResourcesTab domain={domain} />}
             {activeTab === 'ce-readiness' && (
-              <div className="w-full">
+              <div className="w-full min-w-0">
                 <CEReadiness accountName={customer.accountName} />
               </div>
             )}
