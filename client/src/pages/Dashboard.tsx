@@ -737,12 +737,14 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
             return (
               <button key={cat} data-testid={`support-cat-${cat.replace(/\s+/g, '-').toLowerCase()}`}
                 onClick={() => { if (vendors.length === 1) startSupport(cat, vendors[0]); else setSelectedCat(cat); }}
-                className="flex flex-col gap-2 p-4 bg-black/22 hover:bg-black/30 border border-white/20 rounded-2xl text-left backdrop-blur-[10px] transition-all">
-                <Icon className="w-5 h-5 text-[#4494D1]" />
-                <div className="text-sm font-medium text-white leading-tight">{cat}</div>
-                <div className="flex flex-wrap gap-1">
+                className="flex flex-col gap-2 p-4 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-2xl text-left shadow-[0_1px_4px_rgba(0,0,0,0.10)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
+                <div className="p-2 rounded-xl bg-[#4494D112] w-fit">
+                  <Icon className="w-5 h-5 text-[#4494D1]" />
+                </div>
+                <div className="text-sm font-semibold text-[#1f2937] leading-tight">{cat}</div>
+                <div className="flex flex-wrap gap-1 mt-auto">
                   {vendors.map(v => (
-                    <span key={v} className={`text-xs px-2 py-0.5 rounded-full ${VENDOR_KB[v]?.hasKB ? 'bg-[#10b98112] text-[#059669]' : 'bg-[#f3f4f6] text-[#9ca3af]'}`}>
+                    <span key={v} className={`text-xs px-2 py-0.5 rounded-full font-medium ${VENDOR_KB[v]?.hasKB ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
                       {VENDOR_KB[v]?.hasKB ? v : `${v} (soon)`}
                     </span>
                   ))}

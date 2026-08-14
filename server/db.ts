@@ -60,6 +60,16 @@ db.exec(`
     filepath TEXT NOT NULL,
     uploaded_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS assessments (
+    id TEXT PRIMARY KEY,
+    domain TEXT NOT NULL,
+    type TEXT NOT NULL,
+    submitted_at TEXT NOT NULL,
+    answers TEXT NOT NULL,
+    score INTEGER,
+    label TEXT
+  );
 `);
 
 export default db;

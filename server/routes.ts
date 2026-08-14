@@ -655,3 +655,58 @@ router.post('/api/support-chat', async (req, res) => {
     res.end();
   }
 });
+
+// ─── ASSESSMENTS ─────────────────────────────────────────────────────────────
+// Save a completed assessment
+router.post('/api/assessments', async (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '');
+  if (!token.startsWith('cust_')) return res.status(401).json({ error: 'Unauthorised' });
+
+  // Find domain from token
+  let domain: string | null = null;
+  try {
+    const row = db.prepare('SELECT domain FROM sf_cache WHERE data LIKE ?').get(`%${token}%`) as any;
+    if (!row) {
+      // fallback: pull from body
+      domain = req.body.domain || null;
+    } else {
+      domain = row.domain;
+    }
+  } catch { domain = req.body.domain || null; }
+  if (!domain) return res.status(400).json({ error: 'Could not identify domain' });
+
+  const { type, answers, score, label } = req.body;
+  if (!type || !answers) return res.status(400).json({ error: 'Missing type or answers' });
+
+  const id = uuid();
+  const submitted_at = new Date().toISOString();
+  db.prepare('INSERT INTO assessments (id, domain, type, submitted_at, answers, score, label) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(id, domain, type, submitted_at, JSON.stringify(answers), score ?? null, label ?? null);
+
+  res.json({ id, submitted_at });
+});
+
+// List assessments for a domain + type
+router.get('/api/assessments', (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '');
+  if (!token.startsWith('cust_')) return res.status(401).json({ error: 'Unauthorised' });
+
+  const { domain, type } = req.query as { domain: string; type: string };
+  if (!domain || !type) return res.status(400).json({ error: 'Missing domain or type' });
+
+  const rows = db.prepare('SELECT id, type, submitted_at, score, label FROM assessments WHERE domain = ? AND type = ? ORDER BY submitted_at DESC LIMIT 20').all(domain, type) as any[];
+  res.json(rows);
+});
+
+// Get a specific assessment (answers included)
+router.get('/api/assessments/:id', (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '');
+  if (!token.startsWith('cust_')) return res.status(401).json({ error: 'Unauthorised' });
+
+  const row = db.prepare('SELECT * FROM assessments WHERE id = ?').get(req.params.id) as any;
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  res.json({ ...row, answers: JSON.parse(row.answers) });
+});

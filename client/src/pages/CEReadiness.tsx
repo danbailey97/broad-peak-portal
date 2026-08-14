@@ -532,7 +532,7 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
 
 interface Answers { [questionId: string]: boolean | null; }
 
-export default function CEReadiness({ accountName }: { accountName: string }) {
+export default function CEReadiness({ accountName, domain }: { accountName: string; domain?: string }) {
   const [answers, setAnswers] = useState<Answers>({});
   const [currentSection, setCurrentSection] = useState(0);
   const [currentQ, setCurrentQ] = useState(0);
@@ -540,6 +540,50 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
   const [ceLevel, setCeLevel] = useState<'CE' | 'CE+'>('CE');
   const [started, setStarted] = useState(false);
   const [showExample, setShowExample] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [history, setHistory] = useState<{ id: string; submitted_at: string; score: number; label: string }[]>([]);
+  const [loadedHistoryId, setLoadedHistoryId] = useState<string | null>(null);
+
+  // Load history on mount
+  useEffect(() => {
+    if (!domain) return;
+    const token = localStorage.getItem('bp_token') || sessionStorage.getItem('bp_token') || '';
+    fetch(`/api/assessments?domain=${encodeURIComponent(domain)}&type=ce-readiness`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.json()).then(rows => { if (Array.isArray(rows)) setHistory(rows); }).catch(() => {});
+  }, [domain]);
+
+  // Auto-save when results are shown
+  useEffect(() => {
+    if (!showResults || !domain || savedId) return;
+    const token = localStorage.getItem('bp_token') || sessionStorage.getItem('bp_token') || '';
+    const passedCount = Object.values(answers).filter(v => v === true).length;
+    const score = TOTAL_QUESTIONS > 0 ? Math.round((passedCount / TOTAL_QUESTIONS) * 100) : 0;
+    fetch('/api/assessments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ domain, type: 'ce-readiness', answers, score, label: `${ceLevel} · ${score}%` }),
+    }).then(r => r.json()).then(data => {
+      if (data.id) {
+        setSavedId(data.id);
+        setHistory(h => [{ id: data.id, submitted_at: data.submitted_at, score, label: `${ceLevel} · ${score}%` }, ...h]);
+      }
+    }).catch(() => {});
+  }, [showResults]);
+
+  function loadHistoryItem(id: string) {
+    const token = localStorage.getItem('bp_token') || sessionStorage.getItem('bp_token') || '';
+    fetch(`/api/assessments/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(data => {
+        if (data.answers) {
+          setAnswers(data.answers);
+          setLoadedHistoryId(id);
+          setShowResults(true);
+          setSavedId(id);
+          setStarted(true);
+        }
+      }).catch(() => {});
+  }
 
   const progress = Math.round((Object.keys(answers).length / TOTAL_QUESTIONS) * 100);
   const section = CE_SECTIONS[currentSection];
