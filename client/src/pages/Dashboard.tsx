@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, getToken } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert } from 'lucide-react';
+import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp } from 'lucide-react';
 import CEReadiness from './CEReadiness';
 import CyberRiskScore from './CyberRiskScore';
 
@@ -838,6 +838,21 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
   const [activeTab, setActiveTab] = useState<'products' | 'support' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
   const [selectedCategory, setSelectedCategory] = useState<CategoryEntry | null>(null);
   const [highlightedCategories, setHighlightedCategories] = useState<string[]>([]);
+  const [latestRiskScore, setLatestRiskScore] = useState<{ score: number; label: string; submitted_at: string } | null>(null);
+
+  // Load latest risk score for this domain
+  useEffect(() => {
+    if (!domain) return;
+    const token = getToken();
+    fetch(`/api/assessments?domain=${encodeURIComponent(domain)}&type=cyber-risk-score`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.ok ? r.json() : []).then(rows => {
+      if (Array.isArray(rows) && rows.length > 0) {
+        const latest = rows[0];
+        setLatestRiskScore({ score: latest.score, label: latest.label, submitted_at: latest.submitted_at });
+      }
+    }).catch(() => {});
+  }, [domain]);
 
   const { data: customer, isLoading } = useQuery<CustomerData>({
     queryKey: ['/api/customer', domain],
@@ -899,10 +914,10 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
           <>
             {/* MY PRODUCTS TAB */}
             {activeTab === 'products' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left: 3x3 grid */}
-                <div className="lg:col-span-2 space-y-4">
-                  <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                {/* Left: 3x3 tile grid — stretches to fill sidebar height */}
+                <div className="lg:col-span-2 lg:self-stretch">
+                  <div className="grid grid-cols-3 gap-3 h-full" style={{ gridAutoRows: '1fr' }}>
                     {ALL_CATEGORIES.map(cat => {
                       const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
                       return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
@@ -910,8 +925,8 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                   </div>
                 </div>
 
-                {/* Right: chatbot + account manager */}
-                <div className="space-y-4">
+                {/* Right: account manager + chatbot + risk score summary */}
+                <div className="flex flex-col gap-4">
                   {/* Account Manager */}
                   {customer.accountOwner && (
                     <AccountManagerCard owner={customer.accountOwner} />
@@ -927,12 +942,71 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                     </div>
                     <div className="flex-1 min-h-0">
                       <ChatBot domain={domain} accountName={customer.accountName}
-                      onHighlight={(cats) => setHighlightedCategories(cats)}
-                      onOpenCategory={(cat) => {
-                        const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
-                        setSelectedCategory(entry);
-                      }}
-                    />
+                        onHighlight={(cats) => setHighlightedCategories(cats)}
+                        onOpenCategory={(cat) => {
+                          const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null };
+                          setSelectedCategory(entry);
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cyber Risk Score Summary */}
+                  <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+                    <div className="h-1" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-lg bg-[#8b5cf612] flex items-center justify-center">
+                            <TrendingUp className="w-3.5 h-3.5 text-[#8b5cf6]" />
+                          </div>
+                          <span className="text-sm font-semibold text-[#1f2937]">Cyber Risk Score</span>
+                        </div>
+                        <button onClick={() => setActiveTab('risk-score')}
+                          className="text-xs text-[#4494D1] hover:underline font-medium">
+                          {latestRiskScore ? 'Retake ↗' : 'Take Assessment ↗'}
+                        </button>
+                      </div>
+
+                      {latestRiskScore ? (() => {
+                        const score = latestRiskScore.score;
+                        const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : score >= 40 ? '#f97316' : '#ef4444';
+                        const bgColor = score >= 80 ? '#f0fdf4' : score >= 60 ? '#fffbeb' : score >= 40 ? '#fff7ed' : '#fef2f2';
+                        const date = new Date(latestRiskScore.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                        return (
+                          <div>
+                            <div className="flex items-end gap-3 mb-3">
+                              <div className="text-5xl font-bold leading-none" style={{ color }}>{score}</div>
+                              <div className="text-sm text-[#6b7280] mb-1">/ 100</div>
+                              <div className="ml-auto text-right">
+                                <div className="text-sm font-semibold" style={{ color }}>{latestRiskScore.label.split('·')[0].trim()}</div>
+                                <div className="text-xs text-[#9ca3af]">Last assessed {date}</div>
+                              </div>
+                            </div>
+                            <div className="h-2 rounded-full bg-[#f3f4f6] overflow-hidden mb-3">
+                              <div className="h-2 rounded-full transition-all" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${color}99, ${color})` }} />
+                            </div>
+                            <div className="rounded-xl p-3 text-xs" style={{ background: bgColor, border: `1px solid ${color}30` }}>
+                              <span className="font-semibold" style={{ color }}>
+                                {score >= 80 ? '✓ Strong security posture' : score >= 60 ? '⚠ Some areas need attention' : '⚠ Significant gaps identified'}
+                              </span>
+                              <span className="text-[#6b7280] ml-1">— click Retake to reassess</span>
+                            </div>
+                          </div>
+                        );
+                      })() : (
+                        <div className="text-center py-4">
+                          <div className="w-12 h-12 rounded-full bg-[#f3f4f6] flex items-center justify-center mx-auto mb-2">
+                            <Shield className="w-5 h-5 text-[#9ca3af]" />
+                          </div>
+                          <p className="text-sm text-[#6b7280] mb-3">No risk assessment on file for your organisation.</p>
+                          <button onClick={() => setActiveTab('risk-score')}
+                            className="text-sm font-semibold text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+                            style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}>
+                            Take Assessment
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -949,7 +1023,8 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
             )}
             {activeTab === 'risk-score' && (
               <div className="w-full">
-                <CyberRiskScore accountName={customer.accountName} />
+                <CyberRiskScore accountName={customer.accountName} domain={domain}
+                  onSave={(score: number, label: string, submitted_at: string) => setLatestRiskScore({ score, label, submitted_at })} />
               </div>
             )}
           </>

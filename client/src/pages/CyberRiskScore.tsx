@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getToken } from '../lib/api';
 import { CheckCircle, XCircle, ChevronRight, Download, RotateCcw, Shield, AlertTriangle, TrendingUp, Info, HelpCircle, Target } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
@@ -620,7 +621,7 @@ function generateRiskPDF(answers: Answers, accountName: string) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function CyberRiskScore({ accountName }: { accountName: string }) {
+export default function CyberRiskScore({ accountName, domain, onSave }: { accountName: string; domain?: string; onSave?: (score: number, label: string, submitted_at: string) => void }) {
   const [answers, setAnswers] = useState<Answers>({});
   const [queuedQuestions, setQueuedQuestions] = useState<(Question & { fnId: string })[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -628,6 +629,9 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
   const [started, setStarted] = useState(false);
   const [showExample, setShowExample] = useState(false);
   const [fade, setFade] = useState(false);
+  const [savedAssessmentId, setSavedAssessmentId] = useState<string | null>(null);
+  const [history, setHistory] = useState<{ id: string; submitted_at: string; score: number; label: string }[]>([]);
+  const hasSaved = useRef(false);
 
   useEffect(() => {
     if (!started) return;
@@ -643,6 +647,51 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
     }
     setQueuedQuestions(queue);
   }, [answers, started]);
+
+  // Load history on mount
+  useEffect(() => {
+    if (!domain) return;
+    const token = getToken();
+    fetch(`/api/assessments?domain=${encodeURIComponent(domain)}&type=cyber-risk-score`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.ok ? r.json() : []).then(rows => {
+      if (Array.isArray(rows) && rows.length > 0) setHistory(rows);
+    }).catch(() => {});
+  }, [domain]);
+
+  // Auto-save when results first shown
+  useEffect(() => {
+    if (!showResults || !domain || hasSaved.current) return;
+    hasSaved.current = true;
+    const token = getToken();
+    fetch('/api/assessments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ domain, type: 'cyber-risk-score', answers, score: calcOverallScore(answers), label: `${getRiskLevel(calcOverallScore(answers)).label} · ${calcOverallScore(answers)}/100` }),
+    }).then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.id) {
+        setSavedAssessmentId(data.id);
+        const score = calcOverallScore(answers);
+        const label = `${getRiskLevel(score).label} · ${score}/100`;
+        setHistory(h => [{ id: data.id, submitted_at: data.submitted_at, score, label }, ...h]);
+        if (onSave) onSave(score, label, data.submitted_at);
+      }
+    }).catch(() => {});
+  }, [showResults]);
+
+  function loadAssessment(id: string) {
+    const token = getToken();
+    fetch(`/api/assessments/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null).then(data => {
+        if (data?.answers) {
+          setAnswers(data.answers);
+          setSavedAssessmentId(id);
+          hasSaved.current = true;
+          setShowResults(true);
+          setStarted(true);
+        }
+      }).catch(() => {});
+  }
 
   function getFn(qId: string) {
     return NIST_FUNCTIONS.find(fn => fn.questions.some(q => q.id === qId));
@@ -672,6 +721,8 @@ export default function CyberRiskScore({ accountName }: { accountName: string })
     setStarted(false);
     setQueuedQuestions([]);
     setShowExample(false);
+    setSavedAssessmentId(null);
+    hasSaved.current = false;
   }
 
   const overallScore = calcOverallScore(answers);
