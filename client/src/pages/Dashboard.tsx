@@ -310,17 +310,46 @@ function ChatBot({ domain, accountName }: { domain: string; accountName: string 
     setInput('');
     setLoading(true);
     setVendorPrompt(null);
+    const assistantIdx = { current: -1 };
     try {
-      const resp = await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify({ question: userMsg, domain, vendor: effectiveVendor }) });
-      const data = await resp.json();
-      if (data.needsVendor) {
-        setVendorPrompt({ needed: true, originalQ: userMsg });
-        setMessages(m => [...m, { role: 'assistant', content: data.reply || 'Which vendor product are you asking about? Please select or type below.' }]);
-      } else {
-        setMessages(m => [...m, { role: 'assistant', content: data.reply }]);
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: userMsg, domain, vendor: effectiveVendor }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const reader = resp.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '', fullText = '';
+      // Add placeholder assistant message for streaming
+      setMessages(m => { assistantIdx.current = m.length; return [...m, { role: 'assistant', content: '' }]; });
+      setLoading(false);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              fullText += parsed.content;
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: fullText } : msg));
+            }
+            if (parsed.error) throw new Error(parsed.error);
+          } catch (e: any) { if (e.message && !e.message.includes('JSON')) throw e; }
+        }
       }
     } catch {
-      setMessages(m => [...m, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }]);
+      if (assistantIdx.current >= 0) {
+        setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: 'Sorry, something went wrong. Please try again.' } : msg));
+      } else {
+        setMessages(m => [...m, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }]);
+      }
     } finally { setLoading(false); }
   };
 
