@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch, getToken } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp } from 'lucide-react';
+import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, UserRound, Ticket } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import CEReadiness from './CEReadiness';
 import CyberRiskScore from './CyberRiskScore';
 
@@ -644,6 +646,42 @@ const SUPPORT_CATEGORIES = ALL_CATEGORIES.map(cat => ({
   vendors: CATEGORY_VENDORS[cat] || [],
 }));
 
+// ─── MARKDOWN RENDERER ───────────────────────────────────────────────────────
+function MarkdownContent({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        h1: ({ children }) => <h1 className="text-base font-bold text-[#1f2937] mt-4 mb-2 pb-1 border-b border-[#e5e7eb]">{children}</h1>,
+        h2: ({ children }) => <h2 className="text-sm font-bold text-[#1f2937] mt-4 mb-2 flex items-center gap-1.5"><span className="w-1 h-4 rounded-full inline-block flex-shrink-0" style={{background:'linear-gradient(180deg,#C65793,#4494D1)'}}></span>{children}</h2>,
+        h3: ({ children }) => <h3 className="text-sm font-semibold text-[#374151] mt-3 mb-1.5">{children}</h3>,
+        p: ({ children }) => <p className="text-sm text-[#374151] leading-relaxed mb-2">{children}</p>,
+        ul: ({ children }) => <ul className="space-y-1.5 mb-3 ml-1">{children}</ul>,
+        ol: ({ children }) => <ol className="space-y-2 mb-3 ml-1 list-none counter-reset-[item]">{children}</ol>,
+        li: ({ children, ...props }) => {
+          const isOrdered = (props as any).ordered;
+          return isOrdered
+            ? <li className="flex gap-2.5 text-sm text-[#374151] leading-relaxed"><span className="flex-shrink-0 w-5 h-5 rounded-full gradient-cta text-white text-xs flex items-center justify-center font-bold mt-0.5">{(props as any).index + 1}</span><span>{children}</span></li>
+            : <li className="flex gap-2 text-sm text-[#374151] leading-relaxed"><span className="text-[#4494D1] flex-shrink-0 mt-1.5">▸</span><span>{children}</span></li>;
+        },
+        strong: ({ children }) => <strong className="font-semibold text-[#1f2937]">{children}</strong>,
+        em: ({ children }) => <em className="italic text-[#4b5563]">{children}</em>,
+        code: ({ inline, children }: any) => inline
+          ? <code className="bg-[#f3f4f6] text-[#C65793] px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+          : <pre className="bg-[#1f2937] text-[#e5e7eb] rounded-xl p-3 text-xs font-mono overflow-x-auto mb-3 mt-1"><code>{children}</code></pre>,
+        blockquote: ({ children }) => <blockquote className="border-l-2 border-[#C65793] pl-3 my-2 text-sm text-[#6b7280] italic">{children}</blockquote>,
+        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#4494D1] hover:underline font-medium inline-flex items-center gap-0.5">{children}<ExternalLink className="w-3 h-3 inline" /></a>,
+        hr: () => <hr className="border-[#e5e7eb] my-3" />,
+        table: ({ children }) => <div className="overflow-x-auto mb-3"><table className="w-full text-xs border-collapse">{children}</table></div>,
+        th: ({ children }) => <th className="text-left px-3 py-2 bg-[#f3f4f6] font-semibold text-[#374151] border border-[#e5e7eb]">{children}</th>,
+        td: ({ children }) => <td className="px-3 py-2 border border-[#e5e7eb] text-[#374151]">{children}</td>,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
+
 function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: string; accountName: string; accountOwner?: AccountOwner }) {
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
@@ -651,7 +689,28 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [initDone, setInitDone] = useState(false);
+  const [ticketState, setTicketState] = useState<'idle' | 'submitting' | 'done-happy' | 'done-human'>('idle');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  async function createTicket(resolved: boolean, question: string, answer: string) {
+    setTicketState('submitting');
+    try {
+      await fetch('/api/support-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: `[${selectedVendor}] ${question.slice(0, 80)}`,
+          description: `<b>Customer:</b> ${accountName}<br/><b>Category:</b> ${selectedCat}<br/><b>Vendor:</b> ${selectedVendor}<br/><br/><b>Question:</b><br/>${question}<br/><br/><b>AI Response:</b><br/>${answer}<br/><br/><b>Outcome:</b> ${resolved ? 'Customer satisfied — auto-closed' : 'Customer requested human support'}`,
+          accountName,
+          domain,
+          resolved,
+        }),
+      });
+      setTicketState(resolved ? 'done-happy' : 'done-human');
+    } catch {
+      setTicketState(resolved ? 'done-happy' : 'done-human');
+    }
+  }
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -659,6 +718,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     const kb = VENDOR_KB[vendor];
     setSelectedCat(cat);
     setSelectedVendor(vendor);
+    setTicketState('idle');
     setMessages([{ role: 'assistant', content: kb.hasKB
       ? `Hi! I'm ready to help with ${vendor} questions. I'll search the ${kb.label} knowledge base for accurate answers. What issue are you experiencing?`
       : `Hi! Support for ${vendor} is coming soon. For now, please contact Broad Peak directly and we'll assist you with ${cat} queries.`
@@ -672,6 +732,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     const kb = VENDOR_KB[selectedVendor];
     setMessages(m => [...m, { role: 'user', content: q }]);
     setInput('');
+    setTicketState('idle');
     if (!kb.hasKB) {
       setMessages(m => [...m, { role: 'assistant', content: `Support for ${selectedVendor} is coming soon. Please contact your account manager for assistance.` }]);
       return;
@@ -867,21 +928,83 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
           </a>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto bg-[#f9fafb] rounded-xl border border-[#e5e7eb] p-4 space-y-3">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-full gradient-cta flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
-                <Shield className="w-3.5 h-3.5 text-white" />
-              </div>
-            )}
-            <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-              msg.role === 'user' ? 'gradient-cta text-white rounded-br-sm' : 'bg-white text-[#1f2937] border border-[#e5e7eb] shadow-sm rounded-bl-sm'
-            }`} style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-          </div>
-        ))}
+      <div className="flex-1 overflow-y-auto bg-[#f9fafb] rounded-xl border border-[#e5e7eb] p-4 space-y-4">
+        {messages.map((msg, i) => {
+          const isLast = i === messages.length - 1;
+          const userQ = messages[i - 1]?.content || '';
+          return (
+            <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              {msg.role === 'user' ? (
+                <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-sm gradient-cta text-white text-sm leading-relaxed">
+                  {msg.content}
+                </div>
+              ) : (
+                <div className="w-full">
+                  {/* Assistant message card */}
+                  <div className="flex items-start gap-2 mb-1">
+                    <div className="w-7 h-7 rounded-full gradient-cta flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Shield className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <span className="text-xs text-[#9ca3af] mt-1.5 font-medium">Broad Peak AI · {selectedVendor} Support</span>
+                  </div>
+                  <div className="ml-9 bg-white border border-[#e5e7eb] rounded-2xl rounded-tl-sm shadow-[0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden">
+                    {/* Gradient top accent */}
+                    <div className="h-0.5" style={{background:'linear-gradient(90deg,#C65793,#9b4da8,#4494D1)'}} />
+                    <div className="p-4">
+                      <MarkdownContent content={msg.content} />
+                    </div>
+                    {/* Satisfaction buttons — only on last assistant message when not loading and has content */}
+                    {isLast && !loading && msg.content.length > 40 && i > 0 && (
+                      <div className="border-t border-[#f3f4f6] px-4 py-3">
+                        {ticketState === 'idle' && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#9ca3af] mr-1">Was this helpful?</span>
+                            <button
+                              onClick={() => createTicket(true, userQ, msg.content)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f0fdf4] border border-[#86efac] text-[#166534] hover:bg-[#dcfce7] transition-colors">
+                              <ThumbsUp className="w-3.5 h-3.5" /> Happy with this
+                            </button>
+                            <button
+                              onClick={() => createTicket(false, userQ, msg.content)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fff7ed] border border-[#fed7aa] text-[#9a3412] hover:bg-[#ffedd5] transition-colors">
+                              <UserRound className="w-3.5 h-3.5" /> Speak to a human
+                            </button>
+                          </div>
+                        )}
+                        {ticketState === 'submitting' && (
+                          <div className="flex items-center gap-2 text-xs text-[#9ca3af]">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating support ticket...
+                          </div>
+                        )}
+                        {ticketState === 'done-happy' && (
+                          <div className="flex items-center gap-2 text-xs text-[#166534] font-medium">
+                            <CheckCircle2 className="w-4 h-4 text-[#10b981]" />
+                            Great! A resolved ticket has been logged for your records.
+                          </div>
+                        )}
+                        {ticketState === 'done-human' && (
+                          <div className="flex items-center gap-2 text-xs text-[#9a3412] font-medium">
+                            <Ticket className="w-4 h-4 text-[#f97316]" />
+                            Support ticket raised — a member of our team will be in touch shortly.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
         {loading && (
-          <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 text-[#6b7280] animate-spin" /><span className="text-xs text-[#9ca3af]">Searching {kb?.label}...</span></div>
+          <div className="flex items-center gap-2 ml-9">
+            <div className="flex gap-1">
+              <span className="w-2 h-2 rounded-full bg-[#C65793] animate-bounce" style={{animationDelay:'0ms'}} />
+              <span className="w-2 h-2 rounded-full bg-[#9b4da8] animate-bounce" style={{animationDelay:'150ms'}} />
+              <span className="w-2 h-2 rounded-full bg-[#4494D1] animate-bounce" style={{animationDelay:'300ms'}} />
+            </div>
+            <span className="text-xs text-[#9ca3af]">Searching {kb?.label}...</span>
+          </div>
         )}
         <div ref={bottomRef} />
       </div>

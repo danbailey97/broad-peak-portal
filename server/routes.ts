@@ -710,3 +710,42 @@ router.get('/api/assessments/:id', (req, res) => {
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json({ ...row, answers: JSON.parse(row.answers) });
 });
+
+// ─── FRESHDESK TICKET ────────────────────────────────────────────────────────
+router.post('/api/support-ticket', async (req, res) => {
+  const { subject, description, customerEmail, customerName, accountName, resolved } = req.body;
+  const FRESHDESK_API_KEY = process.env.FRESHDESK_API_KEY || '';
+  const FRESHDESK_DOMAIN = process.env.FRESHDESK_DOMAIN || '';
+
+  if (!FRESHDESK_API_KEY || !FRESHDESK_DOMAIN) {
+    // Log it server-side even without Freshdesk configured
+    console.log(`[TICKET] ${resolved ? 'RESOLVED' : 'OPEN'} — ${accountName} — ${subject}`);
+    return res.json({ ok: true, simulated: true, message: 'Ticket logged (Freshdesk not yet configured)' });
+  }
+
+  try {
+    const ticketBody = {
+      subject,
+      description,
+      email: customerEmail || `support@${req.body.domain || 'unknown'}.com`,
+      name: customerName || accountName,
+      priority: 2,
+      status: resolved ? 4 : 2, // 4 = resolved, 2 = open
+      tags: ['portal', 'ai-support', resolved ? 'self-resolved' : 'human-requested'],
+      custom_fields: { account_name: accountName },
+    };
+    const fdRes = await directFetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`,
+      },
+      body: JSON.stringify(ticketBody),
+      ...fetchOpts(),
+    }) as any;
+    const data = await fdRes.json() as any;
+    res.json({ ok: fdRes.ok, ticketId: data.id, status: data.status });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});

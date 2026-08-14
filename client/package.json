@@ -3,6 +3,8 @@
   "private": true,
   "dependencies": {
     "react": "*",
-    "react-dom": "*"
+    "react-dom": "*",
+    "react-markdown": "*",
+    "remark-gfm": "*"
   }
 }
