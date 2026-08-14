@@ -394,52 +394,98 @@ const VENDOR_NEWS = [
   { vendor: 'WatchGuard', url: 'https://www.watchguard.com/wgrd-resource-center/datasheets' },
 ];
 
+const VENDOR_LOGOS: Record<string, { logo: string; bg: string; tagline: string }> = {
+  Barracuda: { logo: 'https://www.barracuda.com/favicon.ico', bg: '#d32f2f', tagline: 'Email, Network & Data Security' },
+  Keepit: { logo: 'https://www.keepit.com/favicon.ico', bg: '#0d47a1', tagline: 'Immutable Cloud Backup' },
+  'Arctic Wolf': { logo: 'https://arcticwolf.com/favicon.ico', bg: '#1565c0', tagline: 'MDR & Managed Risk' },
+  Boxphish: { logo: 'https://www.boxphish.com/favicon.ico', bg: '#6a1b9a', tagline: 'Phishing Simulation & Awareness' },
+  BullWall: { logo: 'https://bullwall.com/favicon.ico', bg: '#e65100', tagline: 'Ransomware Containment' },
+  CyberSmart: { logo: 'https://cybersmart.co.uk/favicon.ico', bg: '#2e7d32', tagline: 'Cyber Essentials & GRC' },
+  Druva: { logo: 'https://www.druva.com/favicon.ico', bg: '#00838f', tagline: 'SaaS & Endpoint Data Protection' },
+  WatchGuard: { logo: 'https://www.watchguard.com/favicon.ico', bg: '#f57c00', tagline: 'Network & Identity Security' },
+};
+
 function NewsTab({ domain }: { domain: string }) {
   const { data: newsletters } = useQuery({ queryKey: ['/api/newsletters', domain], queryFn: () => apiFetch(`/api/newsletters?domain=${domain}`).then(r => r.json()) });
   return (
     <div className="space-y-8">
-      {/* Vendor Resource Libraries */}
+      {/* Broad Peak Newsletters — TOP */}
       <div>
-        <h2 className="text-lg font-bold text-[#1f2937] mb-4">Vendor Resource Libraries</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {VENDOR_NEWS.map(v => (
-            <a key={v.vendor} href={v.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-between gap-2 p-3.5 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
-              <span className="text-sm text-[#1f2937] font-medium leading-tight">{v.vendor} — Resource Library</span>
-              <ExternalLink className="w-3.5 h-3.5 text-[#9ca3af] group-hover:text-[#4494D1] flex-shrink-0 transition-colors" />
-            </a>
-          ))}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-xl gradient-cta flex items-center justify-center">
+            <FileText className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="text-lg font-bold text-[#1f2937]">Broad Peak Newsletters</h2>
         </div>
-      </div>
-
-      {/* Broad Peak Newsletters */}
-      {newsletters?.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-[#1f2937] mb-4">Broad Peak Newsletters</h2>
-          <div className="space-y-3">
+        {newsletters?.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {newsletters.map((n: any) => (
-              <div key={n.id} className="flex items-center gap-4 p-4 bg-white border border-[#e5e7eb] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-                <FileText className="w-5 h-5 text-[#C65793] flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[#1f2937]">{n.title}</div>
-                  <div className="text-xs text-[#9ca3af]">{new Date(n.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              <a key={n.id} href={`/uploads/${n.filename}`} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 bg-white border border-[#e5e7eb] hover:border-[#C65793] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
+                <div className="w-10 h-10 rounded-xl gradient-cta flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-white" />
                 </div>
-                <a href={`/uploads/${n.filename}`} target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-[#4494D1] hover:text-blue-200 flex items-center gap-1">
-                  View <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-[#1f2937] group-hover:text-[#C65793] transition-colors">{n.title}</div>
+                  <div className="text-xs text-[#9ca3af] mt-0.5">{new Date(n.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                </div>
+                <ExternalLink className="w-4 h-4 text-[#9ca3af] group-hover:text-[#C65793] flex-shrink-0 transition-colors" />
+              </a>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-4 p-5 bg-[#f9fafb] border border-dashed border-[#d1d5db] rounded-xl text-[#9ca3af]">
+            <BookOpen className="w-6 h-6 opacity-40 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">No newsletters yet</p>
+              <p className="text-xs">Broad Peak newsletters will appear here when published</p>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {(!newsletters || newsletters.length === 0) && (
-        <div className="text-center py-12 text-[#9ca3af]">
-          <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
-          <p className="text-sm">No newsletters uploaded yet</p>
+      {/* Vendor Resource Libraries — large tiles with logos */}
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-xl bg-[#4494D1] flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="text-lg font-bold text-[#1f2937]">Vendor Resource Libraries</h2>
         </div>
-      )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {VENDOR_NEWS.map(v => {
+            const meta = VENDOR_LOGOS[v.vendor] || { logo: '', bg: '#4494D1', tagline: 'Resources & Updates' };
+            return (
+              <a key={v.vendor} href={v.url} target="_blank" rel="noopener noreferrer"
+                className="flex flex-col bg-white border border-[#e5e7eb] hover:border-[#4494D1] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(68,148,209,0.15)] transition-all group overflow-hidden">
+                {/* Coloured header with logo */}
+                <div className="flex items-center justify-center h-20 px-4" style={{ background: meta.bg + '18', borderBottom: '1px solid ' + meta.bg + '22' }}>
+                  {meta.logo ? (
+                    <img
+                      src={meta.logo}
+                      alt={v.vendor}
+                      className="h-8 w-8 rounded-lg object-contain"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg" style={{ background: meta.bg }}>
+                      {v.vendor[0]}
+                    </div>
+                  )}
+                </div>
+                {/* Content */}
+                <div className="p-4 flex-1 flex flex-col gap-1">
+                  <div className="text-sm font-bold text-[#1f2937] group-hover:text-[#4494D1] transition-colors">{v.vendor}</div>
+                  <div className="text-xs text-[#6b7280] leading-tight flex-1">{meta.tagline}</div>
+                  <div className="flex items-center gap-1 mt-2 text-xs text-[#4494D1] font-medium">
+                    Visit library <ExternalLink className="w-3 h-3" />
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -558,12 +604,45 @@ function TechnicalSupportTab({ domain, accountName }: { domain: string; accountN
       return;
     }
     setLoading(true);
+    const assistantIdx = { current: -1 };
     try {
-      const resp = await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify({ question: q, domain, vendor: selectedVendor }) });
-      const data = await resp.json();
-      setMessages(m => [...m, { role: 'assistant', content: data.reply }]);
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, domain, vendor: selectedVendor }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const reader = resp.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '', fullText = '';
+      // Add placeholder assistant message for streaming
+      setMessages(m => { assistantIdx.current = m.length; return [...m, { role: 'assistant', content: '' }]; });
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              fullText += parsed.content;
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: fullText } : msg));
+            }
+            if (parsed.error) throw new Error(parsed.error);
+          } catch (e: any) { if (e.message && !e.message.includes('JSON')) throw e; }
+        }
+      }
     } catch {
-      setMessages(m => [...m, { role: 'assistant', content: 'Something went wrong. Please try again.' }]);
+      if (assistantIdx.current >= 0) {
+        setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: 'Something went wrong. Please try again.' } : msg));
+      } else {
+        setMessages(m => [...m, { role: 'assistant', content: 'Something went wrong. Please try again.' }]);
+      }
     } finally { setLoading(false); }
   };
 
@@ -775,12 +854,12 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
             {activeTab === 'news' && <NewsTab domain={domain} />}
             {activeTab === 'resources' && <ResourcesTab domain={domain} />}
             {activeTab === 'ce-readiness' && (
-              <div className="max-w-3xl">
+              <div className="w-full">
                 <CEReadiness accountName={customer.accountName} />
               </div>
             )}
             {activeTab === 'risk-score' && (
-              <div className="max-w-3xl">
+              <div className="w-full">
                 <CyberRiskScore accountName={customer.accountName} />
               </div>
             )}
