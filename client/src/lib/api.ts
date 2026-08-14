@@ -1,4 +1,4 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || '__PORT_5001__';
+export const API_BASE = import.meta.env.VITE_API_BASE || '';
 
 // In-memory auth store (works in all environments including sandboxed iframes)
 let _token = '';
