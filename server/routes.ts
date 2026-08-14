@@ -663,18 +663,9 @@ router.post('/api/assessments', async (req, res) => {
   const token = authHeader.replace('Bearer ', '');
   if (!token.startsWith('cust_')) return res.status(401).json({ error: 'Unauthorised' });
 
-  // Find domain from token
-  let domain: string | null = null;
-  try {
-    const row = db.prepare('SELECT domain FROM sf_cache WHERE data LIKE ?').get(`%${token}%`) as any;
-    if (!row) {
-      // fallback: pull from body
-      domain = req.body.domain || null;
-    } else {
-      domain = row.domain;
-    }
-  } catch { domain = req.body.domain || null; }
-  if (!domain) return res.status(400).json({ error: 'Could not identify domain' });
+  // Domain comes from the request body (sent by the frontend which knows its own domain)
+  const domain: string | null = req.body.domain || null;
+  if (!domain) return res.status(400).json({ error: 'Missing domain' });
 
   const { type, answers, score, label } = req.body;
   if (!type || !answers) return res.status(400).json({ error: 'Missing type or answers' });

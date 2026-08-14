@@ -1211,7 +1211,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
             {activeTab === 'resources' && <ResourcesTab domain={domain} />}
             {activeTab === 'ce-readiness' && (
               <div className="w-full min-w-0">
-                <CEReadiness accountName={customer.accountName} />
+                <CEReadiness accountName={customer.accountName} domain={domain} />
               </div>
             )}
             {activeTab === 'risk-score' && (

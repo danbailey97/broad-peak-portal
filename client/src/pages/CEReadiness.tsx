@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getToken } from '../lib/api';
 import { CheckCircle, XCircle, ChevronRight, Download, RotateCcw, Shield, AlertTriangle, Info, Lock, Wifi, Users, Bug, RefreshCw, HelpCircle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
@@ -547,7 +548,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
   // Load history on mount
   useEffect(() => {
     if (!domain) return;
-    const token = localStorage.getItem('bp_token') || sessionStorage.getItem('bp_token') || '';
+    const token = getToken();
     fetch(`/api/assessments?domain=${encodeURIComponent(domain)}&type=ce-readiness`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json()).then(rows => { if (Array.isArray(rows)) setHistory(rows); }).catch(() => {});
@@ -556,7 +557,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
   // Auto-save when results are shown
   useEffect(() => {
     if (!showResults || !domain || savedId) return;
-    const token = localStorage.getItem('bp_token') || sessionStorage.getItem('bp_token') || '';
+    const token = getToken();
     const passedCount = Object.values(answers).filter(v => v === true).length;
     const score = TOTAL_QUESTIONS > 0 ? Math.round((passedCount / TOTAL_QUESTIONS) * 100) : 0;
     fetch('/api/assessments', {
@@ -572,7 +573,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
   }, [showResults]);
 
   function loadHistoryItem(id: string) {
-    const token = localStorage.getItem('bp_token') || sessionStorage.getItem('bp_token') || '';
+    const token = getToken();
     fetch(`/api/assessments/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(data => {
         if (data.answers) {
