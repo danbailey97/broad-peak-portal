@@ -34,8 +34,8 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-4">
-          <div style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: 20, padding: '16px 32px', backdropFilter: 'blur(12px)' }}>
-            <img src="/logo-white-text.jpg" alt="Broad Peak" style={{ height: 48, objectFit: 'contain' }} />
+          <div style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.80)', borderRadius: 20, padding: '16px 32px' }}>
+            <img src="/logo-black-text.jpg" alt="Broad Peak" style={{ height: 48, objectFit: 'contain' }} />
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">Customer Portal</h1>

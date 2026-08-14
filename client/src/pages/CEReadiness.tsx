@@ -1,128 +1,307 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle, ChevronRight, Download, RotateCcw, Shield, AlertTriangle, Info } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronRight, Download, RotateCcw, Shield, AlertTriangle, Info, Lock, Wifi, Users, Bug, RefreshCw, HelpCircle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
-// ── CE Readiness Questions (NCSC Cyber Essentials 5 controls) ────────────────
+// ── CE Readiness Questions ───────────────────────────────────────────────────
 const CE_SECTIONS = [
   {
     id: 'firewall',
     title: 'Firewalls',
     control: 'CE Control 1',
-    description: 'Boundary and device-level firewalls protecting your internet-facing services',
+    icon: 'wifi',
+    color: '#C65793',
+    tagline: 'Your first line of defence against the internet',
+    intro: 'Firewalls act as a security barrier between your internal network and the internet. Cyber Essentials requires that every internet-connected device — and your network boundary — is protected by a correctly configured firewall.',
     questions: [
-      { id: 'fw1', text: 'Do you have a firewall or equivalent device protecting your internet connection?', guidance: 'This includes hardware firewalls, software firewalls, or cloud-based perimeter protection.' },
-      { id: 'fw2', text: 'Is your firewall configured to block all inbound connections by default unless explicitly permitted?', guidance: 'Default-deny rules are required. All inbound rules should be documented and reviewed.' },
-      { id: 'fw3', text: 'Are firewall rules reviewed and approved at least annually?', guidance: 'Regular review ensures unused or overly permissive rules are removed.' },
-      { id: 'fw4', text: 'Are all internet-facing services (websites, remote access, email) protected by firewall rules?', guidance: 'Every service accessible from the internet must be explicitly permitted and protected.' },
-      { id: 'fw5', text: 'Are personal devices used for work required to have a software firewall enabled?', guidance: 'CE requires firewalls on all devices in scope, including personal (BYOD) devices used for work.' },
+      {
+        id: 'fw1',
+        text: 'Do you have a firewall protecting your internet connection?',
+        why: 'Without a boundary firewall, your network is directly exposed to internet-based attacks 24/7. The NCSC reports that unprotected services are typically probed within minutes of going online.',
+        example: 'This could be a hardware appliance (e.g. Barracuda CloudGen Firewall, WatchGuard Firebox), a software firewall built into your router, or a cloud-based perimeter solution.',
+        guidance: 'Any device connecting your internal network to the internet must have active firewall protection — including broadband routers and cloud gateways.',
+      },
+      {
+        id: 'fw2',
+        text: 'Is your firewall configured to block all inbound connections unless explicitly permitted?',
+        why: 'A firewall that allows traffic by default provides little protection. The "default-deny" principle ensures only services you intentionally expose are reachable from the internet.',
+        example: 'If you only need HTTPS (port 443) inbound for a web server, all other ports should be blocked. Remote desktop (RDP on port 3389) should never be open to the internet.',
+        guidance: 'Review your firewall ruleset — look for any broad "allow all" inbound rules. Every inbound permission should have a documented business reason.',
+      },
+      {
+        id: 'fw3',
+        text: 'Are your firewall rules reviewed and approved at least annually?',
+        why: 'Outdated firewall rules are a common attack vector. Services get decommissioned, staff leave, and old rules accumulate — creating unintended openings.',
+        example: 'A rule opened for a contractor two years ago may still be active. Annual reviews catch these and ensure your ruleset reflects your current business needs.',
+        guidance: 'Document each review with sign-off from a responsible manager. CE+ requires evidence of this process during the on-site technical audit.',
+      },
+      {
+        id: 'fw4',
+        text: 'Are all internet-facing services (websites, email, remote access) covered by firewall rules?',
+        why: 'Every service exposed to the internet is a potential entry point. Attackers systematically scan all 65,535 ports — any open port without a firewall rule is an unguarded door.',
+        example: 'Common services requiring protection: web servers (80/443), mail servers (25/587), VPN gateways, Microsoft 365 connectors, and any remote access tools.',
+        guidance: 'Conduct a port scan of your external IP addresses (tools like Shodan or nmap from an external perspective) to confirm what is actually visible from the internet.',
+      },
+      {
+        id: 'fw5',
+        text: 'Are personal or work devices required to have a software firewall enabled?',
+        why: 'Cyber Essentials scopes all devices used for work — including employee-owned (BYOD) devices. A laptop used to access company email must have firewall protection, even outside the office.',
+        example: 'Windows Defender Firewall (enabled by default on Windows 10/11) meets this requirement. macOS has a built-in firewall under System Preferences > Security & Privacy.',
+        guidance: 'Check whether your MDM or endpoint management solution enforces firewall status. If you use Intune, look for device compliance policies.',
+      },
     ],
   },
   {
     id: 'secure_config',
     title: 'Secure Configuration',
     control: 'CE Control 2',
-    description: 'Devices and software configured securely, with unnecessary features removed',
+    icon: 'lock',
+    color: '#7b5ea7',
+    tagline: 'Remove what you don\'t need — secure what remains',
+    intro: 'Every device, application, and service ships with default settings optimised for ease of use — not security. Secure configuration means actively removing unnecessary functionality and hardening what remains before devices are deployed.',
     questions: [
-      { id: 'sc1', text: 'Are default administrator usernames and passwords changed on all devices before deployment?', guidance: 'Default credentials are publicly known and must be changed on all routers, switches, and servers.' },
-      { id: 'sc2', text: 'Is unnecessary software (unused applications, services, features) removed or disabled?', guidance: 'Attack surface reduction — only software needed for business purposes should be present.' },
-      { id: 'sc3', text: 'Do you maintain an inventory of all devices and software in your organisation?', guidance: 'You cannot secure what you cannot see. An asset register is a CE+ prerequisite.' },
-      { id: 'sc4', text: 'Is the auto-run or auto-play feature disabled on all devices?', guidance: 'Prevents malware from automatically executing when removable media is connected.' },
-      { id: 'sc5', text: 'Are all computers configured to lock automatically after a period of inactivity?', guidance: 'Screen lock after 15 minutes of inactivity is a common CE requirement.' },
+      {
+        id: 'sc1',
+        text: 'Are default usernames and passwords changed on all devices before deployment?',
+        why: 'Default credentials (e.g. "admin/admin", "admin/password") are publicly documented and the first thing attackers try. The Mirai botnet — which caused major internet outages — spread entirely by exploiting unchanged default credentials.',
+        example: 'Routers, switches, firewalls, NAS devices, printers, and IP cameras all ship with default credentials. Any of these accessible from the internet with unchanged defaults is immediately compromised.',
+        guidance: 'Maintain a secure register of all device credentials (using a password manager). Include this step in your device deployment checklist.',
+      },
+      {
+        id: 'sc2',
+        text: 'Is unnecessary software, services, and features removed or disabled?',
+        why: 'Every piece of software is a potential vulnerability. Software you don\'t use can still be exploited. The principle of "attack surface reduction" means only what is needed for business should be present.',
+        example: 'Unused Windows features like Telnet, TFTP Client, and Remote Registry service should be disabled. Trial software, games, and personal applications should be removed from work devices.',
+        guidance: 'Run a software audit using your asset management tool or manually review installed programs. Remove anything without a clear business justification.',
+      },
+      {
+        id: 'sc3',
+        text: 'Do you maintain an inventory of all devices and software?',
+        why: 'You cannot protect what you cannot see. Without an asset inventory, you will inevitably have unpatched systems, unconfigured devices, and forgotten accounts — all prime targets.',
+        example: 'Your inventory should include: all laptops, desktops, servers, phones, tablets, network equipment, and cloud services. Tools like CyberSmart or Intune can automate this.',
+        guidance: 'CE+ (the higher level, verified by an assessor) specifically requires evidence of a maintained asset register during the technical audit.',
+      },
+      {
+        id: 'sc4',
+        text: 'Is auto-run / auto-play disabled on all devices?',
+        why: 'Auto-run allows software on USB drives or CDs to execute automatically when connected — a common malware distribution method. Disabling it prevents drive-by infections from physical media.',
+        example: 'The infamous Stuxnet malware used Windows auto-run to spread via USB drives. Even trusted-looking USB sticks found in a car park should never be plugged in.',
+        guidance: 'This is typically configured via Group Policy (Windows) or MDM. Search for "Disable Autoplay" in your Group Policy management console.',
+      },
+      {
+        id: 'sc5',
+        text: 'Do all computers lock automatically after a period of inactivity?',
+        why: 'An unlocked device left unattended — in a café, at a desk, or on a train — gives anyone physical access to all data and systems. Automatic lock is a basic but essential control.',
+        example: 'NCSC guidance recommends locking after 10–15 minutes of inactivity. Many organisations set 5 minutes for high-security areas. A PIN or password must be required to unlock.',
+        guidance: 'Configurable via Group Policy (Windows: Computer Configuration > Policies > Windows Settings > Security Settings > Account Policies) or MDM profile.',
+      },
     ],
   },
   {
     id: 'user_access',
     title: 'User Access Control',
     control: 'CE Control 3',
-    description: 'Limiting access to data and services to only those who need it',
+    icon: 'users',
+    color: '#4494D1',
+    tagline: 'Give people only the access they genuinely need',
+    intro: 'The principle of least privilege — giving users access only to what they need for their role — limits the damage any single compromised account can cause. Insider threats, compromised credentials, and accidental data access are all significantly reduced by tight access control.',
     questions: [
-      { id: 'ua1', text: 'Does every user have their own unique account — no shared accounts?', guidance: 'Shared accounts prevent accountability and make audit trails impossible.' },
-      { id: 'ua2', text: 'Are administrator accounts only used when performing administrative tasks?', guidance: 'Day-to-day work should use standard accounts. Admin rights should be separate.' },
-      { id: 'ua3', text: 'Is the number of users with administrative privileges kept to the minimum necessary?', guidance: '"Least privilege" — admin rights should only be granted to those who genuinely need them.' },
-      { id: 'ua4', text: 'Are accounts removed or disabled promptly when a staff member leaves or changes role?', guidance: 'Stale accounts are a common attack vector. Leaver processes must include account deprovisioning.' },
-      { id: 'ua5', text: 'Is multi-factor authentication (MFA) enabled for remote access and cloud services?', guidance: 'MFA is now a core CE requirement for all cloud services and remote access.' },
-      { id: 'ua6', text: 'Are strong passwords (minimum 12 characters or a three-word passphrase) enforced?', guidance: 'NCSC recommends three-word passphrases. Complexity rules alone are insufficient.' },
+      {
+        id: 'ua1',
+        text: 'Does every user have their own individual account — no shared accounts?',
+        why: 'Shared accounts make it impossible to know who did what, audit activities, or hold individuals accountable. They also can\'t have personal MFA. If one person with the password leaves, the entire account must be changed.',
+        example: '"Reception" or "Shared PC" accounts used by multiple people are non-compliant. Every person — including contractors and temps — must have an individual, named account.',
+        guidance: 'Review your Active Directory or Azure AD for generic/shared accounts. Assign individual accounts before removing shared ones to avoid disruption.',
+      },
+      {
+        id: 'ua2',
+        text: 'Are administrator accounts separate from standard accounts and used only for admin tasks?',
+        why: 'Browsing the web or reading email with an admin account means malware encountered during those activities runs with administrative privileges — capable of modifying the entire system.',
+        example: 'IT staff should have two accounts: a standard account (e.g. j.smith@company.com) for daily use, and an admin account (e.g. admin.j.smith@company.com) used only when managing systems.',
+        guidance: 'This is particularly important for domain administrators. Admin sessions should be kept short and logged.',
+      },
+      {
+        id: 'ua3',
+        text: 'Is the number of users with admin privileges kept to the minimum necessary?',
+        why: 'Every admin account is a high-value target. If an attacker compromises an admin account, they have the keys to your entire kingdom. Fewer admins means smaller blast radius.',
+        example: 'A 50-person company typically needs 2–3 IT administrators. If everyone has admin rights for convenience, that\'s a significant risk. Review and revoke where not essential.',
+        guidance: 'Conduct an access rights review — list all users with admin privileges across all systems (AD, Microsoft 365, cloud platforms) and justify each one.',
+      },
+      {
+        id: 'ua4',
+        text: 'Are accounts removed or disabled promptly when staff leave or change role?',
+        why: 'Dormant accounts from ex-employees are a well-documented attack vector. Attackers seek them out specifically because they\'re often overlooked and may have elevated privileges.',
+        example: 'An ex-employee\'s Active Directory account, still active 6 months after leaving, could be used to access company data — especially if that person is now disgruntled.',
+        guidance: 'Your HR offboarding process should include an IT step. For CE compliance, "promptly" means within the same working day the person leaves.',
+      },
+      {
+        id: 'ua5',
+        text: 'Is multi-factor authentication (MFA) enabled for cloud services and remote access?',
+        why: 'MFA is now a mandatory CE requirement for all cloud services (Microsoft 365, Google Workspace, Salesforce, etc.) and all remote access (VPN, RDP, remote desktop tools). Passwords alone are no longer sufficient.',
+        example: 'Even a complex password can be phished, guessed, or leaked in a data breach. MFA means a stolen password alone cannot grant access — the attacker also needs your phone.',
+        guidance: 'Enable MFA in Microsoft 365 Admin Center under Security > MFA. Consider Conditional Access policies to enforce MFA for all users. WatchGuard AuthPoint is a dedicated MFA solution.',
+      },
+      {
+        id: 'ua6',
+        text: 'Are strong passwords (12+ characters or a three-word passphrase) enforced?',
+        why: 'Short or predictable passwords are cracked in seconds using modern tools. NCSC now recommends three-word passphrases (e.g. "correct-horse-battery") as both strong and memorable — length matters more than complexity.',
+        example: '"P@ssw0rd1!" fails modern security standards despite meeting old complexity rules. "purple-mountain-table" is far stronger and easier to remember.',
+        guidance: 'Configure minimum password length of 12 characters in your Active Directory or Azure AD password policy. Block common passwords using Azure AD Password Protection.',
+      },
     ],
   },
   {
     id: 'malware',
     title: 'Malware Protection',
     control: 'CE Control 4',
-    description: 'Protecting against malware using anti-malware software and safe browsing practices',
+    icon: 'bug',
+    color: '#059669',
+    tagline: 'Defend against malicious software across every entry point',
+    intro: 'Malware — including ransomware, trojans, spyware, and viruses — causes billions in damage annually. Cyber Essentials requires a layered approach: anti-malware software on devices, blocking known malicious websites, and scanning email attachments before they reach users.',
     questions: [
-      { id: 'ml1', text: 'Is anti-malware or endpoint protection software installed on all devices?', guidance: 'All in-scope devices must have active malware protection — Windows Defender is acceptable.' },
-      { id: 'ml2', text: 'Is anti-malware software kept up to date with current signatures or definitions?', guidance: 'Signatures must be updated at least daily. Cloud-based solutions typically do this automatically.' },
-      { id: 'ml3', text: 'Are devices configured to prevent users from installing unauthorised software?', guidance: 'Application whitelisting or administrator-only installation rights are recommended.' },
-      { id: 'ml4', text: 'Is web filtering or safe browsing protection in place to block known malicious websites?', guidance: 'DNS filtering or browser-level protection that blocks access to known malicious domains.' },
-      { id: 'ml5', text: 'Are email attachments scanned for malware before delivery?', guidance: 'Email remains the #1 malware delivery vector. Gateway scanning is essential.' },
+      {
+        id: 'ml1',
+        text: 'Is anti-malware or endpoint protection software installed on all in-scope devices?',
+        why: 'Endpoint protection catches known malware signatures and suspicious behaviours before they can execute. Without it, a malicious email attachment or website download can silently compromise a device.',
+        example: 'Windows Defender (built into Windows 10/11) is CE-acceptable for basic compliance. Business-grade EDR solutions (WatchGuard EPDR, Barracuda XDR) provide significantly better detection and response.',
+        guidance: 'Check that protection is active and not just installed — the service must be running. Use your MDM to confirm status across all managed devices.',
+      },
+      {
+        id: 'ml2',
+        text: 'Is anti-malware kept up to date with current definitions or signatures?',
+        why: 'New malware variants emerge constantly. Outdated definitions mean your protection doesn\'t recognise the latest threats. Definition updates should occur at least daily.',
+        example: 'Cloud-managed solutions (Windows Defender, CrowdStrike, WatchGuard Endpoint) update automatically. Legacy on-premise AV may need manual update checks — ensure this is happening.',
+        guidance: 'Check your endpoint management console for devices with outdated signatures. Set automatic update policies and alert on devices that haven\'t updated within 24 hours.',
+      },
+      {
+        id: 'ml3',
+        text: 'Are users prevented from installing unauthorised software?',
+        why: 'Users inadvertently installing malware disguised as legitimate software (pirated tools, "free" utilities, cracked software) is a major infection vector. Restricting installation rights prevents this.',
+        example: 'Standard users should not have local administrator rights. Where admin rights are needed for specific purposes, use just-in-time access rather than permanent elevation.',
+        guidance: 'Remove local administrator rights from standard users via Group Policy or Intune. Establish a software request process for legitimate business tools.',
+      },
+      {
+        id: 'ml4',
+        text: 'Is web filtering in place to block access to known malicious websites?',
+        why: 'Malicious websites deliver malware through drive-by downloads (simply visiting is enough), phishing pages, and malicious ads. DNS filtering blocks these before the browser even connects.',
+        example: 'Solutions include: Barracuda DNS filtering, WatchGuard DNSWatch, Cisco Umbrella, or Microsoft Defender SmartScreen. Many next-gen firewalls include web filtering.',
+        guidance: 'Test your web filtering by navigating to a known test malicious domain (NCSC provides test URLs). Check whether the block page appears.',
+      },
+      {
+        id: 'ml5',
+        text: 'Are email attachments and links scanned for malware before delivery?',
+        why: 'Email remains the #1 malware delivery mechanism. Microsoft 365 and Google Workspace basic plans provide limited protection — dedicated email security catches significantly more threats.',
+        example: 'A malicious Word document with embedded macros, a PDF with an exploit, or a link to a freshly-registered phishing site — all require active scanning beyond basic email filtering.',
+        guidance: 'Barracuda Email Gateway Defense and Microsoft Defender for Office 365 Plan 2 provide advanced email threat protection including sandboxing and link rewriting.',
+      },
     ],
   },
   {
     id: 'patching',
     title: 'Security Update Management',
     control: 'CE Control 5',
-    description: 'Keeping devices and software up to date with the latest security patches',
+    icon: 'refresh',
+    color: '#f59e0b',
+    tagline: 'Fix known vulnerabilities before attackers exploit them',
+    intro: 'Software vulnerabilities are discovered daily. Vendors release patches to fix them — but those patches only help if you apply them. Cyber Essentials requires critical and high-severity patches to be applied within 14 days of release to all in-scope devices.',
     questions: [
-      { id: 'pt1', text: 'Are operating systems on all devices updated with the latest security patches within 14 days of release?', guidance: 'NCSC CE requires critical and high patches within 14 days. This applies to all in-scope devices.' },
-      { id: 'pt2', text: 'Are all applications and software kept up to date — not just the operating system?', guidance: 'Browsers, Office suites, PDF readers, and all installed applications must be patched.' },
-      { id: 'pt3', text: 'Is software that is no longer supported by the vendor (end-of-life) removed or isolated?', guidance: 'Unsupported software cannot receive security patches and must be removed or network-isolated.' },
-      { id: 'pt4', text: 'Are firmware updates applied to network devices (routers, firewalls, switches) regularly?', guidance: 'Network device firmware is frequently overlooked but is critical to CE compliance.' },
-      { id: 'pt5', text: 'Do you have a documented patch management process or policy?', guidance: 'CE+ requires evidence of a documented process — not just ad-hoc patching.' },
+      {
+        id: 'pt1',
+        text: 'Are operating systems patched with critical/high security updates within 14 days of release?',
+        why: 'The 14-day window is the CE requirement because attackers typically weaponise known vulnerabilities within days of a patch being released — meaning the time between patch and exploit is shrinking.',
+        example: 'Verizon DBIR 2025 found exploitation of vulnerabilities grew 34% year-on-year. WannaCry (2017) exploited a vulnerability that Microsoft had patched 60 days earlier — unpatched organisations were devastated.',
+        guidance: 'Enable automatic Windows Updates for security patches. Use Windows Server Update Services (WSUS) or Intune to enforce and report patch compliance across your estate.',
+      },
+      {
+        id: 'pt2',
+        text: 'Are all applications and software — not just the OS — kept up to date?',
+        why: 'Attackers frequently target application vulnerabilities (browsers, PDF readers, Office, Java) rather than the OS. A fully-patched Windows system with an outdated browser is still vulnerable.',
+        example: 'Chrome, Firefox, Adobe Acrobat, Microsoft Office, and third-party applications all need regular updates. Browser extensions and plugins are particularly overlooked.',
+        guidance: 'Use a software management tool (Intune, PDQ Deploy, SCCM) to track and deploy application updates. Consider enabling automatic updates where supported.',
+      },
+      {
+        id: 'pt3',
+        text: 'Is end-of-life software (no longer receiving security patches) removed or isolated?',
+        why: 'End-of-life software receives no security patches — meaning every newly discovered vulnerability remains permanently unaddressed. Running Windows 7 or Server 2012 without Extended Security Updates is a CE failure.',
+        example: 'Common EOL products: Windows 7 (EOL Jan 2020), Windows 10 21H2 (EOL Jun 2023), Windows Server 2008 (EOL Jan 2020), Internet Explorer 11 (EOL Jun 2022), Office 2016 (EOL Oct 2025).',
+        guidance: 'CE compliance requires removal or network isolation of EOL systems. Isolated means no internet access and no connection to systems holding sensitive data.',
+      },
+      {
+        id: 'pt4',
+        text: 'Are firmware updates applied to network devices (routers, firewalls, switches)?',
+        why: 'Network device firmware vulnerabilities are actively targeted — a compromised firewall or router can intercept all traffic. This is frequently overlooked compared to server and desktop patching.',
+        example: 'In 2024, Cisco and Fortinet both issued emergency patches for firewall vulnerabilities actively exploited in the wild. Organisations that didn\'t patch within days were compromised.',
+        guidance: 'Subscribe to security advisories from your network device vendors. Schedule quarterly firmware reviews. Many modern firewalls (WatchGuard, Barracuda) support automatic firmware updates.',
+      },
+      {
+        id: 'pt5',
+        text: 'Do you have a documented patch management process or policy?',
+        why: 'Ad-hoc patching is unreliable. A documented process ensures patches are applied consistently, within defined timeframes, with accountability. CE+ requires this as written evidence.',
+        example: 'Your policy should include: who is responsible for patching, which systems are in scope, what timeframes apply (14 days for critical/high), and how exceptions are handled and approved.',
+        guidance: 'For CE+, the on-site assessor will ask for your patch management documentation. A simple policy document with defined responsibilities and SLAs is sufficient.',
+      },
     ],
   },
 ];
 
 const TOTAL_QUESTIONS = CE_SECTIONS.reduce((sum, s) => sum + s.questions.length, 0);
 
-// Recommendations for "No" answers
 const RECOMMENDATIONS: Record<string, string> = {
-  fw1: 'Deploy a business-grade firewall or UTM appliance (e.g. Barracuda CloudGen Firewall or WatchGuard Firebox) to protect your internet perimeter.',
-  fw2: 'Review and update your firewall ruleset to implement a default-deny posture, explicitly permitting only required inbound services.',
-  fw3: 'Establish a formal firewall rule review process — at minimum annually, ideally quarterly — with documented sign-off.',
-  fw4: 'Audit all internet-facing services and ensure each has a corresponding, restrictive firewall rule with the minimum required permissions.',
-  fw5: 'Enforce software firewall requirements on all work devices via MDM or group policy. Consider Barracuda CloudGen or WatchGuard endpoint agents.',
-  sc1: 'Implement a process to change all default credentials before device deployment. Use a password manager for secure credential storage.',
-  sc2: 'Conduct a software audit and remove or disable all applications and services not required for business operations.',
-  sc3: 'Build and maintain a live asset register covering hardware, software, and cloud services. CyberSmart Active Protect automates this.',
-  sc4: 'Apply group policy or MDM settings to disable auto-run/auto-play across all Windows and macOS devices.',
-  sc5: 'Configure screen lock via group policy (Windows) or MDM profile (macOS/iOS/Android) to activate after 10–15 minutes of inactivity.',
-  ua1: 'Audit Active Directory / Azure AD and eliminate any shared accounts. Assign individual accounts to every user.',
-  ua2: 'Implement Privileged Access Workstations (PAW) or at minimum, require admin users to have separate standard and admin accounts.',
-  ua3: 'Conduct an access rights review and revoke admin privileges from users who do not require them for their role.',
-  ua4: 'Establish a formal leaver / role-change process that includes immediate account deprovisioning as a mandatory step.',
-  ua5: 'Enable MFA on all cloud services (Microsoft 365, Google Workspace, etc.) and remote access (VPN, RDP). WatchGuard AuthPoint provides MFA for all access types.',
-  ua6: 'Enforce strong password policies via Active Directory / Azure AD. Implement a password manager and consider moving to passphrase-based authentication.',
-  ml1: 'Deploy endpoint protection on all in-scope devices. WatchGuard EPDR or Barracuda XDR provide business-grade endpoint protection.',
-  ml2: 'Configure anti-malware solutions to update automatically. Cloud-managed solutions (e.g. WatchGuard Endpoint) update continuously.',
-  ml3: 'Restrict software installation rights to administrators via group policy or MDM. Review application whitelisting options.',
-  ml4: 'Implement DNS filtering (e.g. via WatchGuard DNSWatch or Barracuda) to block access to known malicious websites.',
-  ml5: 'Deploy email gateway scanning (e.g. Barracuda Email Gateway Defense) to scan all inbound attachments and links before delivery.',
-  pt1: 'Implement automated patch management with a 14-day SLA for critical and high-severity patches. Consider a dedicated patch management tool.',
-  pt2: 'Enable automatic updates for all applications. Use software management tools to track and enforce updates across the estate.',
-  pt3: 'Audit for end-of-life software and either upgrade, replace, or network-isolate any systems that cannot be patched.',
-  pt4: 'Establish a quarterly firmware review process for all network devices. Subscribe to vendor security advisories.',
-  pt5: 'Document your patch management policy and process, including SLAs, responsibilities, and exception handling. This is a CE+ audit requirement.',
+  fw1: 'Deploy a business-grade firewall (Barracuda CloudGen Firewall or WatchGuard Firebox) to protect your internet perimeter. Broad Peak can assess, supply, and configure these for your organisation.',
+  fw2: 'Review and implement a default-deny firewall ruleset. Document every permitted inbound rule with a named business owner and review date.',
+  fw3: 'Establish a formal firewall rule review — minimum annually, ideally quarterly — with documented sign-off from a responsible manager.',
+  fw4: 'Conduct an external port scan to identify all internet-facing services and ensure each has a corresponding, appropriately restrictive firewall rule.',
+  fw5: 'Enforce software firewall requirements via MDM (Intune) or Group Policy across all work devices including BYOD.',
+  sc1: 'Implement a pre-deployment checklist that mandates changing all default credentials. Use a business password manager for secure storage.',
+  sc2: 'Conduct a software audit and remove or disable all applications, services, and features not required for business operations.',
+  sc3: 'Implement an automated asset register using CyberSmart Active Protect, Microsoft Intune, or equivalent. Manual spreadsheets quickly become out of date.',
+  sc4: 'Disable auto-run/auto-play via Group Policy (Computer Configuration > Administrative Templates > Windows Components > AutoPlay Policies).',
+  sc5: 'Configure screen lock via Group Policy or MDM to activate after 10 minutes of inactivity. Require password/PIN to unlock.',
+  ua1: 'Audit Active Directory/Azure AD for shared or generic accounts. Assign individual named accounts to every user — no exceptions.',
+  ua2: 'Implement a dual-account policy for IT administrators: a standard account for daily use and a separate admin account for privileged tasks only.',
+  ua3: 'Conduct an access rights review and revoke admin privileges from all users who do not require them. Document the justification for each admin account.',
+  ua4: 'Add IT account deprovisioning as a mandatory step in your HR offboarding process, to be completed on or before the employee\'s last day.',
+  ua5: 'Enable MFA for all Microsoft 365 users via the M365 Admin Center. Consider WatchGuard AuthPoint for organisation-wide MFA covering VPN and other systems.',
+  ua6: 'Configure minimum 12-character passwords in your Active Directory password policy. Enable Azure AD Password Protection to block common passwords.',
+  ml1: 'Deploy active endpoint protection on all in-scope devices. WatchGuard EPDR or Barracuda XDR provide business-grade endpoint detection and response.',
+  ml2: 'Configure endpoint protection to update signatures automatically. Verify update status via your endpoint management console — flag devices with definitions older than 24 hours.',
+  ml3: 'Remove local administrator rights from standard user accounts via Group Policy or Intune. Establish a formal software request and approval process.',
+  ml4: 'Implement DNS filtering (WatchGuard DNSWatch, Barracuda DNS filtering, or Cisco Umbrella) to block access to malicious websites.',
+  ml5: 'Deploy Barracuda Email Gateway Defense or upgrade to Microsoft Defender for Office 365 Plan 2 for advanced email threat protection including sandboxing.',
+  pt1: 'Enable automatic security updates and implement a patch management tool (Intune, WSUS) to enforce and report on 14-day patch compliance.',
+  pt2: 'Enable automatic updates for all applications. Use a software management tool to track and deploy third-party application updates across your estate.',
+  pt3: 'Identify and eliminate all end-of-life software. Where removal is not immediately possible, isolate systems from the network and implement compensating controls.',
+  pt4: 'Subscribe to vendor security advisories for all network devices. Schedule quarterly firmware reviews and enable automatic updates where available.',
+  pt5: 'Document a patch management policy including scope, responsibilities, timeframes (14 days for critical/high), and exception handling. This is required for CE+ certification.',
 };
 
 interface Answers { [questionId: string]: boolean | null; }
+
+function getIcon(iconName: string, color: string) {
+  const cls = `w-5 h-5`;
+  const style = { color };
+  switch (iconName) {
+    case 'wifi': return <Wifi className={cls} style={style} />;
+    case 'lock': return <Lock className={cls} style={style} />;
+    case 'users': return <Users className={cls} style={style} />;
+    case 'bug': return <Bug className={cls} style={style} />;
+    case 'refresh': return <RefreshCw className={cls} style={style} />;
+    default: return <Shield className={cls} style={style} />;
+  }
+}
 
 function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'CE+') {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, margin = 18;
   let y = 0;
 
-  // Colour palette
   const pink: [number, number, number] = [198, 87, 147];
   const blue: [number, number, number] = [68, 148, 209];
   const darkBg: [number, number, number] = [26, 10, 46];
   const lightGrey: [number, number, number] = [248, 248, 252];
   const midGrey: [number, number, number] = [120, 120, 140];
 
-  // ── Cover page ──────────────────────────────────────────────────────────────
   doc.setFillColor(...darkBg);
   doc.rect(0, 0, W, 297, 'F');
-
-  // Gradient bar
   doc.setFillColor(...pink);
   doc.rect(0, 0, W / 2, 4, 'F');
   doc.setFillColor(...blue);
@@ -150,7 +329,6 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   y += 7;
   doc.text('Assessed by: Broad Peak Cyber', margin, y);
 
-  // Score block
   const failedQuestions = Object.entries(answers).filter(([, v]) => v === false);
   const answeredCount = Object.values(answers).filter(v => v !== null).length;
   const passedCount = Object.values(answers).filter(v => v === true).length;
@@ -159,7 +337,6 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   const readinessColor: [number, number, number] = score >= 90 ? [52, 211, 153] : score >= 70 ? [251, 191, 36] : [239, 68, 68];
 
   y += 25;
-  doc.setFillColor(255, 255, 255, 0.1);
   doc.setFillColor(40, 20, 70);
   doc.roundedRect(margin, y, W - margin * 2, 35, 4, 4, 'F');
   doc.setFontSize(32);
@@ -177,7 +354,6 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   doc.setTextColor(150, 150, 170);
   doc.text(`${passedCount}/${answeredCount} controls met`, W - margin - 55, y + 30);
 
-  // Cover letter
   y += 55;
   doc.setFontSize(10);
   doc.setTextColor(160, 160, 185);
@@ -185,24 +361,22 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   const coverText = [
     `Dear ${accountName},`,
     '',
-    'Thank you for completing the Broad Peak Cyber Essentials Readiness Assessment. This report provides a',
-    `high-level analysis of your organisation\'s current posture against the five Cyber Essentials controls`,
-    'required for NCSC Cyber Essentials certification.',
+    'Thank you for completing the Broad Peak Cyber Essentials Readiness Assessment. This report',
+    `provides a high-level analysis of your organisation\'s current posture against the five Cyber`,
+    'Essentials controls required for NCSC Cyber Essentials certification.',
     '',
-    'This assessment is designed to identify areas that may require attention before undergoing formal',
-    'accreditation. The recommendations contained in this report are advisory in nature and reflect best',
-    'practice guidance from the NCSC Cyber Essentials scheme and broader cybersecurity frameworks.',
+    'This assessment is designed to identify areas that may require attention before undergoing',
+    'formal accreditation. The recommendations contained in this report are advisory in nature and',
+    'reflect best practice guidance from the NCSC Cyber Essentials scheme.',
     '',
-    'Broad Peak Cyber specialises in helping organisations of all sizes achieve and maintain Cyber Essentials',
-    'and Cyber Essentials Plus certification. We can support you through preparation, remediation, and the',
-    'certification process itself. Please contact your account manager to discuss next steps.',
+    'Broad Peak Cyber specialises in helping organisations achieve and maintain Cyber Essentials and',
+    'Cyber Essentials Plus certification. Contact your account manager to discuss next steps.',
   ];
   coverText.forEach(line => {
     doc.text(line, margin, y);
     y += 5.5;
   });
 
-  // Bottom bar
   doc.setFillColor(...pink);
   doc.rect(0, 285, W / 2, 12, 'F');
   doc.setFillColor(...blue);
@@ -212,16 +386,13 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   doc.text('Broad Peak Cyber | broadpeakcyber.com', margin, 292);
   doc.text('CONFIDENTIAL', W - margin - 28, 292);
 
-  // ── Section results pages ───────────────────────────────────────────────────
   CE_SECTIONS.forEach(section => {
     doc.addPage();
     doc.setFillColor(...lightGrey);
     doc.rect(0, 0, W, 297, 'F');
-
-    // Section header
     doc.setFillColor(...darkBg);
     doc.rect(0, 0, W, 22, 'F');
-    doc.setFillColor(...pink);
+    doc.setFillColor(198, 87, 147);
     doc.rect(0, 0, 4, 22, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
@@ -230,7 +401,7 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(180, 180, 200);
-    doc.text(section.control + ' · ' + section.description, 10, 17);
+    doc.text(section.control + ' · ' + section.tagline, 10, 17);
 
     y = 32;
     section.questions.forEach(q => {
@@ -240,14 +411,12 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
 
       if (y > 260) { doc.addPage(); doc.setFillColor(...lightGrey); doc.rect(0, 0, W, 297, 'F'); y = 20; }
 
-      // Question card
-      const cardH = failed ? 40 : 22;
+      const cardH = failed ? 42 : 22;
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(margin, y, W - margin * 2, cardH, 2, 2, 'F');
       doc.setDrawColor(230, 230, 240);
       doc.roundedRect(margin, y, W - margin * 2, cardH, 2, 2, 'S');
 
-      // Status indicator
       if (passed) { doc.setFillColor(52, 211, 153); }
       else if (failed) { doc.setFillColor(239, 68, 68); }
       else { doc.setFillColor(200, 200, 220); }
@@ -259,27 +428,24 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
       const qLines = doc.splitTextToSize(q.text, W - margin * 2 - 20);
       doc.text(qLines, margin + 7, y + 7);
 
-      // Status label
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       if (passed) { doc.setTextColor(52, 211, 153); doc.text('✓ COMPLIANT', W - margin - 28, y + 7); }
       else if (failed) { doc.setTextColor(239, 68, 68); doc.text('✗ GAP IDENTIFIED', W - margin - 32, y + 7); }
       else { doc.setTextColor(150, 150, 170); doc.text('– NOT ANSWERED', W - margin - 32, y + 7); }
 
-      // Recommendation for failed
       if (failed && RECOMMENDATIONS[q.id]) {
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...midGrey);
         const recLines = doc.splitTextToSize('↳ ' + RECOMMENDATIONS[q.id], W - margin * 2 - 14);
-        doc.text(recLines.slice(0, 2), margin + 7, y + 16);
+        doc.text(recLines.slice(0, 2), margin + 7, y + 18);
       }
 
       y += cardH + 4;
     });
   });
 
-  // ── Summary / next steps page ───────────────────────────────────────────────
   doc.addPage();
   doc.setFillColor(...darkBg);
   doc.rect(0, 0, W, 297, 'F');
@@ -291,7 +457,6 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   doc.text('Summary & Next Steps', margin, y);
 
   y += 15;
-  // Score breakdown by section
   CE_SECTIONS.forEach(section => {
     const sectionQs = section.questions.map(q => answers[q.id]);
     const passed = sectionQs.filter(a => a === true).length;
@@ -303,8 +468,6 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
 
     doc.setFillColor(40, 20, 70);
     doc.roundedRect(margin, y, W - margin * 2, 16, 2, 2, 'F');
-
-    // Bar
     const barW = ((W - margin * 2 - 70) * pct) / 100;
     doc.setFillColor(50, 30, 80);
     doc.roundedRect(margin + 6, y + 9, W - margin * 2 - 70, 4, 1, 1, 'F');
@@ -312,21 +475,15 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
       doc.setFillColor(...barColor);
       doc.roundedRect(margin + 6, y + 9, barW, 4, 1, 1, 'F');
     }
-
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
     doc.text(section.title, margin + 6, y + 7);
     doc.setTextColor(...barColor);
     doc.text(`${passed}/${total}`, W - margin - 18, y + 7);
-    doc.setFontSize(7.5);
-    doc.setTextColor(140, 140, 165);
-    doc.text(section.control, margin + 6 + doc.getTextWidth(section.title) + 4, y + 7);
-
     y += 20;
   });
 
-  // Gaps summary
   if (failedQuestions.length > 0) {
     y += 5;
     doc.setFontSize(13);
@@ -346,13 +503,6 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(52, 211, 153);
     doc.text('No gaps identified — Ready for formal certification', margin, y);
-    y += 8;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(200, 200, 220);
-    doc.text('Your responses indicate you are well-positioned for Cyber Essentials certification.', margin, y);
-    y += 5;
-    doc.text('Contact your Broad Peak account manager to arrange formal accreditation.', margin, y);
   }
 
   y += 20;
@@ -368,7 +518,6 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   doc.text('Email: info@broadpeakcyber.com  |  Web: broadpeakcyber.com', margin + 8, y + 18);
   doc.text('CyberSmart Partner — Cyber Essentials & Cyber Essentials Plus Certification', margin + 8, y + 26);
 
-  // Bottom bar
   doc.setFillColor(...pink);
   doc.rect(0, 285, W / 2, 12, 'F');
   doc.setFillColor(...blue);
@@ -381,14 +530,7 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
   doc.save(`BroadPeak-CE-Readiness-${accountName.replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-// ── Main Component ───────────────────────────────────────────────────────────
-const CE_SECTION_COLORS: Record<string, string> = {
-  firewall: '#C65793',
-  secure_config: '#7b5ea7',
-  user_access: '#4494D1',
-  malware: '#059669',
-  patching: '#f59e0b',
-};
+interface Answers { [questionId: string]: boolean | null; }
 
 export default function CEReadiness({ accountName }: { accountName: string }) {
   const [answers, setAnswers] = useState<Answers>({});
@@ -397,11 +539,9 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
   const [showResults, setShowResults] = useState(false);
   const [ceLevel, setCeLevel] = useState<'CE' | 'CE+'>('CE');
   const [started, setStarted] = useState(false);
+  const [showExample, setShowExample] = useState(false);
 
-  const allQuestions = CE_SECTIONS.flatMap(s => s.questions.map(q => ({ ...q, sectionId: s.id, sectionTitle: s.title })));
-  const flatIndex = CE_SECTIONS.slice(0, currentSection).reduce((sum, s) => sum + s.questions.length, 0) + currentQ;
   const progress = Math.round((Object.keys(answers).length / TOTAL_QUESTIONS) * 100);
-
   const section = CE_SECTIONS[currentSection];
   const question = section?.questions[currentQ];
 
@@ -409,8 +549,7 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
     const qId = CE_SECTIONS[currentSection].questions[currentQ].id;
     const newAnswers = { ...answers, [qId]: val };
     setAnswers(newAnswers);
-
-    // Advance
+    setShowExample(false);
     const nextQ = currentQ + 1;
     if (nextQ < CE_SECTIONS[currentSection].questions.length) {
       setCurrentQ(nextQ);
@@ -431,55 +570,88 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
     setCurrentQ(0);
     setShowResults(false);
     setStarted(false);
+    setShowExample(false);
   }
 
   const failedIds = Object.entries(answers).filter(([, v]) => v === false).map(([k]) => k);
   const passedCount = Object.values(answers).filter(v => v === true).length;
   const score = TOTAL_QUESTIONS > 0 ? Math.round((passedCount / TOTAL_QUESTIONS) * 100) : 0;
 
+  // ── Landing ──────────────────────────────────────────────────────────────────
   if (!started) {
     return (
-      <div className="space-y-6">
-        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 border-l-4 border-l-[#C65793]">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-[#4494D112] rounded-xl">
-              <Shield className="w-6 h-6 text-[#1f2937]" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-[#1f2937] mb-2">Cyber Essentials Readiness Assessment</h2>
-              <p className="text-[#6b7280] text-sm leading-relaxed mb-4">
-                This assessment covers the five NCSC Cyber Essentials controls. Answer yes/no to {TOTAL_QUESTIONS} questions to identify gaps before formal certification. A downloadable PDF report with recommendations is generated at the end.
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-                {CE_SECTIONS.map(s => (
-                  <div key={s.id} className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-3 text-center">
-                    <div className="text-xs text-[#6b7280] mb-1">{s.control}</div>
-                    <div className="text-xs font-semibold text-[#1f2937]">{s.title}</div>
-                  </div>
-                ))}
+      <div className="space-y-5">
+        {/* Hero */}
+        <div className="rounded-2xl overflow-hidden border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+          <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #C65793, #7b5ea7, #4494D1)' }} />
+          <div className="bg-white p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
+                <Shield className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-sm text-[#6b7280]">Assessment level:</span>
-                <div className="flex gap-2">
-                  {(['CE', 'CE+'] as const).map(l => (
-                    <button key={l} onClick={() => setCeLevel(l)}
-                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${ceLevel === l ? 'gradient-cta text-white' : 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'}`}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-[#1f2937]">Cyber Essentials Readiness Assessment</h2>
+                <p className="text-[#6b7280] text-sm leading-relaxed mt-1">
+                  Cyber Essentials is the UK Government-backed certification scheme that helps organisations guard against the most common cyber attacks. This assessment covers all five controls and generates a personalised PDF report.
+                </p>
               </div>
-              <button onClick={() => setStarted(true)}
-                className="flex items-center gap-2 px-6 py-3 gradient-cta text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                Start Assessment <ChevronRight className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
+
+        {/* 5 Control Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          {CE_SECTIONS.map((s, i) => (
+            <div key={s.id} className="bg-white border border-[#e5e7eb] rounded-xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+              <div className="w-8 h-8 rounded-lg mb-3 flex items-center justify-center" style={{ background: s.color + '18' }}>
+                {getIcon(s.icon, s.color)}
+              </div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: s.color }}>{s.control}</div>
+              <div className="text-sm font-bold text-[#1f2937] mb-1">{s.title}</div>
+              <div className="text-xs text-[#9ca3af]">{s.questions.length} questions</div>
+            </div>
+          ))}
+        </div>
+
+        {/* What to expect */}
+        <div className="bg-[#f0f6ff] border border-[#4494D130] rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <Info className="w-4 h-4 text-[#4494D1] flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-semibold text-[#1f2937] mb-1">What to expect</div>
+              <div className="text-xs text-[#6b7280] leading-relaxed">
+                {TOTAL_QUESTIONS} yes/no questions across 5 controls. Each question includes a plain-English explanation of <strong>why it matters</strong> and a <strong>real-world example</strong>. Takes approximately 5–7 minutes. A branded PDF gap analysis report with specific recommendations is produced at the end.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CE / CE+ selector */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+          <div className="text-sm font-semibold text-[#1f2937] mb-3">Which certification are you aiming for?</div>
+          <div className="grid grid-cols-2 gap-3">
+            {(['CE', 'CE+'] as const).map(l => (
+              <button key={l} onClick={() => setCeLevel(l)}
+                className={`p-4 rounded-xl border-2 text-left transition-all ${ceLevel === l ? 'border-[#C65793] bg-[#C6579308]' : 'border-[#e5e7eb] hover:border-[#d1d5db]'}`}>
+                <div className={`text-sm font-bold mb-1 ${ceLevel === l ? 'text-[#C65793]' : 'text-[#1f2937]'}`}>{l}</div>
+                <div className="text-xs text-[#9ca3af]">
+                  {l === 'CE' ? 'Self-assessment questionnaire submitted to a certification body. Online only.' : 'Includes CE, plus an on-site technical audit by an accredited assessor.'}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={() => setStarted(true)}
+          className="w-full flex items-center justify-center gap-2 py-3.5 text-white rounded-xl font-semibold transition-opacity hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
+          Begin Assessment <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     );
   }
 
+  // ── Results ──────────────────────────────────────────────────────────────────
   if (showResults) {
     const sectionScores = CE_SECTIONS.map(s => {
       const passed = s.questions.filter(q => answers[q.id] === true).length;
@@ -487,80 +659,83 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
     });
 
     return (
-      <div className="space-y-6">
-        {/* Score header */}
-        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 border-l-4 border-l-[#4494D1]">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-[#1f2937]">Readiness Assessment Complete</h2>
-              <p className="text-[#6b7280] text-sm mt-1">{ceLevel} Gap Analysis · {accountName}</p>
-            </div>
-            <div className="text-right">
-              <div className={`text-4xl font-bold ${score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>{score}%</div>
-              <div className="text-sm text-[#6b7280]">{passedCount}/{TOTAL_QUESTIONS} controls met</div>
-            </div>
-          </div>
-
-          {/* Section breakdown */}
-          <div className="grid grid-cols-5 gap-2 mb-4">
-            {sectionScores.map(s => (
-              <div key={s.id} className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-3">
-                <div className="text-xs text-[#9ca3af] mb-1">{s.control}</div>
-                <div className="text-xs font-medium text-[#1f2937] mb-2">{s.title}</div>
-                <div className="text-sm font-bold" style={{ color: s.pct === 100 ? '#34d399' : s.pct >= 60 ? '#fbbf24' : '#f87171' }}>{s.pct}%</div>
-                <div className="h-1 bg-[#f3f4f6] rounded-full mt-1">
-                  <div className="h-1 rounded-full transition-all" style={{ width: `${s.pct}%`, backgroundColor: s.pct === 100 ? '#34d399' : s.pct >= 60 ? '#fbbf24' : '#f87171' }} />
-                </div>
+      <div className="space-y-5">
+        {/* Score */}
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+          <div className="h-1" style={{ background: 'linear-gradient(90deg, #C65793, #4494D1)' }} />
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-[#1f2937]">Assessment Complete</h2>
+                <p className="text-[#9ca3af] text-sm">{ceLevel} Gap Analysis · {accountName}</p>
               </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => generateCEPDF(answers, accountName, ceLevel)}
-              className="flex items-center gap-2 px-5 py-2.5 gradient-cta text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
-              <Download className="w-4 h-4" /> Download PDF Report
-            </button>
-            <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-[#f3f4f6] text-[#6b7280] rounded-xl text-sm hover:bg-[#e5e7eb] transition-colors">
-              <RotateCcw className="w-4 h-4" /> Restart
-            </button>
+              <div className="text-right">
+                <div className={`text-4xl font-bold ${score >= 90 ? 'text-emerald-500' : score >= 70 ? 'text-amber-500' : 'text-red-500'}`}>{score}%</div>
+                <div className="text-xs text-[#9ca3af]">{passedCount}/{TOTAL_QUESTIONS} controls met</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-5 gap-2 mb-5">
+              {sectionScores.map(s => (
+                <div key={s.id} className="rounded-xl p-3 border" style={{ background: s.color + '0a', borderColor: s.color + '30' }}>
+                  <div className="text-[10px] font-semibold mb-1" style={{ color: s.color }}>{s.control}</div>
+                  <div className="text-xs font-medium text-[#1f2937] mb-2 leading-tight">{s.title}</div>
+                  <div className="text-sm font-bold" style={{ color: s.pct === 100 ? '#10b981' : s.pct >= 60 ? '#f59e0b' : '#ef4444' }}>{s.pct}%</div>
+                  <div className="h-1 bg-[#f3f4f6] rounded-full mt-1.5">
+                    <div className="h-1 rounded-full" style={{ width: `${s.pct}%`, backgroundColor: s.pct === 100 ? '#10b981' : s.pct >= 60 ? '#f59e0b' : '#ef4444' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => generateCEPDF(answers, accountName, ceLevel)}
+                className="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
+                <Download className="w-4 h-4" /> Download PDF Report
+              </button>
+              <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-[#f3f4f6] text-[#6b7280] rounded-xl text-sm hover:bg-[#e5e7eb] transition-colors">
+                <RotateCcw className="w-4 h-4" /> Restart
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Gaps detail */}
-        {failedIds.length > 0 && (
-          <div>
-            <h3 className="text-base font-bold text-[#1f2937] mb-3 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" /> {failedIds.length} Gap{failedIds.length !== 1 ? 's' : ''} Identified
+        {failedIds.length > 0 ? (
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-[#1f2937] flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" /> {failedIds.length} Gap{failedIds.length !== 1 ? 's' : ''} Identified
             </h3>
-            <div className="space-y-3">
-              {CE_SECTIONS.map(section => {
-                const sectionFails = section.questions.filter(q => answers[q.id] === false);
-                if (sectionFails.length === 0) return null;
-                return (
-                  <div key={section.id} className="bg-white border border-red-200 shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-xl p-4 border-l-4 border-l-red-500">
-                    <div className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">{section.title} — {section.control}</div>
-                    {sectionFails.map(q => (
-                      <div key={q.id} className="mb-3 last:mb-0">
-                        <div className="flex items-start gap-2 mb-1">
+            {CE_SECTIONS.map(section => {
+              const fails = section.questions.filter(q => answers[q.id] === false);
+              if (fails.length === 0) return null;
+              return (
+                <div key={section.id} className="bg-white border border-[#fca5a5] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                  <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: section.color + '10', borderBottom: `1px solid ${section.color}30` }}>
+                    {getIcon(section.icon, section.color)}
+                    <span className="text-xs font-bold" style={{ color: section.color }}>{section.control} — {section.title}</span>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {fails.map(q => (
+                      <div key={q.id}>
+                        <div className="flex items-start gap-2 mb-2">
                           <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-[#1f2937]">{q.text}</span>
+                          <span className="text-sm font-medium text-[#1f2937]">{q.text}</span>
                         </div>
-                        <div className="ml-6 text-xs text-[#6b7280] leading-relaxed">{RECOMMENDATIONS[q.id]}</div>
+                        <div className="ml-6 p-3 bg-[#fff7ed] border border-[#fed7aa] rounded-lg text-xs text-[#92400e] leading-relaxed">
+                          <strong>Recommendation:</strong> {RECOMMENDATIONS[q.id]}
+                        </div>
                       </div>
                     ))}
                   </div>
-                );
-              }).filter(Boolean)}
-            </div>
+                </div>
+              );
+            }).filter(Boolean)}
           </div>
-        )}
-
-        {failedIds.length === 0 && (
-          <div className="bg-[#10b98112] border border-[#10b98130] rounded-xl p-5 flex items-center gap-3">
-            <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+        ) : (
+          <div className="bg-[#f0fdf4] border border-[#86efac] rounded-xl p-5 flex items-center gap-3">
+            <CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0" />
             <div>
-              <div className="text-sm font-semibold text-emerald-300">No gaps identified</div>
-              <div className="text-xs text-[#6b7280] mt-1">Your responses indicate you are well-positioned for {ceLevel} certification. Contact your account manager to arrange formal accreditation.</div>
+              <div className="text-sm font-bold text-emerald-700">No gaps identified</div>
+              <div className="text-xs text-emerald-600 mt-1">Your responses indicate you are well-positioned for {ceLevel} certification. Contact your account manager to arrange formal accreditation.</div>
             </div>
           </div>
         )}
@@ -568,58 +743,107 @@ export default function CEReadiness({ accountName }: { accountName: string }) {
     );
   }
 
-  // Question view
+  // ── Question View ──────────────────────────────────────────────────────────
+  const flatQ = CE_SECTIONS.slice(0, currentSection).reduce((s, sec) => s + sec.questions.length, 0) + currentQ;
+
   return (
     <div className="space-y-4">
-      {/* Progress */}
+      {/* Progress bar */}
       <div>
-        <div className="flex justify-between text-xs text-[#6b7280] mb-2">
-          <span>{section.title} · Question {currentQ + 1} of {section.questions.length}</span>
-          <span>{progress}% complete · {TOTAL_QUESTIONS - Object.keys(answers).length} remaining</span>
+        <div className="flex justify-between text-xs text-[#9ca3af] mb-1.5">
+          <span>Question {flatQ + 1} of {TOTAL_QUESTIONS}</span>
+          <span>{progress}% complete</span>
         </div>
         <div className="h-1.5 bg-[#f3f4f6] rounded-full">
-          <div className="h-1.5 rounded-full gradient-cta transition-all" style={{ width: `${progress}%` }} />
+          <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #C65793, #4494D1)' }} />
         </div>
       </div>
 
-      {/* Section tabs */}
+      {/* Section pills */}
       <div className="flex gap-1.5">
         {CE_SECTIONS.map((s, i) => (
-          <div key={s.id} className={`flex-1 h-1 rounded-full transition-all ${i < currentSection ? 'bg-emerald-500' : i === currentSection ? 'gradient-cta' : 'bg-[#f3f4f6]'}`} />
+          <div key={s.id} className="flex-1 h-1 rounded-full transition-all duration-300"
+            style={{ background: i < currentSection ? '#10b981' : i === currentSection ? s.color : '#f3f4f6' }} />
         ))}
       </div>
 
-      {/* Question card */}
-      <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-6 border-l-4" style={{ borderLeftColor: CE_SECTION_COLORS[section.id] }}>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: CE_SECTION_COLORS[section.id] }}>{section.control} — {section.title}</span>
+      {/* Section context header */}
+      <div className="bg-white border border-[#e5e7eb] rounded-xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: section.color + '18' }}>
+            {getIcon(section.icon, section.color)}
+          </div>
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: section.color }}>{section.control} — {section.title}</div>
+            <div className="text-xs font-semibold text-[#1f2937]">{section.tagline}</div>
+          </div>
+          <div className="ml-auto text-xs text-[#9ca3af]">{currentQ + 1}/{section.questions.length}</div>
         </div>
-        <h3 className="text-lg font-semibold text-[#1f2937] mb-3 leading-snug">{question.text}</h3>
-        {question.guidance && (
-          <div className="flex items-start gap-2 p-3 bg-[#4494D112] border border-[#4494D130] rounded-xl mb-5">
-            <Info className="w-4 h-4 text-blue-300 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-[#6b7280] leading-relaxed">{question.guidance}</p>
+        <p className="text-xs text-[#6b7280] leading-relaxed">{section.intro}</p>
+      </div>
+
+      {/* Question card */}
+      <div className="bg-white border-2 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all" style={{ borderColor: section.color + '60' }}>
+        <h3 className="text-base font-bold text-[#1f2937] mb-4 leading-snug">{question.text}</h3>
+
+        {/* Why it matters */}
+        <div className="mb-3 p-3 rounded-xl border" style={{ background: section.color + '08', borderColor: section.color + '30' }}>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: section.color }} />
+            <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: section.color }}>Why this matters</span>
+          </div>
+          <p className="text-xs text-[#374151] leading-relaxed">{question.why}</p>
+        </div>
+
+        {/* Example toggle */}
+        <button onClick={() => setShowExample(v => !v)}
+          className="flex items-center gap-1.5 text-xs text-[#9ca3af] hover:text-[#6b7280] mb-4 transition-colors">
+          <HelpCircle className="w-3.5 h-3.5" />
+          {showExample ? 'Hide example' : 'Show a real-world example'}
+        </button>
+
+        {showExample && (
+          <div className="mb-4 p-3 bg-[#f0f6ff] border border-[#4494D130] rounded-xl">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Info className="w-3.5 h-3.5 text-[#4494D1]" />
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4494D1]">Example</span>
+            </div>
+            <p className="text-xs text-[#374151] leading-relaxed">{question.example}</p>
           </div>
         )}
-        <div className="flex gap-3">
+
+        {/* Guidance */}
+        <div className="mb-5 p-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-xl">
+          <div className="flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-[#9ca3af] flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-[#6b7280] leading-relaxed">{question.guidance}</p>
+          </div>
+        </div>
+
+        {/* Answer buttons */}
+        <div className="grid grid-cols-2 gap-3">
           <button onClick={() => answer(true)}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#f0fdf4] border-2 border-[#10b981] text-[#059669] rounded-xl font-semibold text-sm hover:bg-[#dcfce7] transition-all">
-            <CheckCircle className="w-5 h-5" /> Yes — In place
+            className="flex items-center justify-center gap-2 py-4 bg-[#f0fdf4] border-2 border-[#10b981] text-[#059669] rounded-xl font-bold text-sm hover:bg-[#dcfce7] transition-all">
+            <CheckCircle className="w-5 h-5" />
+            <span>Yes — In place</span>
           </button>
           <button onClick={() => answer(false)}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#fef2f2] border-2 border-[#ef4444] text-[#dc2626] rounded-xl font-semibold text-sm hover:bg-[#fee2e2] transition-all">
-            <XCircle className="w-5 h-5" /> No — Not in place
+            className="flex items-center justify-center gap-2 py-4 bg-[#fef2f2] border-2 border-[#ef4444] text-[#dc2626] rounded-xl font-bold text-sm hover:bg-[#fee2e2] transition-all">
+            <XCircle className="w-5 h-5" />
+            <span>No — Not in place</span>
           </button>
         </div>
       </div>
 
-      {/* Previous answers in section */}
+      {/* Answered trail */}
       {currentQ > 0 && (
-        <div className="space-y-2">
-          <div className="text-xs text-[#9ca3af] uppercase tracking-wide">Previous answers in this section</div>
+        <div className="space-y-1.5">
+          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wide">Already answered in this section</div>
           {section.questions.slice(0, currentQ).map(q => (
-            <div key={q.id} className="flex items-center gap-3 p-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg">
-              {answers[q.id] === true ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" /> : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+            <div key={q.id} className="flex items-center gap-2.5 p-2.5 bg-white border border-[#e5e7eb] rounded-lg">
+              {answers[q.id] === true
+                ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
               <span className="text-xs text-[#6b7280] truncate">{q.text}</span>
             </div>
           ))}
