@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch, getToken } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, CheckCircle, UserRound, Ticket, Plus } from 'lucide-react';
+import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, CheckCircle, UserRound, Ticket, Plus, Video } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CEReadiness from './CEReadiness';
@@ -10,7 +10,7 @@ import CyberRiskScore from './CyberRiskScore';
 interface ProductEntry { name: string; vendor: string; startedAt?: string | null; expiresAt?: string | null; }
 interface RelevantProduct { id: string; name: string; vendor: string; categories: string[]; }
 interface CategoryEntry { category: string; status: 'active' | 'expired' | 'not_owned'; products: ProductEntry[]; expiresAt: string | null; startedAt?: string | null; }
-interface AccountOwner { name: string; email: string; phone?: string; photo?: string; calendly?: string; }
+interface AccountOwner { name: string; email: string; phone?: string; photo?: string; calendly?: string; welcome_video?: string; }
 interface CustomerData { accountName: string; domain: string; grid: CategoryEntry[]; accountOwner?: AccountOwner; }
 interface Message { role: 'user' | 'assistant'; content: string; relevantCategories?: string[]; relevantProducts?: RelevantProduct[]; }
 interface ResearchDoc { id: string; title: string; filename: string; url: string; uploadedAt: string; }
@@ -982,7 +982,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
       <div className="space-y-6">
 
       {/* ── AI Category Picker + Contact card ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Left: category tile picker */}
         <div className="lg:col-span-2 gradient-bg rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
           <p className="text-white/90 text-sm font-medium">Select a security category to get technical support</p>
@@ -1011,10 +1011,10 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
           </div>
         </div>
 
-        {/* Right: Contact Our Team card */}
-        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
-          <div className="h-1" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
-          <div className="p-5 flex flex-col gap-4">
+        {/* Right: Contact Our Team card — stretches to match category grid height */}
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden flex flex-col">
+          <div className="h-1 flex-shrink-0" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
+          <div className="p-5 flex flex-col gap-4 flex-1">
             <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">Contact Our Team</h3>
             {accountOwner ? (
               <>
@@ -1058,8 +1058,23 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                     </a>
                   )}
                 </div>
+                {/* Welcome video — shown if uploaded by admin, otherwise placeholder */}
+                {accountOwner.welcome_video ? (
+                  <div className="rounded-xl overflow-hidden border border-[#e5e7eb] bg-black mt-1">
+                    <video src={accountOwner.welcome_video} controls className="w-full max-h-40 object-cover" />
+                  </div>
+                ) : (
+                  <div className="mt-1 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e5e7eb] bg-[#f9fafb] py-5 text-center">
+                    <div className="w-10 h-10 rounded-full bg-[#C6579312] flex items-center justify-center">
+                      <Video className="w-5 h-5 text-[#C65793]" />
+                    </div>
+                    <p className="text-xs font-medium text-[#6b7280]">Welcome video</p>
+                    <p className="text-[11px] text-[#9ca3af] leading-tight px-2">Your account manager can add a personal welcome video via the admin panel</p>
+                  </div>
+                )}
+
                 <a href={`mailto:${accountOwner.email}?subject=Technical Support Request — ${accountName}`}
-                  className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                  className="mt-auto flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                   style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
                   <Mail className="w-4 h-4" /> Email for Support
                 </a>
@@ -1077,8 +1092,8 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
           </div>
         </div>
 
-      {/* ── Support Tickets Section ─────────────────────────────────────── */}
-      <div className="bg-white border border-[#e5e7eb] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] overflow-hidden">
+      {/* ── Support Tickets Section — full width, spans all 3 cols ───────── */}
+      <div className="lg:col-span-3 bg-white border border-[#e5e7eb] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5e7eb]">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-[#4494D112] flex items-center justify-center">

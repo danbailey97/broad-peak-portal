@@ -241,6 +241,7 @@ router.get('/api/customer/:domain', async (req, res) => {
           phone: amRow.phone || '',
           photo: amRow.photo_path ? `/uploads/${path.basename(amRow.photo_path)}` : '',
           calendly: amRow.calendly || '',
+          welcome_video: amRow.welcome_video_path ? `/uploads/${path.basename(amRow.welcome_video_path)}` : null,
         };
       }
     }
