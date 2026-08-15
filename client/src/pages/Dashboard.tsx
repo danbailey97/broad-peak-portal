@@ -804,7 +804,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [initDone, setInitDone] = useState(false);
-  const [ticketState, setTicketState] = useState<'idle' | 'submitting' | 'done-happy' | 'done-human'>('idle');
+  const [ticketState, setTicketState] = useState<'idle' | 'submitting' | 'human-form' | 'done-happy' | 'done-human'>('idle');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Freshdesk tickets
@@ -852,24 +852,54 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     finally { setSubmittingNew(false); }
   }
 
-  async function createTicket(resolved: boolean, question: string, answer: string) {
+  // Inline ticket form state for "Speak to a human" flow
+  const [humanTicketSubject, setHumanTicketSubject] = useState('');
+  const [humanTicketDesc, setHumanTicketDesc] = useState('');
+  const [humanTicketPriority, setHumanTicketPriority] = useState(2);
+  const [humanTicketSubmitting, setHumanTicketSubmitting] = useState(false);
+
+  async function handleHappy(question: string, answer: string) {
     setTicketState('submitting');
     try {
-      await fetch('/api/support-ticket', {
+      await apiFetch('/api/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subject: `[${selectedVendor}] ${question.slice(0, 80)}`,
-          description: `<b>Customer:</b> ${accountName}<br/><b>Category:</b> ${selectedCat}<br/><b>Vendor:</b> ${selectedVendor}<br/><br/><b>Question:</b><br/>${question}<br/><br/><b>AI Response:</b><br/>${answer}<br/><br/><b>Outcome:</b> ${resolved ? 'Customer satisfied — auto-closed' : 'Customer requested human support'}`,
-          accountName,
+          subject: `[Resolved] [${selectedVendor}] ${question.slice(0, 80)}`,
+          description: `Customer satisfied with AI response.\n\nQuestion: ${question}\n\nAI Answer: ${answer}`,
+          priority: 1,
+          type: 'Question',
           domain,
-          resolved,
+          customerName: accountName,
         }),
       });
-      setTicketState(resolved ? 'done-happy' : 'done-human');
-    } catch {
-      setTicketState(resolved ? 'done-happy' : 'done-human');
-    }
+    } catch { /* still show done */ }
+    setTicketState('done-happy');
+  }
+
+  async function submitHumanTicket(question: string, answer: string) {
+    if (!humanTicketSubject.trim()) return;
+    setHumanTicketSubmitting(true);
+    try {
+      const r = await apiFetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: humanTicketSubject || `[${selectedVendor}] ${question.slice(0, 80)}`,
+          description: `${humanTicketDesc}\n\n---\nOriginal question: ${question}\nAI response: ${answer}`,
+          priority: humanTicketPriority,
+          type: 'Problem',
+          domain,
+          customerName: accountName,
+        }),
+      });
+      const d = await r.json();
+      if (d.ok && d.ticket) {
+        setTickets(prev => [d.ticket, ...prev]);
+      }
+      setTicketState('done-human');
+    } catch { setTicketState('done-human'); }
+    finally { setHumanTicketSubmitting(false); }
   }
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -900,7 +930,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     setLoading(true);
     const assistantIdx = { current: -1 };
     try {
-      const resp = await fetch('/api/support-chat', {
+      const resp = await apiFetch('/api/support-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, vendor: selectedVendor, domain }),
@@ -1257,20 +1287,57 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                     </div>
                     {/* Satisfaction buttons — only on last assistant message when not loading and has content */}
                     {isLast && !loading && msg.content.length > 40 && i > 0 && (
-                      <div className="border-t border-[#f3f4f6] px-4 py-3">
+                      <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
                         {ticketState === 'idle' && (
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-[#9ca3af] mr-1">Was this helpful?</span>
                             <button
-                              onClick={() => createTicket(true, userQ, msg.content)}
+                              onClick={() => handleHappy(userQ, msg.content)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f0fdf4] border border-[#86efac] text-[#166534] hover:bg-[#dcfce7] transition-colors">
                               <ThumbsUp className="w-3.5 h-3.5" /> Happy with this
                             </button>
                             <button
-                              onClick={() => createTicket(false, userQ, msg.content)}
+                              onClick={() => { setTicketState('human-form'); setHumanTicketSubject(`[${selectedVendor}] ${userQ.slice(0, 80)}`); setHumanTicketDesc(''); }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fff7ed] border border-[#fed7aa] text-[#9a3412] hover:bg-[#ffedd5] transition-colors">
                               <UserRound className="w-3.5 h-3.5" /> Speak to a human
                             </button>
+                          </div>
+                        )}
+                        {ticketState === 'human-form' && (
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-[#1f2937]">Log a support ticket — our team will be in touch</p>
+                            <input
+                              value={humanTicketSubject}
+                              onChange={e => setHumanTicketSubject(e.target.value)}
+                              placeholder="Subject"
+                              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-1.5 text-xs text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1]"
+                            />
+                            <textarea
+                              value={humanTicketDesc}
+                              onChange={e => setHumanTicketDesc(e.target.value)}
+                              placeholder="Describe your issue in more detail (optional)"
+                              rows={3}
+                              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-1.5 text-xs text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1] resize-none"
+                            />
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={humanTicketPriority}
+                                onChange={e => setHumanTicketPriority(Number(e.target.value))}
+                                className="border border-[#e5e7eb] rounded-lg px-2 py-1.5 text-xs text-[#1f2937] focus:outline-none focus:border-[#4494D1]">
+                                <option value={1}>Low priority</option>
+                                <option value={2}>Medium priority</option>
+                                <option value={3}>High priority</option>
+                                <option value={4}>Urgent</option>
+                              </select>
+                              <button
+                                onClick={() => submitHumanTicket(userQ, msg.content)}
+                                disabled={humanTicketSubmitting || !humanTicketSubject.trim()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium gradient-cta text-white disabled:opacity-40">
+                                {humanTicketSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
+                                Submit ticket
+                              </button>
+                              <button onClick={() => setTicketState('idle')} className="text-xs text-[#9ca3af] hover:text-[#1f2937] px-2">Cancel</button>
+                            </div>
                           </div>
                         )}
                         {ticketState === 'submitting' && (
@@ -1287,7 +1354,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                         {ticketState === 'done-human' && (
                           <div className="flex items-center gap-2 text-xs text-[#9a3412] font-medium">
                             <Ticket className="w-4 h-4 text-[#f97316]" />
-                            Support ticket raised — a member of our team will be in touch shortly.
+                            Support ticket raised — your account manager will be in touch shortly.
                           </div>
                         )}
                       </div>
