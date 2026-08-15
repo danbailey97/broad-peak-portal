@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch, getToken } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, UserRound, Ticket } from 'lucide-react';
+import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, CheckCircle, UserRound, Ticket, Plus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CEReadiness from './CEReadiness';
@@ -777,6 +777,26 @@ function MarkdownContent({ content }: { content: string }) {
   );
 }
 
+interface FdTicket {
+  id: number; subject: string; status: string; statusCode: number;
+  priority: string; priorityCode: number; createdAt: string; updatedAt: string;
+  requesterName: string; requesterEmail: string; type: string | null; tags: string[];
+}
+
+function TicketStatusBadge({ status, code }: { status: string; code: number }) {
+  const color = code === 1 ? 'bg-blue-100 text-blue-700'
+    : code === 2 ? 'bg-amber-100 text-amber-700'
+    : code === 3 ? 'bg-emerald-100 text-emerald-700'
+    : code === 4 ? 'bg-gray-100 text-gray-500'
+    : 'bg-purple-100 text-purple-700';
+  return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${color}`}>{status}</span>;
+}
+
+function TicketPriorityDot({ code }: { code: number }) {
+  const color = code === 4 ? 'bg-red-500' : code === 3 ? 'bg-orange-400' : code === 2 ? 'bg-amber-400' : 'bg-gray-300';
+  return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} />;
+}
+
 function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: string; accountName: string; accountOwner?: AccountOwner }) {
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
@@ -786,6 +806,51 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
   const [initDone, setInitDone] = useState(false);
   const [ticketState, setTicketState] = useState<'idle' | 'submitting' | 'done-happy' | 'done-human'>('idle');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Freshdesk tickets
+  const [tickets, setTickets] = useState<FdTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsError, setTicketsError] = useState('');
+  // New ticket form
+  const [showNewTicket, setShowNewTicket] = useState(false);
+  const [newSubject, setNewSubject] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newPriority, setNewPriority] = useState(2);
+  const [newType, setNewType] = useState('');
+  const [submittingNew, setSubmittingNew] = useState(false);
+  const [newTicketDone, setNewTicketDone] = useState<FdTicket | null>(null);
+
+  useEffect(() => {
+    if (domain) {
+      setTicketsLoading(true);
+      apiFetch(`/api/tickets?domain=${encodeURIComponent(domain)}`)
+        .then(r => r.json())
+        .then(d => { if (d.ok) setTickets(d.tickets || []); else setTicketsError(d.error || 'Failed'); })
+        .catch(() => setTicketsError('Failed to load tickets'))
+        .finally(() => setTicketsLoading(false));
+    }
+  }, [domain]);
+
+  async function submitNewTicket() {
+    if (!newSubject.trim() || !newDescription.trim()) return;
+    setSubmittingNew(true);
+    try {
+      const r = await apiFetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: newSubject, description: newDescription, priority: newPriority, type: newType || null, domain, customerName: accountName }),
+      });
+      const d = await r.json();
+      if (d.ok && d.ticket) {
+        setTickets(prev => [d.ticket, ...prev]);
+        setNewTicketDone(d.ticket);
+        setNewSubject(''); setNewDescription(''); setNewPriority(2); setNewType('');
+      } else {
+        alert(d.error || 'Failed to submit ticket');
+      }
+    } catch { alert('Failed to submit ticket'); }
+    finally { setSubmittingNew(false); }
+  }
 
   async function createTicket(resolved: boolean, question: string, answer: string) {
     setTicketState('submitting');
@@ -884,6 +949,146 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
 
   if (!selectedCat) {
     return (
+      <div className="space-y-6">
+
+      {/* ── Support Tickets Section ─────────────────────────────────────── */}
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5e7eb]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[#4494D112] flex items-center justify-center">
+              <Ticket className="w-4 h-4 text-[#4494D1]" />
+            </div>
+            <h3 className="font-semibold text-[#1f2937] text-sm">Support Tickets</h3>
+            {tickets.length > 0 && (
+              <span className="text-xs bg-[#f3f4f6] text-[#6b7280] px-2 py-0.5 rounded-full">{tickets.length}</span>
+            )}
+          </div>
+          <button
+            onClick={() => { setShowNewTicket(v => !v); setNewTicketDone(null); }}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white hover:opacity-90 transition-opacity"
+            style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}
+            data-testid="button-new-ticket"
+          >
+            <Plus className="w-3.5 h-3.5" /> Log a Ticket
+          </button>
+        </div>
+
+        {/* New Ticket Form */}
+        {showNewTicket && (
+          <div className="px-5 py-4 border-b border-[#e5e7eb] bg-[#fafafa] space-y-3">
+            {newTicketDone ? (
+              <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <div>
+                  <div className="text-sm font-medium text-emerald-800">Ticket #{newTicketDone.id} logged successfully</div>
+                  <div className="text-xs text-emerald-600">{newTicketDone.subject}</div>
+                </div>
+                <button onClick={() => { setNewTicketDone(null); setShowNewTicket(false); }} className="ml-auto text-emerald-500 hover:text-emerald-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Subject *</label>
+                    <input
+                      value={newSubject} onChange={e => setNewSubject(e.target.value)}
+                      placeholder="e.g. Email quarantine issue with Barracuda"
+                      className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30 focus:border-[#4494D1]"
+                      data-testid="input-ticket-subject"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Priority</label>
+                    <select value={newPriority} onChange={e => setNewPriority(Number(e.target.value))}
+                      className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30"
+                      data-testid="select-ticket-priority">
+                      <option value={1}>Low</option>
+                      <option value={2}>Medium</option>
+                      <option value={3}>High</option>
+                      <option value={4}>Urgent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Type (optional)</label>
+                    <select value={newType} onChange={e => setNewType(e.target.value)}
+                      className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30"
+                      data-testid="select-ticket-type">
+                      <option value="">— Select type —</option>
+                      <option value="Question">Question</option>
+                      <option value="Incident">Incident</option>
+                      <option value="Problem">Problem</option>
+                      <option value="Feature Request">Feature Request</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Description *</label>
+                    <textarea
+                      value={newDescription} onChange={e => setNewDescription(e.target.value)}
+                      placeholder="Describe the issue in detail..."
+                      rows={4}
+                      className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30 focus:border-[#4494D1] resize-none"
+                      data-testid="textarea-ticket-description"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                  <button onClick={() => setShowNewTicket(false)} className="text-sm text-[#6b7280] hover:text-[#1f2937] px-3 py-1.5">Cancel</button>
+                  <button
+                    onClick={submitNewTicket}
+                    disabled={submittingNew || !newSubject.trim() || !newDescription.trim()}
+                    className="flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+                    style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}
+                    data-testid="button-submit-ticket"
+                  >
+                    {submittingNew ? 'Submitting...' : 'Submit Ticket'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Ticket list */}
+        <div className="divide-y divide-[#f3f4f6]">
+          {ticketsLoading && (
+            <div className="px-5 py-6 text-center text-sm text-[#9ca3af]">Loading tickets...</div>
+          )}
+          {!ticketsLoading && ticketsError && (
+            <div className="px-5 py-4 text-sm text-[#ef4444]">{ticketsError}</div>
+          )}
+          {!ticketsLoading && !ticketsError && tickets.length === 0 && (
+            <div className="px-5 py-8 text-center">
+              <Ticket className="w-8 h-8 text-[#d1d5db] mx-auto mb-2" />
+              <p className="text-sm text-[#9ca3af]">No tickets found for your account</p>
+              <p className="text-xs text-[#d1d5db] mt-1">Tickets are matched by your company domain</p>
+            </div>
+          )}
+          {tickets.map(t => (
+            <div key={t.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-[#fafafa] transition-colors" data-testid={`ticket-row-${t.id}`}>
+              <TicketPriorityDot code={t.priorityCode} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium text-[#9ca3af]">#{t.id}</span>
+                  <span className="text-sm font-medium text-[#1f2937] truncate flex-1">{t.subject}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <TicketStatusBadge status={t.status} code={t.statusCode} />
+                  <span className="text-[10px] text-[#9ca3af]">{t.priority} priority</span>
+                  {t.type && <span className="text-[10px] text-[#9ca3af]">· {t.type}</span>}
+                  <span className="text-[10px] text-[#9ca3af] ml-auto">{fmtDate(t.createdAt)}</span>
+                </div>
+                {t.requesterName && t.requesterEmail && !t.requesterEmail.includes('barracuda') && !t.requesterEmail.includes('boxphish') && (
+                  <div className="text-[10px] text-[#c4c9d4] mt-0.5">{t.requesterName} · {t.requesterEmail}</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── AI Category Picker + Contact card ────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left: category tile picker */}
         <div className="lg:col-span-2 gradient-bg rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
@@ -978,6 +1183,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
             )}
           </div>
         </div>
+      </div>
       </div>
     );
   }

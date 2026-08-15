@@ -806,3 +806,99 @@ router.post('/api/support-ticket', async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
+
+// ─── FRESHDESK — list tickets for a customer domain ───────────────────────
+const FD_KEY = process.env.FRESHDESK_API_KEY || 'JskX8UIRV8c65RQtaTUf';
+const FD_DOMAIN = process.env.FRESHDESK_DOMAIN || 'broadpeakcyber';
+const FD_AUTH = Buffer.from(`${FD_KEY}:X`).toString('base64');
+
+const FD_STATUS: Record<number,string> = {1:'Open',2:'Pending',3:'Resolved',4:'Closed',5:'Waiting on Customer',6:'Waiting on Third Party'};
+const FD_PRIORITY: Record<number,string> = {1:'Low',2:'Medium',3:'High',4:'Urgent'};
+
+// GET /api/tickets?domain=gigglingsquid.com  — returns tickets whose requester email domain matches
+router.get('/api/tickets', requireAuth, async (req, res) => {
+  const domain = (req.query.domain as string || '').toLowerCase().trim();
+  if (!domain) return res.status(400).json({ ok: false, error: 'domain required' });
+  try {
+    // Fetch all tickets newest-first (up to 100; most portals will have far fewer per account)
+    const pages: any[] = [];
+    for (let page = 1; page <= 5; page++) {
+      const r = await directFetch(
+        `https://${FD_DOMAIN}.freshdesk.com/api/v2/tickets?order_type=desc&order_by=created_at&per_page=100&page=${page}&include=requester`,
+        { headers: { Authorization: `Basic ${FD_AUTH}`, 'Content-Type': 'application/json' }, ...fetchOpts() }
+      ) as any;
+      if (!r.ok) break;
+      const batch: any[] = await r.json();
+      if (!batch.length) break;
+      pages.push(...batch);
+      if (batch.length < 100) break;
+    }
+    // Filter: match requester email domain, or subject contains the domain, or tags contain domain
+    const matched = pages.filter(t => {
+      const reqEmail: string = t.requester?.email || '';
+      const reqDomain = reqEmail.includes('@') ? reqEmail.split('@')[1].toLowerCase() : '';
+      return reqDomain === domain ||
+        (t.subject || '').toLowerCase().includes(domain) ||
+        (t.tags || []).some((tag: string) => tag.toLowerCase().includes(domain));
+    });
+    const tickets = matched.map(t => ({
+      id: t.id,
+      subject: t.subject,
+      status: FD_STATUS[t.status] || String(t.status),
+      statusCode: t.status,
+      priority: FD_PRIORITY[t.priority] || String(t.priority),
+      priorityCode: t.priority,
+      createdAt: t.created_at,
+      updatedAt: t.updated_at,
+      requesterName: t.requester?.name || '',
+      requesterEmail: t.requester?.email || '',
+      type: t.type || null,
+      tags: t.tags || [],
+    }));
+    res.json({ ok: true, tickets });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// POST /api/tickets — create a new ticket from the portal
+router.post('/api/tickets', requireAuth, async (req, res) => {
+  const { subject, description, priority, type, domain, customerName } = req.body;
+  if (!subject || !description) return res.status(400).json({ ok: false, error: 'subject and description required' });
+  try {
+    const ticketBody = {
+      subject,
+      description,
+      email: `portal@${domain || 'customer.com'}`,
+      name: customerName || `Portal User (${domain})`,
+      priority: priority || 2,
+      status: 2,
+      type: type || null,
+      tags: ['portal', domain || 'unknown'],
+    };
+    const r = await directFetch(`https://${FD_DOMAIN}.freshdesk.com/api/v2/tickets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${FD_AUTH}` },
+      body: JSON.stringify(ticketBody),
+      ...fetchOpts(),
+    }) as any;
+    const data: any = await r.json();
+    if (!r.ok) return res.status(r.status).json({ ok: false, error: data.description || 'Freshdesk error', details: data });
+    res.json({ ok: true, ticketId: data.id, ticket: {
+      id: data.id,
+      subject: data.subject,
+      status: FD_STATUS[data.status] || String(data.status),
+      statusCode: data.status,
+      priority: FD_PRIORITY[data.priority] || String(data.priority),
+      priorityCode: data.priority,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      requesterName: ticketBody.name,
+      requesterEmail: ticketBody.email,
+      type: data.type || null,
+      tags: data.tags || [],
+    }});
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
