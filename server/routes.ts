@@ -61,6 +61,13 @@ router.post('/api/admin/login', (req, res) => {
   res.json({ token });
 });
 
+function requireAuth(req: any, res: any, next: any) {
+  const auth = req.headers.authorization || '';
+  const token = auth.replace('Bearer ', '');
+  if (!token.startsWith('cust_') && !token.startsWith('admin_')) return res.status(401).json({ error: 'Unauthorised' });
+  next();
+}
+
 function requireAdmin(req: any, res: any, next: any) {
   const auth = req.headers.authorization || '';
   const token = auth.replace('Bearer ', '');
