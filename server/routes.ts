@@ -26,19 +26,15 @@ const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 // ── Auth constants ────────────────────────────────────────────
 const CUSTOMER_PASSWORD = process.env.CUSTOMER_PASSWORD || 'Setup187!!';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'BPAdmin2024!';
-const TEST_DOMAIN = 'test';
-const TEST_PASSWORD = 'test';
 
 // ── Customer login ────────────────────────────────────────────
 router.post('/api/login', async (req, res) => {
   const { domain, password } = req.body;
   if (!domain || !password) return res.status(400).json({ error: 'Missing domain or password' });
+  if (password !== CUSTOMER_PASSWORD) return res.status(401).json({ error: 'Invalid credentials' });
+
   // Strip any @ prefix
   const cleanDomain = domain.replace(/^@/, '').toLowerCase().trim();
-
-  // Test account: accepts username 'test' with password 'test'
-  const isTestAccount = cleanDomain === TEST_DOMAIN && password === TEST_PASSWORD;
-  if (!isTestAccount && password !== CUSTOMER_PASSWORD) return res.status(401).json({ error: 'Invalid credentials' });
 
   try {
     const customer = await getCustomerByDomain(cleanDomain);
