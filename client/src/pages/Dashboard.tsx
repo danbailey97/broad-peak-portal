@@ -985,7 +985,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Left: category tile picker */}
         <div className="lg:col-span-2 gradient-bg rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
-          <p className="text-white/90 text-sm font-medium">Select a security category to get technical support</p>
+          <p className="text-white/90 text-sm leading-relaxed">The Broad Peak Technical Support AI has been trained on the vendor documentation for your products and can provide quick, precise answers to technical support issues. And whilst we might be AI first for speed, we're people focussed, and at any time you can contact a real human by selecting <span className="font-semibold">&ldquo;Log a Ticket&rdquo;</span> to get through to our technical team as well as being able to find your Account Manager's direct contact details on the right side of this page.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             {SUPPORT_CATEGORIES.map(({ cat, vendors }) => {
               const Icon = CATEGORY_ICONS[cat] || Shield;
@@ -1470,14 +1470,22 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="w-full bg-[#f3f4f6] p-1 rounded-xl border border-[#e5e7eb] overflow-x-auto">
-          <div className="flex gap-1 min-w-max sm:min-w-0">
+        {/* Tabs — gradient bar, white text, evenly spread */}
+        <div className="w-full rounded-2xl overflow-hidden shadow-[0_4px_16px_rgba(123,94,167,0.18)] overflow-x-auto"
+          style={{ background: 'linear-gradient(160deg, #C65793 0%, #9b4da8 40%, #5a6bbf 70%, #4494D1 100%)' }}>
+          <div className="flex min-w-max sm:min-w-0 w-full">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setActiveTab(t.id)} data-testid={`tab-${t.id}`}
-                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-1 sm:flex-none ${
-                  activeTab === t.id ? 'bg-white text-[#1f2937] shadow-sm' : 'text-[#6b7280] hover:text-[#1f2937]'
-                }`}>{t.label}</button>
+                className={`flex-1 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base font-bold whitespace-nowrap transition-all relative ${
+                  activeTab === t.id
+                    ? 'text-white'
+                    : 'text-white/60 hover:text-white/90'
+                }`}>
+                {t.label}
+                {activeTab === t.id && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-white rounded-full" />
+                )}
+              </button>
             ))}
           </div>
         </div>
