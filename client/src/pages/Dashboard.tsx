@@ -662,22 +662,63 @@ function NewsTab({ domain }: { domain: string }) {
 
 // ─── RESOURCES TAB ───────────────────────────────────────────────────────────
 const DATASHEETS = [
-  { vendor: 'Barracuda', product: 'Email Gateway Defense', url: 'https://www.barracuda.com/content/dam/barracuda-msp/docs/resources/pdf/data-sheets/DS-Email-Gateway-Defense.pdf' },
-  { vendor: 'Barracuda', product: 'Cloud-to-Cloud Backup', url: 'https://www.barracuda.com/content/dam/barracuda-msp/docs/resources/pdf/data-sheets/DS-Cloud-to-Cloud-Backup.pdf' },
-  { vendor: 'Barracuda', product: 'CloudGen Firewall', url: 'https://assets.barracuda.com/assets/docs/dms/DS_CloudGen-Firewall_AWS_US.pdf' },
-  { vendor: 'Barracuda', product: 'Managed XDR', url: 'https://assets.barracuda.com/assets/docs/dms/DS_Managed-XDR_US.pdf' },
-  { vendor: 'Keepit', product: 'Microsoft 365 Backup', url: 'https://www.keepit.com/resources/keepit-for-microsoft-365-product-sheet/' },
-  { vendor: 'Keepit', product: 'Service Guide', url: 'https://lp.keepit.com/hubfs/content-assets/EN/Keepit-Service-Guide.pdf' },
-  { vendor: 'Arctic Wolf', product: 'MDR Datasheet', url: 'https://arcticwolf.com/resource/aw/arctic-wolf-managed-detection-and-response' },
-  { vendor: 'Boxphish', product: 'Service Overview 2025', url: 'https://www.boxphish.com/wp-content/uploads/2025/05/Complete-Service-Overview-Boxphish-2025.pdf' },
-  { vendor: 'BullWall', product: 'Ransomware Containment', url: 'https://bullwall.com/wp-content/uploads/2023/04/BullWall-Product-Brief_Ransomware-Containment.pdf' },
-  { vendor: 'CyberSmart', product: 'Cyber Essentials', url: 'https://cybersmart.co.uk/products/cyber-essentials/' },
-  { vendor: 'CyberSmart', product: 'Cyber Essentials Plus', url: 'https://cybersmart.co.uk/products/cyber-essentials-plus/' },
-  { vendor: 'Druva', product: 'inSync Datasheet', url: 'https://www.druva.com/documents/pf/datasheets/datasheet-druva-insync.pdf' },
-  { vendor: 'Druva', product: 'Phoenix Datasheet', url: 'https://www.druva.com/learning-center/resources/datasheets/datasheet-druva-phoenix' },
-  { vendor: 'WatchGuard', product: 'Firebox M290/M390', url: 'https://www.watchguard.com/wgrd-resource-center/docs/firebox-m290-and-m390' },
-  { vendor: 'WatchGuard', product: 'AuthPoint MFA', url: 'https://www.watchguardonline.co.uk/productattachments/index/download?id=338' },
-  { vendor: 'WatchGuard', product: 'WatchGuard MDR', url: 'https://www.watchguard.com/wgrd-resource-center/docs/watchguard-mdr-msps' },
+  // ── Barracuda — Email Protection ─────────────────────────────────────────
+  { vendor: 'Barracuda', product: 'Total Email Protection', category: 'Email Protection', url: 'https://assets.barracuda.com/assets/docs/dms/Barracuda_Total_Email_Protection_SC_Media_US.pdf' },
+  { vendor: 'Barracuda', product: 'Email Gateway Defense', category: 'Email Protection', url: 'https://www.barracuda.com/content/dam/barracuda-msp/docs/resources/pdf/data-sheets/DS-Email-Gateway-Defense.pdf' },
+  { vendor: 'Barracuda', product: 'Impersonation Protection', category: 'Email Protection', url: 'https://www.barracuda.com/content/dam/barracuda-msp/docs/resources/pdf/data-sheets/ds-impersonation-protection.pdf' },
+  { vendor: 'Barracuda', product: 'Email Security Gateway', category: 'Email Protection', url: 'https://assets.barracuda.com/assets/docs/dms/datasheet_Email-Security-Gateway_US.pdf' },
+  { vendor: 'Barracuda', product: 'Forensics & Incident Response', category: 'Email Protection', url: 'https://www.barracuda.com/content/dam/barracuda-msp/docs/resources/pdf/data-sheets/DS-Forensics-Incident-Response.pdf' },
+  { vendor: 'Barracuda', product: 'Email Threat Scanner', category: 'Email Protection', url: 'https://www.barracuda.com/products/email-protection/email-threat-scanner' },
+  // ── Barracuda — Data Protection ──────────────────────────────────────────
+  { vendor: 'Barracuda', product: 'Cloud-to-Cloud Backup', category: 'Data Protection', url: 'https://www.barracuda.com/content/dam/barracuda-msp/docs/resources/pdf/data-sheets/DS-Cloud-to-Cloud-Backup.pdf' },
+  { vendor: 'Barracuda', product: 'Backup (Physical/Virtual)', category: 'Data Protection', url: 'https://assets.barracuda.com/assets/docs/dms/DS_backup_US.pdf' },
+  // ── Barracuda — Network Protection ───────────────────────────────────────
+  { vendor: 'Barracuda', product: 'SecureEdge', category: 'Network Protection', url: 'https://assets.barracuda.com/assets/docs/dms/OV_SecureEdge_Specifications_US.pdf' },
+  { vendor: 'Barracuda', product: 'SecureEdge Access', category: 'Network Protection', url: 'https://www.barracuda.com/products/network-protection/secureedge-access' },
+  { vendor: 'Barracuda', product: 'CloudGen Firewall', category: 'Network Protection', url: 'https://assets.barracuda.com/assets/docs/dms/DS_CloudGen-Firewall_AWS_US.pdf' },
+  { vendor: 'Barracuda', product: 'CloudGen WAN', category: 'Network Protection', url: 'https://www.barracuda.com/products/network-protection/sd-wan' },
+  // ── Barracuda — Application Protection ───────────────────────────────────
+  { vendor: 'Barracuda', product: 'Web Application Firewall', category: 'Application Protection', url: 'https://assets.barracuda.com/assets/docs/dms/Barracuda_Web_Application_Firewall_DS_US_1-8_pdf.pdf' },
+  { vendor: 'Barracuda', product: 'WAF-as-a-Service', category: 'Application Protection', url: 'https://assets.barracuda.com/assets/docs/dms/Barracuda_Waf_as_a_Service_DS_US.pdf' },
+  { vendor: 'Barracuda', product: 'Advanced Bot Protection', category: 'Application Protection', url: 'https://assets.barracuda.com/assets/docs/dms/solution-brief_ABP_US_1-1.pdf' },
+  { vendor: 'Barracuda', product: 'DDoS Protection', category: 'Application Protection', url: 'https://assets.barracuda.com/assets/docs/dms/Barracuda_Web_Application_Firewall_SB_Active_DDoS_Prevention_US.pdf' },
+  { vendor: 'Barracuda', product: 'Managed XDR', category: 'MDR / XDR', url: 'https://assets.barracuda.com/assets/docs/dms/DS_Managed-XDR_US.pdf' },
+  // ── Keepit ───────────────────────────────────────────────────────────────
+  { vendor: 'Keepit', product: 'Microsoft 365 Backup', category: 'Backup', url: 'https://lp.keepit.com/hubfs/product-sheets/Keepit_for_M365_product_sheet_NEWM365Logo.pdf' },
+  { vendor: 'Keepit', product: 'Azure AD / Entra ID Backup', category: 'Backup', url: 'https://lp.keepit.com/hubfs/product-sheets/EntraID-Productsheet.pdf' },
+  { vendor: 'Keepit', product: 'Dynamics 365 Backup', category: 'Backup', url: 'https://lp.keepit.com/hubfs/product-sheets/Keepit-Microsoft-Dynamics-EN.pdf' },
+  { vendor: 'Keepit', product: 'Salesforce Backup', category: 'Backup', url: 'https://www.keepit.com/resources/keepit-backup-and-recovery-for-salesforce/' },
+  { vendor: 'Keepit', product: 'Google Workspace Backup', category: 'Backup', url: 'https://www.keepit.com/resources/google-product-sheet/' },
+  { vendor: 'Keepit', product: 'Service Guide', category: 'Overview', url: 'https://lp.keepit.com/hubfs/content-assets/EN/Keepit-Service-Guide.pdf' },
+  // ── WatchGuard ───────────────────────────────────────────────────────────
+  { vendor: 'WatchGuard', product: 'Firebox T-Series (Tabletop)', category: 'Network Security', url: 'https://www.watchguard.com/wgrd-resource-center/docs/firebox-t25' },
+  { vendor: 'WatchGuard', product: 'Firebox M290/M390 (Midrange)', category: 'Network Security', url: 'https://www.watchguard.com/wgrd-resource-center/docs/firebox-m290-and-m390' },
+  { vendor: 'WatchGuard', product: 'Firebox M6850 (Enterprise)', category: 'Network Security', url: 'https://www.watchguard.com/wgrd-resource-center/docs/firebox-m6850' },
+  { vendor: 'WatchGuard', product: 'WatchGuard Cloud', category: 'Network Security', url: 'https://www.watchguard.com/wgrd-resource-center/docs/watchguard-cloud' },
+  { vendor: 'WatchGuard', product: 'EPDR (Endpoint Prevention, Detection & Response)', category: 'Endpoint Security', url: 'https://www.watchguard.com/wgrd-resource-center/docs/watchguard-epdr' },
+  { vendor: 'WatchGuard', product: 'EDR (Endpoint Detection & Response)', category: 'Endpoint Security', url: 'https://www.watchguard.com/wgrd-resource-center/docs/watchguard-edr' },
+  { vendor: 'WatchGuard', product: 'Endpoint Security Basic (AV)', category: 'Endpoint Security', url: 'https://www.watchguard.com/wgrd-resource-center/docs/watchguard-endpoint-security-basic' },
+  { vendor: 'WatchGuard', product: 'WatchGuard MDR', category: 'MDR', url: 'https://www.watchguard.com/wgrd-resource-center/docs/watchguard-mdr-msps' },
+  { vendor: 'WatchGuard', product: 'AuthPoint MFA', category: 'Identity & MFA', url: 'https://www.watchguard.com/wgrd-resource-center/docs/authpoint' },
+  // ── Druva ────────────────────────────────────────────────────────────────
+  { vendor: 'Druva', product: 'Data Resiliency Cloud', category: 'Platform', url: 'https://www.druva.com/products/data-resilience' },
+  { vendor: 'Druva', product: 'Microsoft 365 Backup', category: 'Backup', url: 'https://www.druva.com/content/dam/druvaincprogram/collateral/datasheet/datasheet-m365-backup-express.pdf' },
+  { vendor: 'Druva', product: 'Endpoint Data Protection', category: 'Backup', url: 'https://www.druva.com/content/dam/druvaincprogram/collateral/datasheet/datasheet-endpoint-data-protection-and-cyber-resilience.pdf' },
+  { vendor: 'Druva', product: 'SaaS Apps & Endpoints', category: 'Backup', url: 'https://www.druva.com/content/dam/druvaincprogram/collateral/datasheet/datasheet-saas-apps-endpoints.pdf' },
+  // ── Arctic Wolf ──────────────────────────────────────────────────────────
+  { vendor: 'Arctic Wolf', product: 'Managed Detection & Response', category: 'MDR', url: 'https://cybersecurity.arcticwolf.com/rs/840-OSQ-661/images/AW_Managed_Detection_Response_Datasheet.pdf' },
+  { vendor: 'Arctic Wolf', product: 'Managed Risk', category: 'Managed Risk', url: 'https://cybersecurity.arcticwolf.com/rs/840-OSQ-661/images/AW_Managed_Risk_Service_Datasheet.pdf' },
+  { vendor: 'Arctic Wolf', product: 'Managed Security Awareness', category: 'Security Awareness', url: 'https://arcticwolf.com/resource/aw/arctic-wolf-managed-security-awareness-datasheet' },
+  { vendor: 'Arctic Wolf', product: 'Incident Response', category: 'Incident Response', url: 'https://arcticwolf.com/solutions/incident-response-retainer/' },
+  // ── CyberSmart ───────────────────────────────────────────────────────────
+  { vendor: 'CyberSmart', product: 'Cyber Essentials', category: 'Compliance', url: 'https://cybersmart.co.uk/products/cyber-essentials/' },
+  { vendor: 'CyberSmart', product: 'Cyber Essentials Plus', category: 'Compliance', url: 'https://cybersmart.co.uk/products/cyber-essentials-plus/' },
+  // ── BullWall ─────────────────────────────────────────────────────────────
+  { vendor: 'BullWall', product: 'Ransomware Containment', category: 'Ransomware Protection', url: 'https://bullwall.com/wp-content/uploads/2023/04/BullWall-Product-Brief_Ransomware-Containment.pdf' },
+  { vendor: 'BullWall', product: 'Server Intrusion Protection (SIP)', category: 'Ransomware Protection', url: 'https://bullwall.com/wp-content/uploads/2023/09/BullWall-Product-Brief-SIP.pdf' },
+  // ── Boxphish ─────────────────────────────────────────────────────────────
+  { vendor: 'Boxphish', product: 'Complete Service Overview 2025', category: 'Security Awareness', url: 'https://www.boxphish.com/wp-content/uploads/2025/05/Complete-Service-Overview-Boxphish-2025.pdf' },
+  { vendor: 'Boxphish', product: 'Phishing Simulation', category: 'Security Awareness', url: 'https://www.boxphish.com/phishing-simulations/' },
 ];
 
 const VENDOR_COLORS: Record<string, string> = {
@@ -688,24 +729,47 @@ const VENDOR_COLORS: Record<string, string> = {
 
 function ResourcesTab({ domain }: { domain: string }) {
   const { data: adminSheets } = useQuery({ queryKey: ['/api/datasheets'], queryFn: () => apiFetch(`/api/datasheets?domain=${domain}`).then(r => r.json()) });
-  const grouped = DATASHEETS.reduce((acc, ds) => { (acc[ds.vendor] = acc[ds.vendor] || []).push(ds); return acc; }, {} as Record<string, typeof DATASHEETS>);
+
+  // Group by vendor, then by category within each vendor
+  const grouped = DATASHEETS.reduce((acc, ds) => {
+    if (!acc[ds.vendor]) acc[ds.vendor] = {};
+    const cat = (ds as any).category || 'General';
+    if (!acc[ds.vendor][cat]) acc[ds.vendor][cat] = [];
+    acc[ds.vendor][cat].push(ds);
+    return acc;
+  }, {} as Record<string, Record<string, typeof DATASHEETS>>);
 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-bold text-[#1f2937] mb-4">Vendor Datasheets & Product Guides</h2>
-        <div className="space-y-6">
-          {Object.entries(grouped).map(([vendor, sheets]) => (
-            <div key={vendor}>
-              <h3 className={`text-sm font-semibold uppercase tracking-wide mb-2 ${VENDOR_COLORS[vendor] || 'text-[#4494D1]'}`}>{vendor}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {sheets.map(s => (
-                  <a key={s.product} href={s.url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
-                    <FileText className="w-4 h-4 text-[#9ca3af] group-hover:text-[#4494D1] flex-shrink-0" />
-                    <span className="text-sm text-[#1f2937]">{s.product}</span>
-                    <ExternalLink className="w-3 h-3 text-[#9ca3af] group-hover:text-[#4494D1] ml-auto flex-shrink-0" />
-                  </a>
+        <h2 className="text-lg font-bold text-[#1f2937] mb-5">Vendor Datasheets & Product Guides</h2>
+        <div className="space-y-8">
+          {Object.entries(grouped).map(([vendor, cats]) => (
+            <div key={vendor} className="bg-white border border-[#e5e7eb] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] overflow-hidden">
+              {/* Vendor header */}
+              <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[#f3f4f6]" style={{ background: 'linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%)' }}>
+                <div className="w-7 h-7 rounded-lg gradient-cta flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xs font-bold">{vendor[0]}</span>
+                </div>
+                <span className="text-sm font-bold text-[#1f2937]">{vendor}</span>
+                <span className="ml-auto text-xs text-[#9ca3af]">{Object.values(cats).flat().length} resources</span>
+              </div>
+              {/* Categories within vendor */}
+              <div className="p-4 space-y-4">
+                {Object.entries(cats).map(([cat, sheets]) => (
+                  <div key={cat}>
+                    <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${VENDOR_COLORS[vendor] || 'text-[#6b7280]'}`}>{cat}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {sheets.map(s => (
+                        <a key={s.product} href={s.url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 bg-[#fafafa] hover:bg-white border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl transition-all group">
+                          <FileText className="w-4 h-4 text-[#9ca3af] group-hover:text-[#4494D1] flex-shrink-0" />
+                          <span className="text-sm text-[#1f2937] leading-snug">{s.product}</span>
+                          <ExternalLink className="w-3 h-3 text-[#9ca3af] group-hover:text-[#4494D1] ml-auto flex-shrink-0" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
