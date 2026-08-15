@@ -499,7 +499,6 @@ router.get('/api/vendors', (_, res) => {
 
 router.get('/api/categories', (_, res) => res.json(ALL_CATEGORIES));
 
-export default router;
 
 // ─── VENDOR-SPECIFIC SUPPORT CHAT ────────────────────────────────────────────
 // Per-vendor KB search configurations
@@ -902,3 +901,5 @@ router.post('/api/tickets', requireAuth, async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
+
+export default router;
