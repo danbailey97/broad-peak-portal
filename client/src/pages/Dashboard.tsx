@@ -951,6 +951,102 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     return (
       <div className="space-y-6">
 
+      {/* ── AI Category Picker + Contact card ────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Left: category tile picker */}
+        <div className="lg:col-span-2 gradient-bg rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
+          <p className="text-white/90 text-sm font-medium">Select a security category to get technical support</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+            {SUPPORT_CATEGORIES.map(({ cat, vendors }) => {
+              const Icon = CATEGORY_ICONS[cat] || Shield;
+              return (
+                <button key={cat} data-testid={`support-cat-${cat.replace(/\s+/g, '-').toLowerCase()}`}
+                  onClick={() => { if (vendors.length === 1) startSupport(cat, vendors[0]); else setSelectedCat(cat); }}
+                  className="flex flex-col gap-2 p-3 sm:p-4 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl sm:rounded-2xl text-left shadow-[0_1px_4px_rgba(0,0,0,0.10)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
+                  <div className="p-2 rounded-xl bg-[#4494D112] w-fit">
+                    <Icon className="w-5 h-5 text-[#4494D1]" />
+                  </div>
+                  <div className="text-sm font-semibold text-[#1f2937] leading-tight">{cat}</div>
+                  <div className="flex flex-wrap gap-1 mt-auto">
+                    {vendors.map(v => (
+                      <span key={v} className={`text-xs px-2 py-0.5 rounded-full font-medium ${VENDOR_KB[v]?.hasKB ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
+                        {VENDOR_KB[v]?.hasKB ? v : `${v} (soon)`}
+                      </span>
+                    ))}
+                    {vendors.length === 0 && <span className="text-xs text-[#9ca3af]">Coming soon</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right: Contact Our Team card */}
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+          <div className="h-1" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
+          <div className="p-5 flex flex-col gap-4">
+            <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">Contact Our Team</h3>
+            {accountOwner ? (
+              <>
+                <div className="flex items-center gap-3">
+                  {accountOwner.photo ? (
+                    <img src={accountOwner.photo} alt={accountOwner.name} className="w-14 h-14 rounded-full object-cover border-2 border-[#e5e7eb]" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full gradient-cta flex items-center justify-center text-xl font-bold text-white flex-shrink-0">
+                      {accountOwner.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-base font-bold text-[#1f2937]">{accountOwner.name}</div>
+                    <div className="text-xs text-[#6b7280]">Account Manager · Broad Peak Cyber</div>
+                  </div>
+                </div>
+                <div className="space-y-2.5 text-sm">
+                  <a href={`mailto:${accountOwner.email}`}
+                    className="flex items-center gap-2.5 text-[#6b7280] hover:text-[#4494D1] transition-colors group">
+                    <div className="w-7 h-7 rounded-lg bg-[#C6579312] flex items-center justify-center flex-shrink-0">
+                      <Mail className="w-3.5 h-3.5 text-[#C65793]" />
+                    </div>
+                    <span className="group-hover:underline truncate">{accountOwner.email}</span>
+                  </a>
+                  {accountOwner.phone && (
+                    <a href={`tel:${accountOwner.phone}`}
+                      className="flex items-center gap-2.5 text-[#6b7280] hover:text-[#4494D1] transition-colors group">
+                      <div className="w-7 h-7 rounded-lg bg-[#4494D112] flex items-center justify-center flex-shrink-0">
+                        <Phone className="w-3.5 h-3.5 text-[#4494D1]" />
+                      </div>
+                      <span className="group-hover:underline">{accountOwner.phone}</span>
+                    </a>
+                  )}
+                  {accountOwner.calendly && (
+                    <a href={accountOwner.calendly} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 text-[#6b7280] hover:text-[#4494D1] transition-colors group">
+                      <div className="w-7 h-7 rounded-lg bg-[#7b5ea712] flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-3.5 h-3.5 text-[#7b5ea7]" />
+                      </div>
+                      <span className="group-hover:underline">Book a meeting</span>
+                    </a>
+                  )}
+                </div>
+                <a href={`mailto:${accountOwner.email}?subject=Technical Support Request — ${accountName}`}
+                  className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                  style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
+                  <Mail className="w-4 h-4" /> Email for Support
+                </a>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-[#6b7280]">Need help? Reach out to the Broad Peak Cyber team directly.</p>
+                <a href="mailto:support@broadpeakcyber.com?subject=Technical Support Request — ${accountName}"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                  style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
+                  <Mail className="w-4 h-4" /> Contact Support
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
       {/* ── Support Tickets Section ─────────────────────────────────────── */}
       <div className="bg-white border border-[#e5e7eb] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5e7eb]">
@@ -1088,101 +1184,6 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
         </div>
       </div>
 
-      {/* ── AI Category Picker + Contact card ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left: category tile picker */}
-        <div className="lg:col-span-2 gradient-bg rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
-          <p className="text-white/90 text-sm font-medium">Select a security category to get technical support</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-            {SUPPORT_CATEGORIES.map(({ cat, vendors }) => {
-              const Icon = CATEGORY_ICONS[cat] || Shield;
-              return (
-                <button key={cat} data-testid={`support-cat-${cat.replace(/\s+/g, '-').toLowerCase()}`}
-                  onClick={() => { if (vendors.length === 1) startSupport(cat, vendors[0]); else setSelectedCat(cat); }}
-                  className="flex flex-col gap-2 p-3 sm:p-4 bg-white hover:bg-[#f9fafb] border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl sm:rounded-2xl text-left shadow-[0_1px_4px_rgba(0,0,0,0.10)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
-                  <div className="p-2 rounded-xl bg-[#4494D112] w-fit">
-                    <Icon className="w-5 h-5 text-[#4494D1]" />
-                  </div>
-                  <div className="text-sm font-semibold text-[#1f2937] leading-tight">{cat}</div>
-                  <div className="flex flex-wrap gap-1 mt-auto">
-                    {vendors.map(v => (
-                      <span key={v} className={`text-xs px-2 py-0.5 rounded-full font-medium ${VENDOR_KB[v]?.hasKB ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
-                        {VENDOR_KB[v]?.hasKB ? v : `${v} (soon)`}
-                      </span>
-                    ))}
-                    {vendors.length === 0 && <span className="text-xs text-[#9ca3af]">Coming soon</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right: Contact Our Team card */}
-        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
-          <div className="h-1" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
-          <div className="p-5 flex flex-col gap-4">
-            <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">Contact Our Team</h3>
-            {accountOwner ? (
-              <>
-                <div className="flex items-center gap-3">
-                  {accountOwner.photo ? (
-                    <img src={accountOwner.photo} alt={accountOwner.name} className="w-14 h-14 rounded-full object-cover border-2 border-[#e5e7eb]" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full gradient-cta flex items-center justify-center text-xl font-bold text-white flex-shrink-0">
-                      {accountOwner.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-base font-bold text-[#1f2937]">{accountOwner.name}</div>
-                    <div className="text-xs text-[#6b7280]">Account Manager · Broad Peak Cyber</div>
-                  </div>
-                </div>
-                <div className="space-y-2.5 text-sm">
-                  <a href={`mailto:${accountOwner.email}`}
-                    className="flex items-center gap-2.5 text-[#6b7280] hover:text-[#4494D1] transition-colors group">
-                    <div className="w-7 h-7 rounded-lg bg-[#C6579312] flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-3.5 h-3.5 text-[#C65793]" />
-                    </div>
-                    <span className="group-hover:underline truncate">{accountOwner.email}</span>
-                  </a>
-                  {accountOwner.phone && (
-                    <a href={`tel:${accountOwner.phone}`}
-                      className="flex items-center gap-2.5 text-[#6b7280] hover:text-[#4494D1] transition-colors group">
-                      <div className="w-7 h-7 rounded-lg bg-[#4494D112] flex items-center justify-center flex-shrink-0">
-                        <Phone className="w-3.5 h-3.5 text-[#4494D1]" />
-                      </div>
-                      <span className="group-hover:underline">{accountOwner.phone}</span>
-                    </a>
-                  )}
-                  {accountOwner.calendly && (
-                    <a href={accountOwner.calendly} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2.5 text-[#6b7280] hover:text-[#4494D1] transition-colors group">
-                      <div className="w-7 h-7 rounded-lg bg-[#7b5ea712] flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-3.5 h-3.5 text-[#7b5ea7]" />
-                      </div>
-                      <span className="group-hover:underline">Book a meeting</span>
-                    </a>
-                  )}
-                </div>
-                <a href={`mailto:${accountOwner.email}?subject=Technical Support Request — ${accountName}`}
-                  className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-                  style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
-                  <Mail className="w-4 h-4" /> Email for Support
-                </a>
-              </>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-[#6b7280]">Need help? Reach out to the Broad Peak Cyber team directly.</p>
-                <a href="mailto:support@broadpeakcyber.com?subject=Technical Support Request — ${accountName}"
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-                  style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
-                  <Mail className="w-4 h-4" /> Contact Support
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
       </div>
     );
