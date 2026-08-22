@@ -902,8 +902,8 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
       setTicketsLoading(true);
       apiFetch(`/api/tickets?domain=${encodeURIComponent(domain)}`)
         .then(r => r.json())
-        .then(d => { if (d.ok) setTickets(d.tickets || []); else setTicketsError(d.error || 'Failed'); })
-        .catch(() => setTicketsError('Failed to load tickets'))
+        .then(d => { if (d.ok) setTickets(d.tickets || []); else setTicketsError('Could not load tickets'); })
+        .catch(() => setTicketsError('Could not load tickets'))
         .finally(() => setTicketsLoading(false));
     }
   }, [domain]);

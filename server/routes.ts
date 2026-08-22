@@ -872,9 +872,15 @@ router.get('/api/tickets', requireAuth, async (req, res) => {
       pages.push(...batch);
       if (batch.length < 100) break;
     }
-    // Filter: match requester email domain, or subject contains the domain, or tags contain domain
+    // Filter: match requester email domain, or subject/tags contain the domain
+    // Exclude Barracuda phishing alert auto-tickets (per user instruction)
+    const PHISHING_SENDERS = ['noreply@barracuda.com', 'phishing@barracuda.com', 'alerts@barracuda.com'];
     const matched = pages.filter(t => {
-      const reqEmail: string = t.requester?.email || '';
+      const reqEmail: string = (t.requester?.email || '').toLowerCase();
+      // Exclude Barracuda phishing alerts
+      if (PHISHING_SENDERS.includes(reqEmail)) return false;
+      if ((t.subject || '').toLowerCase().includes('targeted phishing attack detected')) return false;
+      if ((t.subject || '').toLowerCase().includes('phishing alert')) return false;
       const reqDomain = reqEmail.includes('@') ? reqEmail.split('@')[1].toLowerCase() : '';
       return reqDomain === domain ||
         (t.subject || '').toLowerCase().includes(domain) ||
