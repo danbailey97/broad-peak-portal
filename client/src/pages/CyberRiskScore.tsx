@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLang } from '../lib/LanguageContext';
 import { getToken } from '../lib/api';
 import { CheckCircle, XCircle, ChevronRight, Download, RotateCcw, Shield, AlertTriangle, TrendingUp, Info, HelpCircle, Target } from 'lucide-react';
 import { jsPDF } from 'jspdf';
@@ -356,13 +357,345 @@ const NIST_FUNCTIONS: NISTFunction[] = [
   },
 ];
 
+
+// ── Arabic NIST Functions ─────────────────────────────────────────────────────
+const NIST_FUNCTIONS_AR: NISTFunction[] = [
+  {
+    id: 'govern',
+    name: 'الحوكمة',
+    ref: 'GV',
+    description: 'السياق التنظيمي، استراتيجية المخاطر، مخاطر سلسلة التوريد، وسياسة الأمن السيبراني',
+    tagline: 'القيادة والمساءلة واستراتيجية المخاطر',
+    color: '#8b5cf6',
+    bpProducts: ['CyberSmart Active Protect', 'Arctic Wolf Managed Risk'],
+    questions: [
+      {
+        id: 'gv1',
+        text: 'هل لدى مؤسستك سياسة أمن سيبراني موثقة معتمدة من القيادة العليا؟',
+        why: 'تحدد السياسة الرسمية المساءلة، وتُظهر التزام مجلس الإدارة، وتوفر الأساس لجميع ضوابط الأمان الأخرى. بدونها يصبح الأمن عشوائيًا وغير متسق.',
+        example: 'تستوفي سياسة الاستخدام المقبول (AUP) وسياسة أمن المعلومات الموقعة من الرئيس التنفيذي أو مجلس الإدارة هذا الشرط. لا يلزم أن تكون مطولة — الوضوح والالتزام أهم من الحجم.',
+        guidance: 'NIST CSF GV.OC-01. يجب أن تغطي سياستك: تصنيف البيانات، الاستخدام المقبول، الإبلاغ عن الحوادث، ومتطلبات كلمات المرور. راجع سنويًا.',
+        weight: 3,
+      },
+      {
+        id: 'gv2',
+        text: 'هل تجرون تقييمات رسمية لمخاطر الأمن السيبراني مرة واحدة على الأقل سنويًا؟',
+        why: 'تحدد تقييمات المخاطر التهديدات والثغرات وتأثيرها المحتمل قبل أن يجدها المهاجمون. بدونها أنت تعمل بشكل أعمى — تنفق على ضوابط خاطئة مع ترك مخاطر حقيقية دون معالجة.',
+        example: 'ورشة عمل سنوية مع تكنولوجيا المعلومات ورؤساء الأقسام لتحديد أهم المخاطر واحتمالات تحققها وتأثيرها وإجراءات التخفيف الحالية. وثّق النتائج وتتبع المعالجة.',
+        guidance: 'NIST CSF GV.RM-01. تُشكّل تقييمات المخاطر أساس برنامج الأمان المبني على المخاطر. يتوقع المنظمون (ICO وFCA) بشكل متزايد أدلة على إدارة المخاطر الرسمية.',
+        weight: 3,
+      },
+      {
+        id: 'gv3',
+        text: 'هل أدوار ومسؤوليات الأمن السيبراني محددة بوضوح لجميع الموظفين؟',
+        why: 'عند وقوع حادثة أمنية، يُعدّ الغموض حول المسؤوليات من أكثر العوامل ضررًا. توضح مصفوفات RACI الواضحة الثغرات (لا أحد يتولى المهمة) والتضارب (الجميع يظن أن شخصًا آخر يتولاها).',
+        example: 'إرشادات خاصة بالأدوار في حزم التوجيه: "فريق المالية — مسؤوليتكم في حماية بيانات الدفع تشمل..." تجنبوا عبارات "الجميع مسؤول عن الأمان" العامة دون تفاصيل.',
+        guidance: 'NIST CSF GV.RR-01. يجب أن يعرف كل شخص مسؤولياته الأمنية. فكّروا في ورقة بسيطة لكل فريق تحدد التزاماتهم المحددة.',
+        weight: 2,
+      },
+      {
+        id: 'gv4',
+        text: 'هل تقيّمون مخاطر الأمن السيبراني التي يشكلها كبار مورديكم وأطراف العلاقة الخارجية؟',
+        why: 'خروقات الأطراف الثالثة هي ناقل هجوم رئيسي. استهدفت هجمة SolarWinds (2020) 18,000 مؤسسة عبر مورد واحد موثوق. أمانك بقوة مورديك الأضعف.',
+        example: 'إرسال استبيان أمان للموردين الرئيسيين سنويًا. مراجعة شهادات ISO 27001 أو Cyber Essentials للموردين. إضافة بنود أمنية إلى عقود الموردين.',
+        guidance: 'NIST CSF GV.SC-01. توصي إرشادات NCSC لسلسلة التوريد بتقييم أي مورد يمكنه الوصول إلى بياناتك أو أنظمتك. ابدأ بالموردين الأعلى مخاطرة.',
+        weight: 2,
+      },
+      {
+        id: 'gv5',
+        text: 'هل يتلقى مجلس الإدارة أو القيادة العليا تحديثات منتظمة حول مخاطر الأمن السيبراني؟',
+        why: 'تتطلب قرارات الأمن السيبراني (الميزانيات، تحمّل المخاطر، الاستجابة للحوادث) دعمًا تنفيذيًا. بدون تقارير منتظمة، تبقى مخاطر الأمن السيبراني غير مرئية على مستوى مجلس الإدارة — حتى يجبر حادث كبير على مواجهتها.',
+        example: 'لوحة مخاطر سيبرانية ربع سنوية لمجلس الإدارة تغطي: أهم المخاطر، الحوادث الأخيرة، حالة امتثال التصحيح، وأي تغييرات تنظيمية. احتفظ بها موجزة ومركّزة على الأعمال.',
+        guidance: 'NIST CSF GV.OC-02. الرؤية التنفيذية هي مُميّز رئيسي في برامج الأمان الناضجة. صغ التحديثات بمصطلحات تأثير الأعمال، وليس بمصطلحات تقنية.',
+        weight: 2,
+      },
+    ],
+  },
+  {
+    id: 'identify',
+    name: 'التعرف',
+    ref: 'ID',
+    description: 'إدارة الأصول وتقييم المخاطر وفهم سياق العمل',
+    tagline: 'اعرف ما لديك قبل أن تتمكن من حمايته',
+    color: '#3b82f6',
+    bpProducts: ['CyberSmart Active Protect', 'Arctic Wolf Managed Risk'],
+    questions: [
+      {
+        id: 'id1',
+        text: 'هل تحتفظون بجرد كامل ومحدَّث لجميع أصول الأجهزة؟',
+        why: 'لا يمكنك حماية ما لا تراه. الأجهزة غير المسجلة — أجهزة الكمبيوتر الشخصية والخوادم القديمة وأجهزة IoT المنسية — كثيرًا ما تكون نقطة دخول المهاجمين تحديدًا لأنها مغفولة.',
+        example: 'جدول بيانات أو أداة آلية تسرد كل كمبيوتر محمول وخادم ومحوّل وجدار حماية وهاتف وجهاز لوحي وطابعة — بما في ذلك الشركة المصنعة والطراز والرقم التسلسلي وإصدار نظام التشغيل والمالك. يُحدَّث عند تغيير الأصول.',
+        guidance: 'NIST CSF ID.AM-01. رؤية الأصول أساسية لكل ضابط أمان آخر. الأدوات الآلية (Intune وCyberSmart) أكثر موثوقية بكثير من السجلات اليدوية.',
+        weight: 3,
+      },
+      {
+        id: 'id2',
+        text: 'هل لديكم رؤية لجميع البرامج والتطبيقات والخدمات السحابية المستخدمة؟',
+        why: 'Shadow IT — التطبيقات التي تتبناها الفرق دون موافقة تكنولوجيا المعلومات — مخاطرة كبيرة. قد لا تستوفي الأدوات غير المصرح بها معايير أمانك، وقد تخزن بيانات حساسة خارج نطاق سيطرتك، ونادرًا ما يتم تصحيحها.',
+        example: 'اكتشاف أن فريق التسويق يستخدم أداة مجانية لمشاركة الملفات السحابية لإرسال بيانات العملاء، أو أن قسمًا ما يشغّل تطبيق قاعدة بيانات قديمًا لم تعلم به تكنولوجيا المعلومات.',
+        guidance: 'NIST CSF ID.AM-02. يمكن لوسطاء أمان الوصول إلى السحابة (CASBs) اكتشاف Shadow IT. على أدنى تقدير، أجرِ تدقيقات سنوية للبرامج عبر أدوات إدارة نقاط النهاية.',
+        weight: 2,
+      },
+      {
+        id: 'id3',
+        text: 'هل حددتم وصنّفتم أهم بياناتكم وأكثرها حساسية؟',
+        why: 'ليست جميع البيانات تتطلب نفس مستوى الحماية. معرفة جواهرك التاجية — البيانات الشخصية للعملاء والسجلات المالية والملكية الفكرية — تتيح لك إعطاء الأولوية للدفاعات بشكل مناسب.',
+        example: 'مخطط تصنيف بيانات: سري (PII للعملاء، البيانات المالية)، داخلي (وثائق الأعمال)، عام. يُطبَّق باتساق عبر الأنظمة ويُشارَك مع الموظفين.',
+        guidance: 'NIST CSF ID.AM-07. يتطلب قانون GDPR في المملكة المتحدة أن تفهم البيانات الشخصية التي تحتفظ بها ومكانها وكيفية حمايتها. تصنيف البيانات هو نقطة البداية.',
+        weight: 3,
+      },
+      {
+        id: 'id4',
+        text: 'هل تعرفون الأنظمة والعمليات الحرجة لعمليات أعمالكم؟',
+        why: 'بدون معرفة أصولك الحرجة، لا يمكنك إعطاء الأولوية لحمايتها أو التخطيط لاسترداد ذي معنى. هجوم فدية يستهدف نظام الفوترة له تأثير تجاري مختلف جدًا عن استهداف خادم اختبار.',
+        example: 'تحديد أن نظام ERP وقاعدة بيانات العملاء والبريد الإلكتروني حرجة للأعمال — أي أن انقطاع 4 ساعات سيتسبب في ضرر كبير — وضمان حصول هذه الأنظمة على أولوية حماية أعلى.',
+        guidance: 'NIST CSF ID.BE-04. معرفة أصولك الحرجة تمكّن من الحماية والتخطيط للاسترداد ذوي الأولوية. هذا يُعلم خطة استمرارية الأعمال وخطة الاسترداد من الكوارث.',
+        weight: 2,
+      },
+      {
+        id: 'id5',
+        text: 'هل يتم تحديد ثغرات الأمن السيبراني في أنظمتكم من خلال مسح منتظم؟',
+        why: 'تُكتشف ثغرات في البرامج باستمرار. بدون المسح النشط، لن تعلم بالنقاط الضعيفة الحرجة حتى يستغلها أحد المهاجمين. التحديد الاستباقي أرخص بكثير من الاستجابة التفاعلية للخروقات.',
+        example: 'عمليات مسح شهرية للثغرات الداخلية باستخدام أدوات مثل Nessus أو Qualys أو Microsoft Defender. اختبارات اختراق سنوية خارجية. الاشتراك في تنبيهات الثغرات من NCSC.',
+        guidance: 'NIST CSF ID.RA-01. فحص الثغرات متطلب في CE+. خدمة فحص الثغرات المجانية من NCSC متاحة للمنظمات في المملكة المتحدة.',
+        weight: 3,
+      },
+    ],
+  },
+  {
+    id: 'protect',
+    name: 'الحماية',
+    ref: 'PR',
+    description: 'إدارة الهوية، التحكم في الوصول، التدريب التوعوي، أمان البيانات، وأمان المنصات',
+    tagline: 'تطبيق ضمانات للحد من تأثير الحوادث',
+    color: '#10b981',
+    bpProducts: ['Barracuda Email Gateway Defense', 'WatchGuard Firebox', 'WatchGuard AuthPoint', 'Boxphish Security Awareness', 'Keepit M365 Backup', 'Druva inSync'],
+    questions: [
+      {
+        id: 'pr1',
+        text: 'هل يُفرض MFA لجميع الخدمات السحابية والبريد الإلكتروني والوصول عن بُعد؟',
+        why: 'MFA هو الضابط الأكثر فعالية ضد الهجمات المبنية على بيانات الاعتماد. يُفيد IBM 2025 بأن MFA يمنع أكثر من 99% من الهجمات الآلية. كلمات المرور وحدها غير كافية — يتم سرقتها بانتظام عبر التصيد الاحتيالي أو تسريبها أو تخمينها.',
+        example: 'Microsoft 365 مع تفعيل MFA لجميع المستخدمين عبر سياسات الوصول المشروط. يتحقق الموظفون عبر تطبيق Microsoft Authenticator على هواتفهم — كلمة مرور مسروقة لا تستطيع وحدها منح الوصول بدون الهاتف.',
+        guidance: 'NIST CSF PR.AA-03. MFA هو الآن متطلب إلزامي لـ Cyber Essentials لجميع الخدمات السحابية والوصول عن بُعد. هيّئ عبر مركز إدارة Microsoft 365 > الأمان > MFA.',
+        weight: 3,
+      },
+      {
+        id: 'pr2',
+        text: 'هل يُطبَّق مبدأ الامتياز الأدنى — يصل المستخدمون فقط إلى ما يحتاجونه لأدوارهم؟',
+        why: 'الحسابات ذات الامتيازات المفرطة تزيد بشكل كبير من نطاق أي خرق. إذا تعرض حساب مدير التسويق للاختراق وكان لديه وصول إلى أنظمة مالية لا ينبغي له الوصول إليها، فسيحصل المهاجم على ذلك الوصول أيضًا.',
+        example: 'يمكن لموظفي خدمة العملاء الوصول إلى CRM — لكن ليس النظام المالي. يمكن لموظفي المالية الوصول إلى برنامج المحاسبة — لكن ليس سجلات الموارد البشرية. تُراجَع وتُحدَّث عند تغيير الأدوار.',
+        guidance: 'NIST CSF PR.AA-05. أجرِ مراجعات حقوق الوصول مرة واحدة على الأقل سنويًا (أو عند تغيير الموظفين لأدوارهم). أزل الوصول في اليوم ذاته عند مغادرة الموظفين.',
+        weight: 3,
+      },
+      {
+        id: 'pr3',
+        text: 'هل يتلقى جميع الموظفين تدريبًا منتظمًا للتوعية بالأمان مرة واحدة على الأقل سنويًا؟',
+        why: 'العنصر البشري متورط في غالبية الخروقات السيبرانية — من خلال التصيد الاحتيالي والهندسة الاجتماعية وكشف البيانات بالخطأ. التدريب يقلل المخاطر بشكل قابل للقياس. وجد Verizon DBIR 2025 أن العنصر البشري متورط في 60% من الخروقات.',
+        example: 'تدريب سنوي للتوعية بالأمان يغطي: التعرف على التصيد الاحتيالي، نظافة كلمات المرور، التعامل مع البيانات، والإبلاغ عن الحوادث. يُكمَّل بتحديثات منتظمة للتهديدات وتذكيرات بالسياسات.',
+        guidance: 'NIST CSF PR.AT-01. يجب أن يكون التدريب جذابًا وذا صلة — الاختبارات الامتثالية الجافة غير فعالة. Boxphish يجمع التدريب بالفيديو مع محاكاة التصيد الاحتيالي لتحقيق أقصى تأثير.',
+        weight: 3,
+      },
+      {
+        id: 'pr3b',
+        text: 'هل تجرون تمارين محاكاة للتصيد الاحتيالي لاختبار وعي الموظفين؟',
+        why: 'التدريب وحده أقل فعالية بكثير من التدريب المقترن بالممارسة. تكشف تمارين محاكاة التصيد الاحتيالي الثغرات في السلوك الفعلي — وليس فقط المعرفة — وتحدد الموظفين الذين يحتاجون دعمًا إضافيًا.',
+        example: 'حملات محاكاة تصيد احتيالي ربع سنوية تحاكي أساليب الهجوم الحقيقية (احتيال الفواتير، انتحال هوية مكتب المساعدة). الموظفون الذين ينقرون يتلقون تعليمًا فوريًا بدلًا من العقوبة.',
+        guidance: 'تُظهر أبحاث KnowBe4 انخفاضًا بنسبة 86% في معدلات النقر مع برامج التدريب والمحاكاة المشتركة. Boxphish يوفر كلًا من التدريب ومحاكاة التصيد الاحتيالي في منصة واحدة.',
+        weight: 2,
+        skipIf: { questionId: 'pr3', answer: false },
+      },
+      {
+        id: 'pr4',
+        text: 'هل يتم نسخ البيانات التجارية الحيوية احتياطيًا بانتظام، مع اختبار النسخ الاحتياطية للاسترداد؟',
+        why: 'النسخ الاحتياطية غير المختبرة ليست نسخًا احتياطية. وجد Sophos 2025 أن 53% فقط من ضحايا برامج الفدية نجحوا في الاسترداد من النسخ الاحتياطية — مما يعني أن ما يقارب النصف دفع الفدية أو فقد البيانات نهائيًا.',
+        example: 'نسخ احتياطية آلية يومية لجميع البيانات الحيوية. اختبارات استرداد شهرية — استرداد فعلي لملف أو قاعدة بيانات للتحقق من صحتها. مراجعة سجلات النسخ الاحتياطية أسبوعيًا بحثًا عن الإخفاقات.',
+        guidance: 'NIST CSF PR.DS-01. قاعدة 3-2-1: 3 نسخ، على وسيطين مختلفين، مع نسخة واحدة خارج الموقع أو في السحابة. اختبر النسخ الاحتياطية كل ربع سنة على الأقل — وثّق نتائج الاختبار.',
+        weight: 3,
+      },
+      {
+        id: 'pr4b',
+        text: 'هل يتم تخزين النسخ الاحتياطية في وضع غير متصل أو في موقع غير قابل للتغيير (مقاوم لبرامج الفدية)؟',
+        why: 'تستهدف برامج الفدية الحديثة حلول النسخ الاحتياطي المتصلة تحديدًا. ينتظر المهاجمون داخل الشبكات لأسابيع، ليكتشفوا النسخ الاحتياطية ويشفروها أو يحذفوها قبل تفعيل برامج الفدية — لضمان أقصى قدر من الرافعة.',
+        example: 'يوفر Keepit وDruva نسخًا احتياطيًا سحابيًا غير قابل للتغيير — بمجرد الكتابة، لا يمكن تعديل البيانات أو حذفها، حتى ببرامج فدية لديها صلاحيات المسؤول. النسخ الاحتياطية على الشرائط المعزولة هوائيًا مؤهلة أيضًا.',
+        guidance: 'النسخ الاحتياطية المعزولة هوائيًا أو غير المتصلة أو غير القابلة للتغيير ضرورية. اسأل مورد النسخ الاحتياطي: "هل تستطيع برامج الفدية بصلاحيات مسؤول حذف أو تشفير نسخنا الاحتياطية؟" يجب أن تكون الإجابة لا.',
+        weight: 3,
+        skipIf: { questionId: 'pr4', answer: false },
+      },
+      {
+        id: 'pr5',
+        text: 'هل البريد الإلكتروني محمي بضد تصيد احتيالي متقدم ومضاد للانتحال يتجاوز الإعدادات الافتراضية؟',
+        why: 'البريد الإلكتروني هو ناقل الهجوم الرئيسي رقم 1. الحماية الأصلية لـ Microsoft 365 وGoogle Workspace لها ثغرات موثقة جيدًا — تفوتها التصيد الاحتيالي المتطور، واختراق البريد التجاري (BEC)، والبرامج الضارة غير المعروفة. سجّل FBI أكثر من 3 مليارات دولار خسائر BEC في 2025.',
+        example: 'يفحص Barracuda Email Gateway Defense كل بريد إلكتروني وارد، ويعزل المرفقات المشبوهة، ويعيد كتابة الروابط، ويحظر نطاقات المرسل المنتحلة التي يفوتها M365.',
+        guidance: 'NIST CSF PR.PS-01. على أدنى تقدير، تأكد من تهيئة سجلات SPF وDKIM وDMARC بشكل صحيح لنطاقك. فكّر في أمان البريد الإلكتروني المتقدم لـ Microsoft 365 أو Google Workspace.',
+        weight: 3,
+      },
+      {
+        id: 'pr6',
+        text: 'هل جميع الأجهزة محمية ببرنامج أمان نقطة النهاية (يتجاوز برنامج مكافحة الفيروسات الأساسي)؟',
+        why: 'يكتشف برنامج مكافحة الفيروسات القديم توقيعات البرامج الضارة المعروفة لكنه يفوت الهجمات الحديثة غير المستندة إلى ملفات وتقنيات "العيش خارج الأرض" ومتغيرات برامج الفدية الجديدة. توفر EDR (الكشف والاستجابة لنقاط النهاية) تحليلًا سلوكيًا يلتقط ما يفوت برنامج مكافحة الفيروسات.',
+        example: 'WatchGuard EPDR وBarracuda XDR يراقبان سلوك نقاط النهاية باستمرار، ملتقطَين الهجمات التي تتحايل على الأدوات المبنية على التوقيعات — مثل برنامج PowerShell لا يحتوي على أي توقيعات برامج ضارة معروفة.',
+        guidance: 'NIST CSF PR.PS-02. يستوفي Windows Defender خط أساس Cyber Essentials. توفر EDR حماية أفضل بكثير وتُوصى بها لأي مؤسسة تتعامل مع بيانات حساسة.',
+        weight: 3,
+      },
+      {
+        id: 'pr7',
+        text: 'هل شبكتكم مقسّمة بحيث لا تنتشر إصابة منطقة واحدة بحرية؟',
+        why: 'الشبكات المسطحة — حيث يمكن لكل جهاز التواصل مع كل جهاز آخر — تسمح للمهاجمين بالتحرك بحرية بمجرد الدخول. يحصر التقسيم الخروقات في المنطقة المتأثرة، مما يحد بشكل كبير من التأثير.',
+        example: 'فصل شبكة WiFi للضيوف عن شبكتك الداخلية. وضع أنظمة التصنيع على VLAN منفصل عن أجهزة الكمبيوتر المكتبية. عزل الخوادم عن محطات العمل. تتطلب كل منها مصادقة منفصلة للعبور.',
+        guidance: 'NIST CSF PR.IR-04. تقسيم الشبكة مهم بشكل خاص للمؤسسات التي تضم تقنية تشغيلية (OT) أو أنظمة تصنيع حيوية جنبًا إلى جنب مع تكنولوجيا المعلومات.',
+        weight: 2,
+      },
+      {
+        id: 'pr8',
+        text: 'هل جميع الأنظمة مُصحَّحة بتحديثات الأمان الحيوية في غضون 14 يومًا من الإصدار؟',
+        why: 'وجد Verizon DBIR 2025 أن استغلال الثغرات المعروفة نما بنسبة 34% سنة بعد سنة. يسلّح المهاجمون التصحيحات في غضون ساعات من الإصدار — النافذة بين "التصحيح متاح" و"الاستغلال في البرية" تتقلص.',
+        example: 'نشر تصحيح آلي عبر Intune أو WSUS. حد أقصى 14 يومًا لتطبيق التصحيحات الحيوية وعالية الخطورة. تقارير أسبوعية عن امتثال التصحيح عبر جميع الأجهزة.',
+        guidance: 'NIST CSF PR.PS-04. متطلب الـ 14 يومًا إلزامي من Cyber Essentials. استغل WannaCry ثغرة كانت قد صُحِّحت قبل 60 يومًا — من صحّح في غضون 14 يومًا كانوا بأمان.',
+        weight: 3,
+      },
+    ],
+  },
+  {
+    id: 'detect',
+    name: 'الكشف',
+    ref: 'DE',
+    description: 'المراقبة المستمرة وتحليل الأحداث غير المرغوبة والكشف عن الشذوذ',
+    tagline: 'اعثر على التهديدات قبل أن تتحول إلى خروقات',
+    color: '#f59e0b',
+    bpProducts: ['Arctic Wolf MDR', 'WatchGuard MDR', 'Barracuda XDR'],
+    questions: [
+      {
+        id: 'de1',
+        text: 'هل لديكم مراقبة أمنية تكتشف النشاط غير العادي أو المريب؟',
+        why: 'وجد IBM 2025 أن متوسط الخرق يمر دون اكتشاف لمدة 241 يومًا بدون مراقبة. كلما طال وقت بقاء المهاجم دون اكتشاف، كلما زاد الضرر الذي يتسبب فيه — والتكلفة. يوفر الكشف المبكر ما معدله 1.9 مليون دولار لكل حادثة.',
+        example: 'نظام SIEM (معلومات الأمان وإدارة الأحداث) الذي يرتبط السجلات من عبر بيئتك وينبّه على الشذوذ — مثل مستخدم يصل إلى 10,000 ملف في ساعة واحدة، أو تسجيل دخول من بلد غير عادي.',
+        guidance: 'NIST CSF DE.CM-01. المراقبة لا تحتاج أن تكون معقدة. حتى التنبيه الأساسي على محاولات تسجيل الدخول الفاشلة، ونقل البيانات الكبيرة، أو نشاط المسؤول غير العادي يوفر قيمة كبيرة.',
+        weight: 3,
+      },
+      {
+        id: 'de2',
+        text: 'هل يتم جمع ومراجعة سجلات الأمان من الأنظمة الرئيسية؟',
+        why: 'جمع السجلات دون مراجعة هو مسرحية أمنية. السجلات ذات قيمة فقط إذا كان شخص ما (أو شيء ما) يراقبها فعلًا بحثًا عن مؤشرات الاختراق. كثير من الخروقات مرئية في السجلات — لكنها لم تُلاحَظ أبدًا.',
+        example: 'جمع سجلات مركزي من جدار الحماية وActive Directory وM365 والخوادم الرئيسية. مراجعة أسبوعية من قِبَل تكنولوجيا المعلومات، أو تنبيه آلي عبر SIEM أو خدمة MDR.',
+        guidance: 'NIST CSF DE.CM-03. على أدنى تقدير، اجمع سجلات من: جدران الحماية وأنظمة المصادقة وبوابة البريد الإلكتروني وDNS. احتفظ بالسجلات لمدة 90 يومًا على الأقل (12 شهرًا موصى به للتحقيق في الحوادث).',
+        weight: 2,
+      },
+      {
+        id: 'de3',
+        text: 'هل لديكم مراقبة أمنية على مدار الساعة — داخليًا أو عبر مزود SOC/MDR مُدار؟',
+        why: 'معظم الهجمات السيبرانية تحدث خارج ساعات العمل — يوقّت المهاجمون نشاطهم عمدًا لتجنب الاكتشاف. صباح الاثنين هو وقت ذروة نشر برامج الفدية. بدون مراقبة 24/7، تسير الهجمات دون رقيب طوال عطلة نهاية الأسبوع.',
+        example: 'Arctic Wolf MDR أو WatchGuard MDR يوفران مركز عمليات أمني 24/7 يراقب بيئتك باستمرار، ويُنبّه على التهديدات ويستجيب في الوقت الفعلي بجزء من تكلفة مركز العمليات الأمني الداخلي.',
+        guidance: 'NIST CSF DE.CM-09. المراقبة على مدار الساعة تتجاوز قدرات فرق تكنولوجيا المعلومات الداخلية الكثيرة. يوفر الكشف والاستجابة المُدارة (MDR) قدرات مركز العمليات الأمني على مستوى المؤسسات بأسعار تناسب الشركات الصغيرة والمتوسطة.',
+        weight: 3,
+        skipIf: { questionId: 'de1', answer: false },
+      },
+      {
+        id: 'de4',
+        text: 'هل تتلقون موجزات استخبارات تهديدات ذات صلة بأنظمتكم وقطاعكم؟',
+        why: 'تُمكّن استخبارات التهديدات من الأمان الاستباقي بدلًا من التفاعلي. معرفة أن مجموعة فدية معينة تستهدف قطاعك هذا الأسبوع يتيح لك مراجعة الضوابط ذات الصلة قبل أن يُستهدف.',
+        example: 'خدمة الإنذار المبكر من NCSC (مجانية للمؤسسات البريطانية). مراكز مشاركة وتحليل المعلومات الخاصة بالقطاع (ISACs). يوفر Arctic Wolf استخبارات التهديدات كجزء من خدمة MDR الخاصة به.',
+        guidance: 'NIST CSF DE.AE-02. خدمة الإنذار المبكر المجانية من NCSC توفر استخبارات تهديدات منتقاة بناءً على نطاقات IP ونطاقاتك. سجّل على ncsc.gov.uk.',
+        weight: 2,
+      },
+    ],
+  },
+  {
+    id: 'respond',
+    name: 'الاستجابة',
+    ref: 'RS',
+    description: 'تخطيط الاستجابة للحوادث، الاتصالات، التحليل، والتخفيف',
+    tagline: 'اعرف بالضبط ماذا تفعل عند وقوع حادثة',
+    color: '#ef4444',
+    bpProducts: ['Arctic Wolf MDR', 'WatchGuard MDR', 'Barracuda XDR'],
+    questions: [
+      {
+        id: 'rs1',
+        text: 'هل لديكم خطة استجابة للحوادث موثقة للتعامل مع الهجمات السيبرانية؟',
+        why: 'بدون خطة، تكون الاستجابة للخرق فوضوية. وجد IBM 2025 أن المنظمات التي لديها خطط استجابة للحوادث توفر ما معدله 1.5 مليون دولار لكل خرق مقارنةً بتلك التي ليست لديها. الخطة التي لم تُكتب أبدًا لن تُنفَّذ بشكل صحيح تحت الضغط.',
+        example: 'دليل توثيقي يغطي: من تتصل به أولًا، كيفية عزل الأنظمة المتأثرة، متى تُخطر ICO، كيفية التواصل مع العملاء، ومن لديه صلاحية إخراج الأنظمة من الخدمة.',
+        guidance: 'NIST CSF RS.MA-01. لا تحتاج خطة الاستجابة للحوادث أن تكون شاملة — وثيقة واضحة وقابلة للتنفيذ تغطي أول 24 ساعة أكثر قيمة من وثيقة شاملة لم يقرأها أحد.',
+        weight: 3,
+      },
+      {
+        id: 'rs2',
+        text: 'هل تم اختبار أو تمرين خطة الاستجابة للحوادث في الأشهر الـ 12 الماضية؟',
+        why: 'الخطط التي لم تُختبر أبدًا ستفشل تحت الضغط. تكشف تمارين الطاولة الثغرات، وتبني الذاكرة العضلية، وتضمن أن الجميع يعرف دوره — حتى لا تكون المرة الأولى أثناء هجوم فدية حي في الساعة الثانية صباحًا.',
+        example: 'تمرين طاولة لمدة ساعتين: "الساعة الخامسة مساء يوم الجمعة. أبلغ مدير مالي عن ظهور ملاحظة فدية على جهاز الكمبيوتر. ماذا تفعل؟" تتبع الخطة خطوة بخطوة، مع تحديد الثغرات.',
+        guidance: 'NIST CSF RS.MA-04. أدرج تكنولوجيا المعلومات والإدارة العليا والموارد البشرية والاتصالات في التمارين. وثّق النتائج وحدّث الخطة بناءً على ما تم تحديده.',
+        weight: 2,
+        skipIf: { questionId: 'rs1', answer: false },
+      },
+      {
+        id: 'rs3',
+        text: 'هل تفهمون التزاماتكم القانونية للإبلاغ عن خرق بيانات شخصية؟',
+        why: 'يتطلب قانون GDPR في المملكة المتحدة الإخطار لـ ICO في غضون 72 ساعة من الإدراك بخرق البيانات الشخصية. قد يترتب على عدم الإبلاغ في الوقت المحدد غرامات كبيرة — إضافةً إلى الخرق نفسه. كثير من المنظمات لا تعلم أن الساعة تبدأ في العدّ فورًا.',
+        example: 'إذا شفّرت هجمة فدية قاعدة بيانات تحتوي على أسماء العملاء وعناوين بريدهم الإلكتروني، يجب عليك إخطار ICO في غضون 72 ساعة وربما إخطار الأفراد المتأثرين.',
+        guidance: 'NIST CSF RS.CO-02. "الإدراك" يعني أي موظف لديه صلاحية التصرف — وليس فقط عند إخطار مسؤول حماية البيانات رسميًا. درّب موظفيك في الخطوط الأمامية على التصعيد الفوري.',
+        weight: 2,
+      },
+      {
+        id: 'rs4',
+        text: 'هل لديكم علاقات متفق عليها مسبقًا مع دعم الاستجابة الخارجي للحوادث السيبرانية؟',
+        why: 'أثناء الحادثة هو أسوأ وقت للبحث عن شركة استجابة للحوادث. البحث عن مساعدة والتفاوض على العقود وإدخال مورد جديد يستغرق أيامًا — أيام لا يزال المهاجم خلالها نشطًا.',
+        example: 'توقيع استباقي مع شركة أمن سيبراني يضمن الاستجابة في غضون ساعات ولديها بالفعل بنية شبكتك وتفاصيل التواصل معك. كثير من بوالص التأمين الإلكتروني تتضمن وصولًا إلى شركات استجابة للحوادث.',
+        guidance: 'NIST CSF RS.CO-05. تحقق من بوليصة التأمين الإلكترونية الخاصة بك — معظمها يتضمن وصولًا إلى لجنة من شركات الاستجابة للحوادث المعتمدة كجزء من التغطية. يتضمن Arctic Wolf MDR دعم الاستجابة للحوادث.',
+        weight: 2,
+      },
+    ],
+  },
+  {
+    id: 'recover',
+    name: 'الاسترداد',
+    ref: 'RC',
+    description: 'تخطيط الاسترداد، استعادة القدرات، والدروس المستفادة',
+    tagline: 'استعد العمليات وتعلم من كل حادثة',
+    color: '#06b6d4',
+    bpProducts: ['Keepit M365 Backup', 'Druva inSync', 'Druva Phoenix', 'Barracuda Cloud-to-Cloud Backup'],
+    questions: [
+      {
+        id: 'rc1',
+        text: 'هل لديكم خطة استمرارية أعمال أو خطة تعافٍ من الكوارث تغطي هجومًا سيبرانيًا كبيرًا؟',
+        why: 'الهجوم السيبراني مختلف جوهريًا عن الكارثة التقليدية (الحريق والفيضان). قد لا تتضرر الأنظمة فعليًا لكنها تبقى غير متاحة لأسابيع. خطط استمرارية الأعمال العامة كثيرًا ما تفشل في معالجة التحديات المحددة للحوادث السيبرانية.',
+        example: 'خطة استرداد خاصة بالأمن السيبراني: كيفية العمل بدون نظام ERP لمدة أسبوعين، والعمليات اليدوية التي تحل محل الآلية، وكيفية التواصل إذا كان البريد الإلكتروني غير متاح.',
+        guidance: 'NIST CSF RC.RP-01. وجد Sophos 2025 متوسط تكلفة معالجة بلغت 1.84 مليون جنيه إسترليني لبرامج الفدية — مدفوعة إلى حد بعيد بانقطاع الخدمة المطوّل. تقلل خطة الاسترداد المختبرة هذا الرقم مباشرةً.',
+        weight: 3,
+      },
+      {
+        id: 'rc2',
+        text: 'هل حددتم واختبرتم RTOs وRPOs لأنظمتكم الحيوية؟',
+        why: 'Recovery Time Objective (RTO — المدة التي تستطيع البقاء بدون نظام) وRecovery Point Objective (RPO — مقدار فقدان البيانات المقبول) يجب تحديدهما قبل الحادثة، وليس أثناءها.',
+        example: 'النظام المالي: RTO 4 ساعات (لا يمكن معالجة الرواتب بدونه)، RPO ساعة واحدة (أقصى فقدان مقبول لبيانات المعاملات). البريد الإلكتروني: RTO 8 ساعات، RPO 4 ساعات. هذه تحرك قرارات استثمار النسخ الاحتياطية والاسترداد.',
+        guidance: 'NIST CSF RC.RP-03. بدون RTOs/RPOs محددة، لا يمكنك معرفة ما إذا كانت قدرة الاسترداد الحالية تلبي احتياجات العمل. حددها مع أصحاب العمل، وليس تكنولوجيا المعلومات فقط.',
+        weight: 2,
+        skipIf: { questionId: 'rc1', answer: false },
+      },
+      {
+        id: 'rc3',
+        text: 'هل تستطيعون استعادة الأنظمة والبيانات الحيوية في إطار زمني مقبول في أعقاب برامج الفدية؟',
+        why: 'وجد Sophos 2025 أن متوسط وقت الاسترداد من برامج الفدية هو أسبوع واحد، مع 15% يستغرقون شهرًا أو أكثر. كل يوم من انقطاع الخدمة له تأثير مالي مباشر. قدرتك على الاسترداد تحدد مباشرةً مدة توقفك.',
+        example: 'اختبار الاسترداد الفعلي من النسخ الاحتياطية: استرداد خادم حيوي من النسخة الاحتياطية والتحقق من تشغيله الكامل. قِس الوقت المستغرق. هل يلبي هذا RTO الخاص بك؟ إذا لا، يحتاج حل النسخ الاحتياطي إلى الترقية.',
+        guidance: 'NIST CSF RC.RP-05. يجب اختبار قدرة الاسترداد مرة واحدة على الأقل سنويًا من خلال تمرين استرداد كامل — وليس مجرد التحقق من النسخ الاحتياطية. أدرج وقت الاسترداد في وثائق الاختبار.',
+        weight: 3,
+      },
+      {
+        id: 'rc4',
+        text: 'هل تجرون مراجعات ما بعد الحوادث لتحسين دفاعاتكم بعد الأحداث الأمنية؟',
+        why: 'كل حدث أمني — حتى البسيطة منها — يحتوي على دروس. المنظمات التي تجري مراجعات لا لوم فيها بعد الحوادث تحسّن وضعها باستمرار مع مرور الوقت. أما التي لا تفعل فتكرر نفس الأخطاء.',
+        example: 'بعد الإبلاغ عن بريد إلكتروني تصيد احتيالي: "كيف نجح في اختراق مرشح البريد الإلكتروني؟ هل كان متغيرًا جديدًا؟ هل يجب تعديل قواعد التصفية؟ هل يحتاج الموظفون إلى تدريب تذكيري؟"',
+        guidance: 'NIST CSF RC.IM-01. يجب أن تكون مراجعات ما بعد الحوادث بلا لوم وبناءة — تركّز على تحسين العمليات، وليس المساءلة الفردية. وثّق النتائج وتتبع المعالجة.',
+        weight: 2,
+      },
+    ],
+  },
+];
+
 const TOTAL_QUESTIONS = NIST_FUNCTIONS.reduce((sum, f) => sum + f.questions.length, 0);
 
-function getRiskLevel(score: number): { label: string; color: string; bgColor: string; description: string } {
-  if (score >= 80) return { label: 'Low Risk', color: '#10b981', bgColor: '#f0fdf4', description: 'Strong security posture. Focus on continuous improvement and monitoring.' };
-  if (score >= 60) return { label: 'Medium Risk', color: '#f59e0b', bgColor: '#fffbeb', description: 'Reasonable baseline with notable gaps requiring prioritised attention.' };
-  if (score >= 40) return { label: 'High Risk', color: '#f97316', bgColor: '#fff7ed', description: 'Significant gaps across multiple areas. Prioritised remediation plan required.' };
-  return { label: 'Critical Risk', color: '#ef4444', bgColor: '#fef2f2', description: 'Fundamental controls missing. Immediate remediation action essential.' };
+function getRiskLevel(score: number, ar = false): { label: string; color: string; bgColor: string; description: string } {
+  if (score >= 80) return { label: ar ? 'مخاطر منخفضة' : 'Low Risk', color: '#10b981', bgColor: '#f0fdf4', description: ar ? 'وضع أمني قوي. ركّز على التحسين المستمر والمراقبة.' : 'Strong security posture. Focus on continuous improvement and monitoring.' };
+  if (score >= 60) return { label: ar ? 'مخاطر متوسطة' : 'Medium Risk', color: '#f59e0b', bgColor: '#fffbeb', description: ar ? 'خط أساسي معقول مع ثغرات جديرة بالاهتمام المُعطى له الأولوية.' : 'Reasonable baseline with notable gaps requiring prioritised attention.' };
+  if (score >= 40) return { label: ar ? 'مخاطر عالية' : 'High Risk', color: '#f97316', bgColor: '#fff7ed', description: ar ? 'ثغرات كبيرة عبر مجالات متعددة. مطلوب خطة معالجة ذات أولوية.' : 'Significant gaps across multiple areas. Prioritised remediation plan required.' };
+  return { label: ar ? 'مخاطر حرجة' : 'Critical Risk', color: '#ef4444', bgColor: '#fef2f2', description: ar ? 'ضوابط أساسية مفقودة. إجراء فوري للمعالجة ضروري.' : 'Fundamental controls missing. Immediate remediation action essential.' };
 }
 
 const PRODUCT_MAP: Record<string, string[]> = {
@@ -423,8 +756,9 @@ function generateRiskPDF(answers: Answers, accountName: string) {
   const darkBg: [number, number, number] = [26, 10, 46];
   const lightGrey: [number, number, number] = [248, 248, 252];
 
+  const activeFunctions = isAr ? NIST_FUNCTIONS_AR : NIST_FUNCTIONS;
   const overallScore = calcOverallScore(answers);
-  const risk = getRiskLevel(overallScore);
+  const risk = getRiskLevel(overallScore, isAr);
   const riskRgb = overallScore >= 80 ? [16, 185, 129] as [number,number,number] : overallScore >= 60 ? [245, 158, 11] as [number,number,number] : overallScore >= 40 ? [249, 115, 22] as [number,number,number] : [239, 68, 68] as [number,number,number];
 
   doc.setFillColor(...darkBg); doc.rect(0, 0, W, 297, 'F');
@@ -665,6 +999,7 @@ function generateRiskPDF(answers: Answers, accountName: string) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function CyberRiskScore({ accountName, domain, onSave }: { accountName: string; domain?: string; onSave?: (score: number, label: string, submitted_at: string) => void }) {
+  const { t, isAr, dir } = useLang();
   const [answers, setAnswers] = useState<Answers>({});
   const [queuedQuestions, setQueuedQuestions] = useState<(Question & { fnId: string })[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -710,7 +1045,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
     fetch('/api/assessments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ domain, type: 'cyber-risk-score', answers, score: calcOverallScore(answers), label: `${getRiskLevel(calcOverallScore(answers)).label} · ${calcOverallScore(answers)}/100` }),
+      body: JSON.stringify({ domain, type: 'cyber-risk-score', answers, score: calcOverallScore(answers), label: `${getRiskLevel(calcOverallScore(answers), false).label} · ${calcOverallScore(answers)}/100` }),
     }).then(r => r.ok ? r.json() : null).then(data => {
       if (data?.id) {
         setSavedAssessmentId(data.id);
@@ -737,7 +1072,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
   }
 
   function getFn(qId: string) {
-    return NIST_FUNCTIONS.find(fn => fn.questions.some(q => q.id === qId));
+    return activeFunctions.find(fn => fn.questions.some(q => q.id === qId));
   }
 
   function answerQuestion(val: boolean) {
@@ -768,8 +1103,9 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
     hasSaved.current = false;
   }
 
+  const activeFunctions = isAr ? NIST_FUNCTIONS_AR : NIST_FUNCTIONS;
   const overallScore = calcOverallScore(answers);
-  const risk = getRiskLevel(overallScore);
+  const risk = getRiskLevel(overallScore, isAr);
   const progress = queuedQuestions.length > 0 ? Math.round((currentIdx / queuedQuestions.length) * 100) : 0;
   const currentQuestion = queuedQuestions[currentIdx];
   const currentFn = currentQuestion ? getFn(currentQuestion.id) : undefined;
@@ -777,7 +1113,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
   // ── Landing ──────────────────────────────────────────────────────────────────
   if (!started) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-5" dir={dir}>
         {/* Hero */}
         <div className="rounded-2xl overflow-hidden border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
           <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
@@ -787,9 +1123,9 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
                 <Target className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-[#1f2937]">Cyber Risk Score</h2>
+                <h2 className="text-lg font-bold text-[#1f2937]">{isAr ? "درجة المخاطر السيبرانية" : "Cyber Risk Score"}</h2>
                 <p className="text-[#6b7280] text-sm leading-relaxed mt-1">
-                  An adaptive assessment based on the <strong>NIST Cybersecurity Framework 2.0</strong> — the globally recognised standard for cyber risk management. Each question includes real-world context and statistics to help you understand exactly why it matters.
+                  {isAr ? <span>تقييم تكيفي مبني على <strong>إطار NIST للأمن السيبراني 2.0</strong> — المعيار المعترف به عالميًا لإدارة المخاطر السيبرانية. يتضمن كل سؤال سياقًا وإحصاءات من العالم الحقيقي لمساعدتك على فهم أهميته تمامًا.</span> : <span>An adaptive assessment based on the <strong>NIST Cybersecurity Framework 2.0</strong> — the globally recognised standard for cyber risk management. Each question includes real-world context and statistics to help you understand exactly why it matters.</span>}
                 </p>
               </div>
             </div>
@@ -798,7 +1134,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
 
         {/* NIST Functions */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {NIST_FUNCTIONS.map(fn => (
+          {activeFunctions.map(fn => (
             <div key={fn.id} className="bg-white border border-[#e5e7eb] rounded-xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold" style={{ background: fn.color }}>
@@ -807,7 +1143,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
                 <span className="text-sm font-bold text-[#1f2937]">{fn.name}</span>
               </div>
               <p className="text-xs text-[#9ca3af] leading-snug">{fn.tagline}</p>
-              <div className="mt-2 text-[10px] text-[#9ca3af]">{fn.questions.length} questions</div>
+              <div className="mt-2 text-[10px] text-[#9ca3af]">{fn.questions.length} {isAr ? "سؤال" : "questions"}</div>
             </div>
           ))}
         </div>
@@ -817,9 +1153,9 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
           <div className="flex items-start gap-3">
             <Info className="w-4 h-4 text-[#4494D1] flex-shrink-0 mt-0.5" />
             <div>
-              <div className="text-sm font-semibold text-[#1f2937] mb-1">Adaptive & contextual</div>
+              <div className="text-sm font-semibold text-[#1f2937] mb-1">{isAr ? "تكيفي وسياقي" : "Adaptive & contextual"}</div>
               <div className="text-xs text-[#6b7280] leading-relaxed">
-                Questions adapt based on your answers — some follow-ups are skipped if they aren't relevant to you. Each question includes <strong>why it matters</strong>, a <strong>real-world example</strong>, and the <strong>NIST CSF reference</strong>. Takes approximately 5–8 minutes. A branded PDF report with product recommendations is generated at the end.
+                {isAr ? "تتكيف الأسئلة بناءً على إجاباتك — يتم تخطي بعض الأسئلة التتبعية إذا لم تكن ذات صلة بك. يتضمن كل سؤال 'لماذا هذا مهم' ومثالًا من العالم الحقيقي ومرجع NIST CSF. يستغرق حوالي 5–8 دقائق. يُنشأ في النهاية تقرير PDF بتوصيات المنتجات." : "Questions adapt based on your answers — some follow-ups are skipped if they aren't relevant to you. Each question includes why it matters, a real-world example, and the NIST CSF reference. Takes approximately 5–8 minutes. A branded PDF report with product recommendations is generated at the end."}
               </div>
             </div>
           </div>
@@ -828,9 +1164,9 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
         {/* Stats teaser */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { stat: '241 days', label: 'Average breach dwell time without monitoring', source: 'IBM 2025' },
-            { stat: '$1.5M', label: 'Average saving for orgs with an IR plan', source: 'IBM 2025' },
-            { stat: '60%', label: 'Of breaches involve the human element', source: 'Verizon DBIR 2025' },
+            { stat: isAr ? '241 يومًا' : '241 days', label: isAr ? 'متوسط مدة الخرق دون مراقبة' : 'Average breach dwell time without monitoring', source: 'IBM 2025' },
+            { stat: '$1.5M', label: isAr ? 'متوسط التوفير للمنظمات التي لديها خطة استجابة للحوادث' : 'Average saving for orgs with an IR plan', source: 'IBM 2025' },
+            { stat: '60%', label: isAr ? 'من الخروقات تتضمن العنصر البشري' : 'Of breaches involve the human element', source: 'Verizon DBIR 2025' },
           ].map(s => (
             <div key={s.stat} className="bg-white border border-[#e5e7eb] rounded-xl p-3 text-center shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
               <div className="text-lg font-bold text-[#C65793]">{s.stat}</div>
@@ -843,7 +1179,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
         <button onClick={() => setStarted(true)}
           className="w-full flex items-center justify-center gap-2 py-3.5 text-white rounded-xl font-semibold transition-opacity hover:opacity-90"
           style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)' }}>
-          Begin Risk Assessment <ChevronRight className="w-4 h-4" />
+          {isAr ? 'بدء تقييم المخاطر' : 'Begin Risk Assessment'} <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     );
@@ -851,8 +1187,8 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
 
   // ── Results ──────────────────────────────────────────────────────────────────
   if (showResults) {
-    const fnScores = NIST_FUNCTIONS.map(fn => ({ ...fn, score: calcFunctionScore(fn, answers) }));
-    const gaps = NIST_FUNCTIONS.flatMap(fn =>
+    const fnScores = activeFunctions.map(fn => ({ ...fn, score: calcFunctionScore(fn, answers) }));
+    const gaps = activeFunctions.flatMap(fn =>
       fn.questions.filter(q => answers[q.id] === false).map(q => ({ fn, q }))
     );
     const prodFreq: Record<string, number> = {};
@@ -861,14 +1197,14 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
     const weakest = [...fnScores].sort((a, b) => a.score - b.score).slice(0, 3).filter(f => f.score < 80);
 
     return (
-      <div className="space-y-5">
+      <div className="space-y-5" dir={dir}>
         {/* Score card */}
         <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
           <div className="h-1" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
           <div className="p-5">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-lg font-bold text-[#1f2937]">Cyber Risk Score</h2>
+                <h2 className="text-lg font-bold text-[#1f2937]">{isAr ? "درجة المخاطر السيبرانية" : "Cyber Risk Score"}</h2>
                 <p className="text-[#9ca3af] text-sm">{accountName} · NIST CSF 2.0</p>
               </div>
               <div className="text-right">
@@ -887,7 +1223,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
               {fnScores.map(fn => {
-                const fnRisk = getRiskLevel(fn.score);
+                const fnRisk = getRiskLevel(fn.score, isAr);
                 return (
                   <div key={fn.id} className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-3">
                     <div className="flex items-center justify-between mb-2">
@@ -909,10 +1245,10 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
               <button onClick={() => generateRiskPDF(answers, accountName)}
                 className="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
                 style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
-                <Download className="w-4 h-4" /> Download PDF Report
+                <Download className="w-4 h-4" /> {isAr ? "تحميل تقرير PDF" : "Download PDF Report"}
               </button>
               <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-[#f3f4f6] text-[#6b7280] rounded-xl text-sm hover:bg-[#e5e7eb] transition-colors">
-                <RotateCcw className="w-4 h-4" /> Retake
+                <RotateCcw className="w-4 h-4" /> {isAr ? "إعادة التقييم" : "Retake"}
               </button>
             </div>
           </div>
@@ -921,14 +1257,14 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
         {weakest.length > 0 && (
           <div>
             <h3 className="text-sm font-bold text-[#1f2937] mb-3 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" /> Priority Areas
+              <AlertTriangle className="w-4 h-4 text-amber-500" /> {isAr ? "مجالات الأولوية" : "Priority Areas"}
             </h3>
             <div className="space-y-3">
               {weakest.map(fn => (
                 <div key={fn.id} className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.06)] rounded-xl p-4" style={{ borderLeftColor: fn.color, borderLeftWidth: 3 }}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-bold" style={{ color: fn.color }}>{fn.ref}: {fn.name}</span>
-                    <span className="text-base font-bold" style={{ color: getRiskLevel(fn.score).color }}>{fn.score}%</span>
+                    <span className="text-base font-bold" style={{ color: getRiskLevel(fn.score, isAr).color }}>{fn.score}%</span>
                   </div>
                   <p className="text-xs text-[#6b7280] mb-2">{fn.tagline}</p>
                   {fn.bpProducts.length > 0 && (
@@ -947,14 +1283,14 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
         {topProds.length > 0 && (
           <div>
             <h3 className="text-sm font-bold text-[#1f2937] mb-3 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[#C65793]" /> Broad Peak Recommendations
+              <Shield className="w-4 h-4 text-[#C65793]" /> {isAr ? "توصيات Broad Peak" : "Broad Peak Recommendations"}
             </h3>
             <div className="space-y-2">
               {topProds.map(([prod, count]) => (
                 <div key={prod} className="flex items-center gap-3 p-3 bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.05)] rounded-xl">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }} />
                   <span className="text-sm text-[#1f2937] font-medium flex-1">{prod}</span>
-                  <span className="text-xs text-[#9ca3af]">Addresses {count} gap{count > 1 ? 's' : ''}</span>
+                  <span className="text-xs text-[#9ca3af]">{isAr ? `يعالج ${count} ${count > 1 ? "ثغرات" : "ثغرة"}` : `Addresses ${count} gap${count > 1 ? "s" : ""}`}</span>
                 </div>
               ))}
             </div>
@@ -963,9 +1299,9 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
 
         {gaps.length > 0 && (
           <div>
-            <h3 className="text-sm font-bold text-[#1f2937] mb-3">All Gaps ({gaps.length})</h3>
+            <h3 className="text-sm font-bold text-[#1f2937] mb-3">{isAr ? `جميع الثغرات (${gaps.length})` : `All Gaps (${gaps.length})`}</h3>
             <div className="space-y-2">
-              {NIST_FUNCTIONS.map(fn => {
+              {activeFunctions.map(fn => {
                 const fnGaps = gaps.filter(g => g.fn.id === fn.id);
                 if (fnGaps.length === 0) return null;
                 return (
@@ -973,7 +1309,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
                     <div className="px-4 py-2 flex items-center gap-2" style={{ background: fn.color + '10', borderBottom: `1px solid ${fn.color}25` }}>
                       <div className="w-5 h-5 rounded text-[9px] font-bold flex items-center justify-center text-white" style={{ background: fn.color }}>{fn.ref}</div>
                       <span className="text-xs font-bold" style={{ color: fn.color }}>{fn.name}</span>
-                      <span className="text-xs text-[#9ca3af] ml-auto">{fnGaps.length} gap{fnGaps.length > 1 ? 's' : ''}</span>
+                      <span className="text-xs text-[#9ca3af] ml-auto">{isAr ? `${fnGaps.length} ${fnGaps.length > 1 ? "ثغرات" : "ثغرة"}` : `${fnGaps.length} gap${fnGaps.length > 1 ? "s" : ""}`}</span>
                     </div>
                     <div className="p-3 space-y-2">
                       {fnGaps.map(({ q }) => (
@@ -999,8 +1335,8 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
           <div className="bg-[#f0fdf4] border border-[#86efac] rounded-xl p-5 flex items-center gap-3">
             <CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0" />
             <div>
-              <div className="text-sm font-bold text-emerald-700">Excellent posture — no gaps identified</div>
-              <div className="text-xs text-emerald-600 mt-1">Your organisation demonstrates strong alignment with NIST CSF 2.0. Continue regular reviews to maintain this posture.</div>
+              <div className="text-sm font-bold text-emerald-700">{isAr ? "وضع ممتاز — لا توجد ثغرات محددة" : "Excellent posture — no gaps identified"}</div>
+              <div className="text-xs text-emerald-600 mt-1">{isAr ? "تُظهر مؤسستكم توافقًا قويًا مع NIST CSF 2.0. واصلوا المراجعات المنتظمة للحفاظ على هذا الوضع." : "Your organisation demonstrates strong alignment with NIST CSF 2.0. Continue regular reviews to maintain this posture."}</div>
             </div>
           </div>
         )}
@@ -1009,19 +1345,19 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
   }
 
   // ── Question view ──────────────────────────────────────────────────────────
-  if (!currentQuestion) return <div className="text-[#9ca3af] text-sm text-center py-8">Preparing questions...</div>;
+  if (!currentQuestion) return <div className="text-[#9ca3af] text-sm text-center py-8">{isAr ? 'جارٍ تحضير الأسئلة...' : 'Preparing questions...'}</div>;
 
   const recentAnswers = queuedQuestions.slice(Math.max(0, currentIdx - 3), currentIdx).map(q => ({
     q, ans: answers[q.id], fn: getFn(q.id),
   }));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={dir}>
       {/* Progress */}
       <div>
         <div className="flex justify-between text-xs text-[#9ca3af] mb-1.5">
-          <span>Question {currentIdx + 1} of ~{queuedQuestions.length}</span>
-          <span>{progress}% complete</span>
+          <span>{isAr ? `السؤال ${currentIdx + 1} من ~${queuedQuestions.length}` : `Question ${currentIdx + 1} of ~${queuedQuestions.length}`}</span>
+          <span>{progress}% {isAr ? 'مكتمل' : 'complete'}</span>
         </div>
         <div className="h-1.5 bg-[#f3f4f6] rounded-full">
           <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #8b5cf6, #06b6d4)' }} />
@@ -1030,7 +1366,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
 
       {/* Function indicators */}
       <div className="flex gap-1">
-        {NIST_FUNCTIONS.map(fn => (
+        {activeFunctions.map(fn => (
           <div key={fn.id} className="flex-1 h-1 rounded-full transition-all"
             style={{ background: fn.id === currentFn?.id ? fn.color : fn.color + '25' }} />
         ))}
@@ -1063,7 +1399,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
             ))}
           </div>
           <span className="text-[10px] text-[#9ca3af]">
-            {currentQuestion.weight === 3 ? 'High importance' : currentQuestion.weight === 2 ? 'Medium importance' : 'Standard'}
+            {isAr ? (currentQuestion.weight === 3 ? 'أهمية عالية' : currentQuestion.weight === 2 ? 'أهمية متوسطة' : 'معيار') : (currentQuestion.weight === 3 ? 'High importance' : currentQuestion.weight === 2 ? 'Medium importance' : 'Standard')}
           </span>
         </div>
 
@@ -1073,7 +1409,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
         <div className="mb-3 p-3 rounded-xl border" style={{ background: (currentFn?.color || '#6b7280') + '08', borderColor: (currentFn?.color || '#e5e7eb') + '30' }}>
           <div className="flex items-center gap-1.5 mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: currentFn?.color || '#6b7280' }} />
-            <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: currentFn?.color || '#6b7280' }}>Why this matters</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: currentFn?.color || '#6b7280' }}>{isAr ? "لماذا هذا مهم" : "Why this matters"}</span>
           </div>
           <p className="text-xs text-[#374151] leading-relaxed">{currentQuestion.why}</p>
         </div>
@@ -1089,14 +1425,14 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
         <button onClick={() => setShowExample(v => !v)}
           className="flex items-center gap-1.5 text-xs text-[#9ca3af] hover:text-[#6b7280] mb-4 transition-colors">
           <HelpCircle className="w-3.5 h-3.5" />
-          {showExample ? 'Hide example' : 'See a real-world example'}
+          {showExample ? (isAr ? 'إخفاء المثال' : 'Hide example') : (isAr ? 'عرض مثال من العالم الحقيقي' : 'See a real-world example')}
         </button>
 
         {showExample && (
           <div className="mb-4 p-3 bg-[#f0f6ff] border border-[#4494D130] rounded-xl">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Info className="w-3.5 h-3.5 text-[#4494D1]" />
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4494D1]">Real-world example</span>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4494D1]">{isAr ? "مثال من العالم الحقيقي" : "Real-world example"}</span>
             </div>
             <p className="text-xs text-[#374151] leading-relaxed">{currentQuestion.example}</p>
           </div>
@@ -1114,11 +1450,11 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
         <div className="grid grid-cols-2 gap-3">
           <button onClick={() => answerQuestion(true)}
             className="flex items-center justify-center gap-2 py-4 bg-[#f0fdf4] border-2 border-[#10b981] text-[#059669] rounded-xl font-bold text-sm hover:bg-[#dcfce7] transition-all">
-            <CheckCircle className="w-5 h-5" /> Yes
+            <CheckCircle className="w-5 h-5" /> {isAr ? "نعم" : "Yes"}
           </button>
           <button onClick={() => answerQuestion(false)}
             className="flex items-center justify-center gap-2 py-4 bg-[#fef2f2] border-2 border-[#ef4444] text-[#dc2626] rounded-xl font-bold text-sm hover:bg-[#fee2e2] transition-all">
-            <XCircle className="w-5 h-5" /> No
+            <XCircle className="w-5 h-5" /> {isAr ? "لا" : "No"}
           </button>
         </div>
       </div>
@@ -1126,7 +1462,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
       {/* Recent trail */}
       {recentAnswers.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wide">Recent answers</div>
+          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wide">{isAr ? "الإجابات الأخيرة" : "Recent answers"}</div>
           {recentAnswers.map(({ q, ans, fn }) => (
             <div key={q.id} className="flex items-center gap-2.5 p-2.5 bg-white border border-[#e5e7eb] rounded-lg">
               {ans === true

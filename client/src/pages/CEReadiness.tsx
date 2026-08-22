@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLang } from '../lib/LanguageContext';
 import { getToken } from '../lib/api';
 import { CheckCircle, XCircle, ChevronRight, Download, RotateCcw, Shield, AlertTriangle, Info, Lock, Wifi, Users, Bug, RefreshCw, HelpCircle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
@@ -239,6 +240,238 @@ const CE_SECTIONS = [
         why: 'Ad-hoc patching is unreliable. A documented process ensures patches are applied consistently, within defined timeframes, with accountability. CE+ requires this as written evidence.',
         example: 'Your policy should include: who is responsible for patching, which systems are in scope, what timeframes apply (14 days for critical/high), and how exceptions are handled and approved.',
         guidance: 'For CE+, the on-site assessor will ask for your patch management documentation. A simple policy document with defined responsibilities and SLAs is sufficient.',
+      },
+    ],
+  },
+];
+
+
+// ── Arabic CE Sections ───────────────────────────────────────────────────────
+const CE_SECTIONS_AR = [
+  {
+    id: 'firewall',
+    title: 'جدران الحماية',
+    control: 'الضابط الأول',
+    tagline: 'خط دفاعك الأول ضد الإنترنت',
+    intro: 'تعمل جدران الحماية كحاجز أمني بين شبكتك الداخلية والإنترنت. تشترط Cyber Essentials أن تكون كل جهاز متصل بالإنترنت — وحدود شبكتك — محمية بجدار حماية مُهيَّأ بشكل صحيح.',
+    questions: [
+      {
+        id: 'fw1',
+        text: 'هل لديك جدار حماية يحمي اتصالك بالإنترنت؟',
+        why: 'بدون جدار حماية على حدود الشبكة، تكون شبكتك مكشوفة مباشرة للهجمات القادمة من الإنترنت على مدار الساعة. تُفيد NCSC بأن الخدمات غير المحمية يتم استكشافها خلال دقائق من الاتصال بالإنترنت.',
+        example: 'يمكن أن يكون ذلك جهازًا ماديًا (مثل Barracuda CloudGen Firewall أو WatchGuard Firebox)، أو جدار حماية برمجي مدمج في جهاز التوجيه، أو حل سحابي لحماية المحيط.',
+        guidance: 'يجب أن تحتوي كل جهاز يربط شبكتك الداخلية بالإنترنت على حماية نشطة بجدار الحماية — بما في ذلك أجهزة التوجيه للنطاق العريض وبوابات السحابة.',
+      },
+      {
+        id: 'fw2',
+        text: 'هل تم تهيئة جدار الحماية لحظر جميع الاتصالات الواردة ما لم يُسمح بها صراحةً؟',
+        why: 'جدار الحماية الذي يسمح بالمرور الافتراضي يوفر حماية ضئيلة. يضمن مبدأ "الحظر الافتراضي" أن الخدمات التي تعرضها عن قصد فقط هي القابلة للوصول من الإنترنت.',
+        example: 'إذا كنت تحتاج فقط إلى HTTPS (المنفذ 443) للوارد لخادم ويب، يجب حظر جميع المنافذ الأخرى. يجب ألا يكون سطح المكتب البعيد (RDP على المنفذ 3389) مفتوحًا على الإنترنت أبدًا.',
+        guidance: 'راجع مجموعة قواعد جدار الحماية — ابحث عن أي قواعد واردة عريضة من نوع "السماح بالكل". يجب أن يكون لكل إذن وارد سبب عمل موثق.',
+      },
+      {
+        id: 'fw3',
+        text: 'هل يتم مراجعة قواعد جدار الحماية والموافقة عليها مرة واحدة على الأقل سنويًا؟',
+        why: 'قواعد جدار الحماية القديمة هي ناقل هجوم شائع. يتم إيقاف الخدمات، ومغادرة الموظفين، وتراكم القواعد القديمة — مما يخلق فتحات غير مقصودة.',
+        example: 'قد تكون قاعدة فُتحت لمقاول قبل عامين لا تزال نشطة. تكشف المراجعات السنوية عن هذه الحالات وتضمن أن مجموعة قواعدك تعكس احتياجات عملك الحالية.',
+        guidance: 'وثِّق كل مراجعة مع موافقة من مدير مسؤول. تتطلب CE+ أدلة على هذه العملية خلال التدقيق التقني الميداني.',
+      },
+      {
+        id: 'fw4',
+        text: 'هل تغطي قواعد جدار الحماية جميع الخدمات المواجهة للإنترنت (المواقع الإلكترونية، البريد الإلكتروني، الوصول عن بُعد)؟',
+        why: 'كل خدمة مكشوفة للإنترنت هي نقطة دخول محتملة. يقوم المهاجمون بمسح جميع المنافذ الـ 65535 بشكل منهجي — أي منفذ مفتوح بدون قاعدة جدار حماية هو باب غير محروس.',
+        example: 'الخدمات الشائعة التي تتطلب الحماية: خوادم الويب (80/443)، خوادم البريد (25/587)، بوابات VPN، موصلات Microsoft 365، وأي أدوات وصول عن بُعد.',
+        guidance: 'قم بإجراء مسح للمنافذ على عناوين IP الخارجية الخاصة بك (أدوات مثل Shodan أو nmap من منظور خارجي) لتأكيد ما هو مرئي فعلًا من الإنترنت.',
+      },
+      {
+        id: 'fw5',
+        text: 'هل يُطلب من الأجهزة الشخصية أو المهنية تفعيل جدار حماية برمجي؟',
+        why: 'تشمل Cyber Essentials جميع الأجهزة المستخدمة للعمل — بما في ذلك الأجهزة المملوكة للموظفين (BYOD). يجب أن يتمتع الكمبيوتر المحمول المستخدم للوصول إلى بريد الشركة بحماية جدار الحماية حتى خارج المكتب.',
+        example: 'يستوفي جدار حماية Windows Defender (المفعّل افتراضيًا في Windows 10/11) هذا المتطلب. يحتوي macOS على جدار حماية مدمج ضمن تفضيلات النظام > الأمان والخصوصية.',
+        guidance: 'تحقق مما إذا كان حل MDM أو إدارة نقاط النهاية الخاص بك يفرض حالة جدار الحماية. إذا كنت تستخدم Intune، ابحث عن سياسات امتثال الأجهزة.',
+      },
+    ],
+  },
+  {
+    id: 'secure_config',
+    title: 'التهيئة الآمنة',
+    control: 'الضابط الثاني',
+    tagline: 'أزل ما لا تحتاجه — أمِّن ما تبقى',
+    intro: 'تأتي كل جهاز وتطبيق وخدمة بإعدادات افتراضية مُحسَّنة لسهولة الاستخدام وليس للأمان. تعني التهيئة الآمنة إزالة الوظائف غير الضرورية بشكل فعّال وتصليب ما تبقى قبل نشر الأجهزة.',
+    questions: [
+      {
+        id: 'sc1',
+        text: 'هل يتم تغيير أسماء المستخدمين وكلمات المرور الافتراضية على جميع الأجهزة قبل النشر؟',
+        why: 'بيانات الاعتماد الافتراضية (مثل "admin/admin" أو "admin/password") موثقة علنًا وهي أول ما يجربه المهاجمون. انتشرت بوتنت Mirai — التي تسببت في انقطاعات إنترنت كبرى — كليًا باستغلال بيانات الاعتماد الافتراضية غير المغيّرة.',
+        example: 'أجهزة التوجيه والمحوّلات وجدران الحماية وأجهزة NAS والطابعات وكاميرات IP تأتي جميعها ببيانات اعتماد افتراضية. أي منها يمكن الوصول إليه من الإنترنت ببيانات اعتماد افتراضية يتعرض للاختراق فورًا.',
+        guidance: 'احتفظ بسجل آمن لجميع بيانات اعتماد الأجهزة (باستخدام مدير كلمات مرور). أدرج هذه الخطوة في قائمة التحقق الخاصة بنشر الأجهزة.',
+      },
+      {
+        id: 'sc2',
+        text: 'هل تتم إزالة أو تعطيل البرامج والخدمات والميزات غير الضرورية؟',
+        why: 'كل برنامج هو ثغرة محتملة. يمكن استغلال البرامج التي لا تستخدمها. يعني مبدأ "تقليل سطح الهجوم" أن ما هو ضروري للعمل فقط هو ما يجب أن يكون موجودًا.',
+        example: 'يجب تعطيل ميزات Windows غير المستخدمة مثل Telnet وعميل TFTP وخدمة Remote Registry. يجب إزالة البرامج التجريبية والألعاب والتطبيقات الشخصية من أجهزة العمل.',
+        guidance: 'قم بإجراء تدقيق للبرامج باستخدام أداة إدارة الأصول الخاصة بك أو مراجعة البرامج المثبتة يدويًا. أزل أي شيء ليس له مبرر تجاري واضح.',
+      },
+      {
+        id: 'sc3',
+        text: 'هل تحتفظ بجرد لجميع الأجهزة والبرامج؟',
+        why: 'لا يمكنك حماية ما لا تراه. بدون جرد الأصول، ستكون حتمًا لديك أنظمة غير مُرقَّعة وأجهزة غير مُهيَّأة وحسابات منسية — وكلها أهداف رئيسية.',
+        example: 'يجب أن يشمل جردك: جميع أجهزة الكمبيوتر المحمولة والمكتبية والخوادم والهواتف والأجهزة اللوحية ومعدات الشبكة والخدمات السحابية. يمكن لأدوات مثل CyberSmart أو Intune أتمتة ذلك.',
+        guidance: 'تتطلب CE+ (المستوى الأعلى الذي يتحقق منه مقيّم) تحديدًا أدلة على وجود سجل أصول محدَّث خلال التدقيق التقني.',
+      },
+      {
+        id: 'sc4',
+        text: 'هل تم تعطيل التشغيل التلقائي/التشغيل التلقائي للوسائط على جميع الأجهزة؟',
+        why: 'يسمح التشغيل التلقائي للبرامج الموجودة على محركات USB أو الأقراص المضغوطة بالتنفيذ تلقائيًا عند توصيلها — وهو أسلوب توزيع شائع للبرامج الضارة. يمنع تعطيله الإصابات الناجمة عن الوسائط المادية.',
+        example: 'استخدمت برمجية Stuxnet الخبيثة الشهيرة ميزة التشغيل التلقائي في Windows للانتشار عبر محركات USB. حتى محركات USB الموثوقة الظاهر التي تُوجد في مواقف السيارات يجب ألا تُوصَّل أبدًا.',
+        guidance: 'يتم تهيئة ذلك عادةً عبر Group Policy (Windows) أو MDM. ابحث عن "تعطيل التشغيل التلقائي" في وحدة تحكم إدارة Group Policy.',
+      },
+      {
+        id: 'sc5',
+        text: 'هل تُقفل جميع أجهزة الكمبيوتر تلقائيًا بعد فترة من الخمول؟',
+        why: 'الجهاز غير المقفل المتروك دون مراقبة — في مقهى أو على مكتب أو في قطار — يمنح أي شخص وصولًا ماديًا لجميع البيانات والأنظمة. القفل التلقائي ضابط أساسي رغم بساطته.',
+        example: 'توصي NCSC بالقفل بعد 10-15 دقيقة من الخمول. تضبط كثير من المنظمات 5 دقائق للمناطق عالية الأمان. يجب أن تكون هناك كلمة مرور أو رقم PIN مطلوبان لإلغاء القفل.',
+        guidance: 'قابل للتهيئة عبر Group Policy (Windows) أو ملف تعريف MDM.',
+      },
+    ],
+  },
+  {
+    id: 'user_access',
+    title: 'التحكم في وصول المستخدم',
+    control: 'الضابط الثالث',
+    tagline: 'امنح الناس فقط الوصول الذي يحتاجونه فعلًا',
+    intro: 'يحدّ مبدأ الامتياز الأدنى — منح المستخدمين وصولًا فقط لما يحتاجونه لأدوارهم — من الضرر الذي قد يتسبب فيه أي حساب مخترق واحد. التهديدات الداخلية وبيانات الاعتماد المخترقة والوصول العرضي إلى البيانات كلها تنخفض بشكل كبير مع ضوابط وصول صارمة.',
+    questions: [
+      {
+        id: 'ua1',
+        text: 'هل لكل مستخدم حسابه الفردي الخاص — لا حسابات مشتركة؟',
+        why: 'الحسابات المشتركة تجعل من المستحيل معرفة من فعل ماذا، ومراجعة الأنشطة، أو محاسبة الأفراد. كما لا يمكنها الحصول على MFA شخصي. إذا غادر شخص لديه كلمة المرور، يجب تغيير الحساب بأكمله.',
+        example: 'حسابات "الاستقبال" أو "الكمبيوتر المشترك" التي يستخدمها عدة أشخاص غير متوافقة. يجب أن يكون لكل شخص — بما في ذلك المقاولون والعمال المؤقتون — حساب فردي باسم شخصي.',
+        guidance: 'راجع Active Directory أو Azure AD الخاص بك بحثًا عن الحسابات العامة أو المشتركة. خصص حسابات فردية قبل إزالة الحسابات المشتركة لتجنب الاضطراب.',
+      },
+      {
+        id: 'ua2',
+        text: 'هل تكون حسابات المسؤول منفصلة عن الحسابات العادية وتُستخدم فقط لمهام الإدارة؟',
+        why: 'تصفح الويب أو قراءة البريد الإلكتروني بحساب مسؤول يعني أن البرامج الضارة التي تُواجَه خلال تلك الأنشطة تعمل بامتيازات إدارية — قادرة على تعديل النظام بأكمله.',
+        example: 'يجب أن يكون لدى موظفي تكنولوجيا المعلومات حسابان: حساب عادي (مثل j.smith@company.com) للاستخدام اليومي، وحساب مسؤول (مثل admin.j.smith@company.com) يُستخدم فقط عند إدارة الأنظمة.',
+        guidance: 'هذا مهم بشكل خاص لمسؤولي المجال. يجب أن تكون جلسات المسؤول قصيرة ومسجَّلة.',
+      },
+      {
+        id: 'ua3',
+        text: 'هل يُبقى عدد المستخدمين ذوي امتيازات المسؤول في حده الأدنى الضروري؟',
+        why: 'كل حساب مسؤول هو هدف عالي القيمة. إذا اخترق مهاجم حساب مسؤول، فلديه مفاتيح مملكتك بأكملها. كلما قل عدد المسؤولين، كان نطاق الضرر المحتمل أصغر.',
+        example: 'تحتاج شركة مكونة من 50 شخصًا عادةً إلى 2-3 مسؤولي تكنولوجيا معلومات. إذا كان للجميع حقوق مسؤول للراحة، فهذا خطر كبير. راجع وأسقط الامتيازات حيثما لم تكن ضرورية.',
+        guidance: 'أجرِ مراجعة لحقوق الوصول — اسرد جميع المستخدمين ذوي امتيازات المسؤول عبر جميع الأنظمة (AD وMicrosoft 365 والمنصات السحابية) وبرر كل منها.',
+      },
+      {
+        id: 'ua4',
+        text: 'هل تتم إزالة أو تعطيل الحسابات فورًا عند مغادرة الموظفين أو تغيير أدوارهم؟',
+        why: 'الحسابات الخاملة لموظفين سابقين هي ناقل هجوم موثق جيدًا. يبحث المهاجمون عنها تحديدًا لأنها كثيرًا ما تُغفَل وقد تحتوي على امتيازات مرتفعة.',
+        example: 'يمكن استخدام حساب Active Directory لموظف سابق، لا يزال نشطًا بعد 6 أشهر من مغادرته، للوصول إلى بيانات الشركة — خاصةً إذا كان ذلك الشخص ساخطًا الآن.',
+        guidance: 'يجب أن تتضمن عملية مغادرة الموظفين في الموارد البشرية خطوة لتكنولوجيا المعلومات. للامتثال لـ CE، تعني "فورًا" في غضون يوم العمل نفسه الذي يغادر فيه الشخص.',
+      },
+      {
+        id: 'ua5',
+        text: 'هل المصادقة متعددة العوامل (MFA) مفعّلة للخدمات السحابية والوصول عن بُعد؟',
+        why: 'MFA هي الآن متطلب إلزامي لـ CE لجميع الخدمات السحابية (Microsoft 365 وGoogle Workspace وSalesforce وغيرها) وجميع وسائل الوصول عن بُعد (VPN وRDP وأدوات سطح المكتب البعيد). كلمات المرور وحدها لم تعد كافية.',
+        example: 'حتى كلمة مرور معقدة يمكن اختراقها عبر التصيد الاحتيالي أو تخمينها أو تسريبها في اختراق بيانات. تعني MFA أن كلمة مرور مسروقة وحدها لا يمكنها منح الوصول — فالمهاجم يحتاج أيضًا إلى هاتفك.',
+        guidance: 'فعّل MFA في مركز إدارة Microsoft 365 ضمن الأمان > MFA. ضع في اعتبارك سياسات الوصول المشروط لفرض MFA على جميع المستخدمين. WatchGuard AuthPoint هو حل MFA مخصص.',
+      },
+      {
+        id: 'ua6',
+        text: 'هل يتم فرض كلمات مرور قوية (12 حرفًا أو أكثر أو عبارة مكونة من ثلاث كلمات)؟',
+        why: 'يتم كسر كلمات المرور القصيرة أو القابلة للتنبؤ في ثوانٍ باستخدام الأدوات الحديثة. توصي NCSC الآن بعبارات مكونة من ثلاث كلمات لأنها قوية وسهلة التذكر — الطول أهم من التعقيد.',
+        example: '"P@ssw0rd1!" لا تستوفي معايير الأمان الحديثة على الرغم من استيفائها لقواعد التعقيد القديمة. "purple-mountain-table" أقوى بكثير وأسهل في التذكر.',
+        guidance: 'هيّئ الحد الأدنى لطول كلمة المرور بـ 12 حرفًا في سياسة كلمة مرور Active Directory أو Azure AD الخاصة بك. فعّل Azure AD Password Protection لحظر كلمات المرور الشائعة.',
+      },
+    ],
+  },
+  {
+    id: 'malware',
+    title: 'الحماية من البرامج الضارة',
+    control: 'الضابط الرابع',
+    tagline: 'الدفاع ضد البرامج الضارة عبر كل نقطة دخول',
+    intro: 'تتسبب البرامج الضارة — بما في ذلك برامج الفدية وأحصنة طروادة وبرامج التجسس والفيروسات — في خسائر بمليارات الدولارات سنويًا. تتطلب Cyber Essentials نهجًا متعدد الطبقات: برامج مكافحة البرامج الضارة على الأجهزة، وحظر المواقع الضارة المعروفة، ومسح مرفقات البريد الإلكتروني قبل وصولها إلى المستخدمين.',
+    questions: [
+      {
+        id: 'ml1',
+        text: 'هل مكافحة البرامج الضارة أو برنامج حماية نقاط النهاية مثبت على جميع الأجهزة في النطاق؟',
+        why: 'تلتقط حماية نقاط النهاية توقيعات البرامج الضارة المعروفة والسلوكيات المشبوهة قبل أن تتمكن من التنفيذ. بدونها، يمكن أن يُخترق جهاز بصمت من خلال مرفق بريد إلكتروني ضار أو تنزيل موقع.',
+        example: 'Windows Defender (المدمج في Windows 10/11) مقبول لـ CE للامتثال الأساسي. توفر حلول EDR التجارية (WatchGuard EPDR وBarracuda XDR) اكتشافًا واستجابة أفضل بكثير.',
+        guidance: 'تحقق من أن الحماية نشطة وليست مجرد مثبتة — يجب أن تكون الخدمة قيد التشغيل. استخدم MDM لتأكيد الحالة عبر جميع الأجهزة المُدارة.',
+      },
+      {
+        id: 'ml2',
+        text: 'هل تتم تحديثات مكافحة البرامج الضارة بالتعريفات أو التوقيعات الحالية؟',
+        why: 'تظهر متغيرات برامج ضارة جديدة باستمرار. التعريفات القديمة تعني أن حمايتك لا تتعرف على أحدث التهديدات. يجب أن تحدث تحديثات التعريف يوميًا على الأقل.',
+        example: 'الحلول المُدارة سحابيًا (Windows Defender وCrowdStrike وWatchGuard Endpoint) تتحدث تلقائيًا. قد يحتاج برنامج مكافحة الفيروسات القديم المحلي إلى فحوصات تحديث يدوية — تأكد من حدوث ذلك.',
+        guidance: 'تحقق من وحدة تحكم إدارة نقاط النهاية بحثًا عن أجهزة ذات توقيعات قديمة. اضبط سياسات التحديث التلقائي وأرسل تنبيهًا بشأن الأجهزة التي لم تُحدَّث خلال 24 ساعة.',
+      },
+      {
+        id: 'ml3',
+        text: 'هل يُمنع المستخدمون من تثبيت برامج غير مصرح بها؟',
+        why: 'المستخدمون الذين يثبتون عن غير قصد برامج ضارة متنكرة في شكل برامج مشروعة (أدوات مقرصنة أو "مجانية" أو برامج مكسورة) هم ناقل إصابة رئيسي. يمنع تقييد حقوق التثبيت ذلك.',
+        example: 'يجب ألا يمتلك المستخدمون العاديون حقوق المسؤول المحلي. حيثما تُطلب حقوق المسؤول لأغراض محددة، استخدم الوصول في الوقت المناسب بدلًا من الرفع الدائم.',
+        guidance: 'أزل حقوق المسؤول المحلي من المستخدمين العاديين عبر Group Policy أو Intune. أنشئ عملية طلب برامج للأدوات التجارية المشروعة.',
+      },
+      {
+        id: 'ml4',
+        text: 'هل يوجد تصفية للويب لحظر الوصول إلى المواقع الضارة المعروفة؟',
+        why: 'تقوم المواقع الضارة بتوصيل البرامج الضارة من خلال التنزيلات التلقائية (مجرد الزيارة يكفي) وصفحات التصيد الاحتيالي والإعلانات الضارة. تحظر تصفية DNS هذه المواقع قبل أن يتصل بها المتصفح.',
+        example: 'تشمل الحلول: Barracuda DNS filtering وWatchGuard DNSWatch وCisco Umbrella وMicrosoft Defender SmartScreen. تتضمن كثير من جدران الحماية من الجيل التالي تصفية الويب.',
+        guidance: 'اختبر تصفية الويب بالانتقال إلى نطاق اختبار معروف ضار (توفر NCSC عناوين URL للاختبار). تحقق مما إذا كانت صفحة الحظر تظهر.',
+      },
+      {
+        id: 'ml5',
+        text: 'هل يتم فحص مرفقات البريد الإلكتروني والروابط بحثًا عن برامج ضارة قبل التسليم؟',
+        why: 'البريد الإلكتروني يبقى آلية توصيل البرامج الضارة الرئيسية رقم 1. توفر خطط Microsoft 365 وGoogle Workspace الأساسية حماية محدودة — يكتشف أمان البريد الإلكتروني المخصص تهديدات أكثر بكثير.',
+        example: 'مستند Word ضار بوحدات ماكرو مضمنة أو PDF يحتوي على ثغرة أو رابط لموقع تصيد احتيالي مسجل حديثًا — كل هذه تتطلب مسحًا نشطًا يتجاوز تصفية البريد الإلكتروني الأساسية.',
+        guidance: 'يوفر Barracuda Email Gateway Defense وMicrosoft Defender for Office 365 Plan 2 حماية متقدمة لتهديدات البريد الإلكتروني بما في ذلك بيئة الاختبار المعزولة وإعادة كتابة الروابط.',
+      },
+    ],
+  },
+  {
+    id: 'patching',
+    title: 'إدارة تحديثات الأمان',
+    control: 'الضابط الخامس',
+    tagline: 'أصلح الثغرات المعروفة قبل أن يستغلها المهاجمون',
+    intro: 'تُكتشف ثغرات البرامج يوميًا. يُصدر البائعون تصحيحات لإصلاحها — لكن تلك التصحيحات لا تُفيد إلا إذا طبّقتها. تشترط Cyber Essentials تطبيق التصحيحات الحرجة وعالية الخطورة خلال 14 يومًا من إصدارها على جميع الأجهزة في النطاق.',
+    questions: [
+      {
+        id: 'pt1',
+        text: 'هل يتم تصحيح أنظمة التشغيل بتحديثات الأمان الحرجة/العالية في غضون 14 يومًا من الإصدار؟',
+        why: 'نافذة الـ 14 يومًا هي متطلب CE لأن المهاجمين عادةً ما يسلّحون الثغرات المعروفة في غضون أيام من إصدار تصحيح — مما يعني أن الوقت بين التصحيح والاستغلال يتقلص.',
+        example: 'وجد Verizon DBIR 2025 أن استغلال الثغرات نما بنسبة 34% سنة بعد سنة. استغل WannaCry (2017) ثغرة كانت Microsoft قد أصدرت تصحيحًا لها قبل 60 يومًا — المنظمات غير المُصحَّحة دُمِّرت.',
+        guidance: 'فعّل التحديثات التلقائية لـ Windows للتصحيحات الأمنية. استخدم Windows Server Update Services (WSUS) أو Intune لفرض امتثال التصحيح والإبلاغ عنه عبر أصولك.',
+      },
+      {
+        id: 'pt2',
+        text: 'هل جميع التطبيقات والبرامج — وليس نظام التشغيل فقط — محدَّثة؟',
+        why: 'كثيرًا ما يستهدف المهاجمون ثغرات التطبيقات (المتصفحات وقارئات PDF وOffice وJava) بدلًا من نظام التشغيل. نظام Windows مُصحَّح بالكامل مع متصفح قديم لا يزال عُرضة للهجوم.',
+        example: 'Chrome وFirefox وAdobe Acrobat وMicrosoft Office وتطبيقات الجهات الخارجية كلها تحتاج إلى تحديثات منتظمة. امتدادات المتصفح والمكونات الإضافية مغفولة بشكل خاص.',
+        guidance: 'استخدم أداة إدارة برامج (Intune أو PDQ Deploy أو SCCM) لتتبع ونشر تحديثات التطبيقات. فكّر في تفعيل التحديثات التلقائية حيثما كانت مدعومة.',
+      },
+      {
+        id: 'pt3',
+        text: 'هل تتم إزالة أو عزل البرامج منتهية الصلاحية (التي لم تعد تتلقى تصحيحات الأمان)؟',
+        why: 'البرامج منتهية الصلاحية لا تتلقى تصحيحات أمنية — مما يعني أن كل ثغرة مكتشفة حديثًا تبقى دون معالجة بشكل دائم. تشغيل Windows 7 أو Server 2012 بدون تحديثات الأمان الممتدة يُعدّ فشلًا في CE.',
+        example: 'المنتجات الشائعة منتهية الصلاحية: Windows 7 (EOL يناير 2020)، Windows 10 21H2 (EOL يونيو 2023)، Windows Server 2008 (EOL يناير 2020)، Internet Explorer 11 (EOL يونيو 2022)، Office 2016 (EOL أكتوبر 2025).',
+        guidance: 'يتطلب امتثال CE إزالة أو عزل الشبكة للأنظمة منتهية الصلاحية. يعني العزل عدم الوصول إلى الإنترنت وعدم الاتصال بالأنظمة التي تحتوي على بيانات حساسة.',
+      },
+      {
+        id: 'pt4',
+        text: 'هل يتم تطبيق تحديثات البرامج الثابتة على أجهزة الشبكة (أجهزة التوجيه وجدران الحماية والمحوّلات)؟',
+        why: 'ثغرات البرامج الثابتة لأجهزة الشبكة تستهدف بشكل نشط — جهاز توجيه أو جدار حماية مخترق يمكنه اعتراض جميع حركة المرور. كثيرًا ما يُغفَل هذا مقارنةً بتصحيح الخوادم وسطح المكتب.',
+        example: 'في عام 2024، أصدرت كل من Cisco وFortinet تصحيحات طارئة لثغرات جدار الحماية التي كانت تُستغل بشكل نشط. المنظمات التي لم تُصحِّح في غضون أيام تعرضت للاختراق.',
+        guidance: 'اشترك في التنبيهات الأمنية من بائعي أجهزة الشبكة. جدوِل مراجعات ربع سنوية للبرامج الثابتة. تدعم كثير من جدران الحماية الحديثة (WatchGuard وBarracuda) تحديثات البرامج الثابتة التلقائية.',
+      },
+      {
+        id: 'pt5',
+        text: 'هل لديك عملية أو سياسة موثقة لإدارة التصحيحات؟',
+        why: 'التصحيح العشوائي غير موثوق. تضمن العملية الموثقة تطبيق التصحيحات باتساق، ضمن أطر زمنية محددة، مع المساءلة. تتطلب CE+ هذا كدليل مكتوب.',
+        example: 'يجب أن تتضمن سياستك: من المسؤول عن التصحيح، والأنظمة في النطاق، والأطر الزمنية المعمول بها (14 يومًا للحرجة/العالية)، وكيفية التعامل مع الاستثناءات والموافقة عليها.',
+        guidance: 'بالنسبة لـ CE+، سيطلب المقيّم الميداني وثائق إدارة التصحيحات الخاصة بك. وثيقة سياسة بسيطة مع مسؤوليات ومستويات خدمة محددة كافية.',
       },
     ],
   },
@@ -615,20 +848,21 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
   }
 
   const progress = Math.round((Object.keys(answers).length / TOTAL_QUESTIONS) * 100);
-  const section = CE_SECTIONS[currentSection];
+  const activeSections = isAr ? CE_SECTIONS_AR : CE_SECTIONS;
+  const section = activeSections[currentSection];
   const question = section?.questions[currentQ];
 
   function answer(val: boolean) {
-    const qId = CE_SECTIONS[currentSection].questions[currentQ].id;
+    const qId = activeSections[currentSection].questions[currentQ].id;
     const newAnswers = { ...answers, [qId]: val };
     setAnswers(newAnswers);
     setShowExample(false);
     const nextQ = currentQ + 1;
-    if (nextQ < CE_SECTIONS[currentSection].questions.length) {
+    if (nextQ < activeSections[currentSection].questions.length) {
       setCurrentQ(nextQ);
     } else {
       const nextSection = currentSection + 1;
-      if (nextSection < CE_SECTIONS.length) {
+      if (nextSection < activeSections.length) {
         setCurrentSection(nextSection);
         setCurrentQ(0);
       } else {
@@ -653,7 +887,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
   // ── Landing ──────────────────────────────────────────────────────────────────
   if (!started) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-5" dir={dir}>
         {/* Hero */}
         <div className="rounded-2xl overflow-hidden border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
           <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #C65793, #7b5ea7, #4494D1)' }} />
@@ -663,9 +897,9 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-[#1f2937]">Cyber Essentials Readiness Assessment</h2>
+                <h2 className="text-lg font-bold text-[#1f2937]">{isAr ? "تقييم الاستعداد لـ Cyber Essentials" : "Cyber Essentials Readiness Assessment"}</h2>
                 <p className="text-[#6b7280] text-sm leading-relaxed mt-1">
-                  Cyber Essentials is the UK Government-backed certification scheme that helps organisations guard against the most common cyber attacks. This assessment covers all five controls and generates a personalised PDF report.
+                  {isAr ? "Cyber Essentials هو مخطط الاعتماد الصادر عن الحكومة البريطانية الذي يساعد المنظمات على الحماية من أكثر الهجمات الإلكترونية شيوعًا. يغطي هذا التقييم جميع الضوابط الخمسة ويُنشئ تقرير PDF مخصصًا." : "Cyber Essentials is the UK Government-backed certification scheme that helps organisations guard against the most common cyber attacks. This assessment covers all five controls and generates a personalised PDF report."}
                 </p>
               </div>
             </div>
@@ -674,14 +908,14 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
 
         {/* 5 Control Overview */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          {CE_SECTIONS.map((s, i) => (
+          {activeSections.map((s, i) => (
             <div key={s.id} className="bg-white border border-[#e5e7eb] rounded-xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
               <div className="w-8 h-8 rounded-lg mb-3 flex items-center justify-center" style={{ background: s.color + '18' }}>
                 {getIcon(s.icon, s.color)}
               </div>
               <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: s.color }}>{s.control}</div>
               <div className="text-sm font-bold text-[#1f2937] mb-1">{s.title}</div>
-              <div className="text-xs text-[#9ca3af]">{s.questions.length} questions</div>
+              <div className="text-xs text-[#9ca3af]">{s.questions.length} {isAr ? "سؤال" : "questions"}</div>
             </div>
           ))}
         </div>
@@ -691,9 +925,9 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
           <div className="flex items-start gap-3">
             <Info className="w-4 h-4 text-[#4494D1] flex-shrink-0 mt-0.5" />
             <div>
-              <div className="text-sm font-semibold text-[#1f2937] mb-1">What to expect</div>
+              <div className="text-sm font-semibold text-[#1f2937] mb-1">{isAr ? "ما الذي يمكن توقعه" : "What to expect"}</div>
               <div className="text-xs text-[#6b7280] leading-relaxed">
-                {TOTAL_QUESTIONS} yes/no questions across 5 controls. Each question includes a plain-English explanation of <strong>why it matters</strong> and a <strong>real-world example</strong>. Takes approximately 5–7 minutes. A branded PDF gap analysis report with specific recommendations is produced at the end.
+                {isAr ? `${TOTAL_QUESTIONS} سؤال بنعم/لا عبر 5 ضوابط. يتضمن كل سؤال شرحًا لـ "سبب أهميته" ومثالًا من العالم الحقيقي. يستغرق حوالي 5–7 دقائق. يُنشأ في النهاية تقرير PDF بتحليل الثغرات والتوصيات.` : `${TOTAL_QUESTIONS} yes/no questions across 5 controls. Each question includes a plain-English explanation of why it matters and a real-world example. Takes approximately 5–7 minutes. A branded PDF gap analysis report with specific recommendations is produced at the end.`}
               </div>
             </div>
           </div>
@@ -701,14 +935,14 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
 
         {/* CE / CE+ selector */}
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
-          <div className="text-sm font-semibold text-[#1f2937] mb-3">Which certification are you aiming for?</div>
+          <div className="text-sm font-semibold text-[#1f2937] mb-3">{isAr ? "ما الاعتماد الذي تستهدفه؟" : "Which certification are you aiming for?"}</div>
           <div className="grid grid-cols-2 gap-3">
             {(['CE', 'CE+'] as const).map(l => (
               <button key={l} onClick={() => setCeLevel(l)}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${ceLevel === l ? 'border-[#C65793] bg-[#C6579308]' : 'border-[#e5e7eb] hover:border-[#d1d5db]'}`}>
                 <div className={`text-sm font-bold mb-1 ${ceLevel === l ? 'text-[#C65793]' : 'text-[#1f2937]'}`}>{l}</div>
                 <div className="text-xs text-[#9ca3af]">
-                  {l === 'CE' ? 'Self-assessment questionnaire submitted to a certification body. Online only.' : 'Includes CE, plus an on-site technical audit by an accredited assessor.'}
+                  {isAr ? (l === 'CE' ? 'استبيان تقييم ذاتي يُقدَّم إلى هيئة اعتماد. إلكتروني فقط.' : 'يتضمن CE، بالإضافة إلى تدقيق تقني ميداني من قِبَل مقيّم معتمد.') : (l === 'CE' ? 'Self-assessment questionnaire submitted to a certification body. Online only.' : 'Includes CE, plus an on-site technical audit by an accredited assessor.')}
                 </div>
               </button>
             ))}
@@ -718,7 +952,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
         <button onClick={() => setStarted(true)}
           className="w-full flex items-center justify-center gap-2 py-3.5 text-white rounded-xl font-semibold transition-opacity hover:opacity-90"
           style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
-          Begin Assessment <ChevronRight className="w-4 h-4" />
+          {isAr ? 'بدء التقييم' : 'Begin Assessment'} <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     );
@@ -726,25 +960,25 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
 
   // ── Results ──────────────────────────────────────────────────────────────────
   if (showResults) {
-    const sectionScores = CE_SECTIONS.map(s => {
+    const sectionScores = activeSections.map(s => {
       const passed = s.questions.filter(q => answers[q.id] === true).length;
       return { ...s, passed, total: s.questions.length, pct: Math.round((passed / s.questions.length) * 100) };
     });
 
     return (
-      <div className="space-y-5">
+      <div className="space-y-5" dir={dir}>
         {/* Score */}
         <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
           <div className="h-1" style={{ background: 'linear-gradient(90deg, #C65793, #4494D1)' }} />
           <div className="p-6">
             <div className="flex items-start justify-between mb-5">
               <div>
-                <h2 className="text-lg font-bold text-[#1f2937]">Assessment Complete</h2>
-                <p className="text-[#9ca3af] text-sm">{ceLevel} Gap Analysis · {accountName}</p>
+                <h2 className="text-lg font-bold text-[#1f2937]">{isAr ? "اكتمل التقييم" : "Assessment Complete"}</h2>
+                <p className="text-[#9ca3af] text-sm">{ceLevel} {isAr ? "تحليل الثغرات" : "Gap Analysis"} · {accountName}</p>
               </div>
               <div className="text-right">
                 <div className={`text-4xl font-bold ${score >= 90 ? 'text-emerald-500' : score >= 70 ? 'text-amber-500' : 'text-red-500'}`}>{score}%</div>
-                <div className="text-xs text-[#9ca3af]">{passedCount}/{TOTAL_QUESTIONS} controls met</div>
+                <div className="text-xs text-[#9ca3af]">{passedCount}/{TOTAL_QUESTIONS} {isAr ? "ضابط متوافق" : "controls met"}</div>
               </div>
             </div>
             <div className="grid grid-cols-5 gap-2 mb-5">
@@ -763,10 +997,10 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
               <button onClick={() => generateCEPDF(answers, accountName, ceLevel)}
                 className="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
                 style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
-                <Download className="w-4 h-4" /> Download PDF Report
+                <Download className="w-4 h-4" /> {isAr ? "تحميل تقرير PDF" : "Download PDF Report"}
               </button>
               <button onClick={reset} className="flex items-center gap-2 px-4 py-2.5 bg-[#f3f4f6] text-[#6b7280] rounded-xl text-sm hover:bg-[#e5e7eb] transition-colors">
-                <RotateCcw className="w-4 h-4" /> Restart
+                <RotateCcw className="w-4 h-4" /> {isAr ? "إعادة البدء" : "Restart"}
               </button>
             </div>
           </div>
@@ -775,9 +1009,9 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
         {failedIds.length > 0 ? (
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-[#1f2937] flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" /> {failedIds.length} Gap{failedIds.length !== 1 ? 's' : ''} Identified
+              <AlertTriangle className="w-4 h-4 text-amber-500" /> {failedIds.length} {isAr ? (failedIds.length !== 1 ? "ثغرات محددة" : "ثغرة محددة") : (failedIds.length !== 1 ? "Gaps Identified" : "Gap Identified")}
             </h3>
-            {CE_SECTIONS.map(section => {
+            {activeSections.map(section => {
               const fails = section.questions.filter(q => answers[q.id] === false);
               if (fails.length === 0) return null;
               return (
@@ -794,7 +1028,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
                           <span className="text-sm font-medium text-[#1f2937]">{q.text}</span>
                         </div>
                         <div className="ml-6 p-3 bg-[#fff7ed] border border-[#fed7aa] rounded-lg text-xs text-[#92400e] leading-relaxed">
-                          <strong>Recommendation:</strong> {RECOMMENDATIONS[q.id]}
+                          <strong>{isAr ? "التوصية:" : "Recommendation:"}</strong> {RECOMMENDATIONS[q.id]}
                         </div>
                       </div>
                     ))}
@@ -807,8 +1041,8 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
           <div className="bg-[#f0fdf4] border border-[#86efac] rounded-xl p-5 flex items-center gap-3">
             <CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0" />
             <div>
-              <div className="text-sm font-bold text-emerald-700">No gaps identified</div>
-              <div className="text-xs text-emerald-600 mt-1">Your responses indicate you are well-positioned for {ceLevel} certification. Contact your account manager to arrange formal accreditation.</div>
+              <div className="text-sm font-bold text-emerald-700">{isAr ? "لا توجد ثغرات محددة" : "No gaps identified"}</div>
+              <div className="text-xs text-emerald-600 mt-1">{isAr ? `تشير إجاباتك إلى أنك في وضع جيد للحصول على اعتماد ${ceLevel}. تواصل مع مدير حسابك لترتيب الاعتماد الرسمي.` : `Your responses indicate you are well-positioned for ${ceLevel} certification. Contact your account manager to arrange formal accreditation.`}</div>
             </div>
           </div>
         )}
@@ -817,15 +1051,15 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
   }
 
   // ── Question View ──────────────────────────────────────────────────────────
-  const flatQ = CE_SECTIONS.slice(0, currentSection).reduce((s, sec) => s + sec.questions.length, 0) + currentQ;
+  const flatQ = activeSections.slice(0, currentSection).reduce((s, sec) => s + sec.questions.length, 0) + currentQ;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={dir}>
       {/* Progress bar */}
       <div>
         <div className="flex justify-between text-xs text-[#9ca3af] mb-1.5">
-          <span>Question {flatQ + 1} of {TOTAL_QUESTIONS}</span>
-          <span>{progress}% complete</span>
+          <span>{isAr ? `السؤال ${flatQ + 1} من ${TOTAL_QUESTIONS}` : `Question ${flatQ + 1} of ${TOTAL_QUESTIONS}`}</span>
+          <span>{progress}% {isAr ? "مكتمل" : "complete"}</span>
         </div>
         <div className="h-1.5 bg-[#f3f4f6] rounded-full">
           <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #C65793, #4494D1)' }} />
@@ -834,7 +1068,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
 
       {/* Section pills */}
       <div className="flex gap-1.5">
-        {CE_SECTIONS.map((s, i) => (
+        {activeSections.map((s, i) => (
           <div key={s.id} className="flex-1 h-1 rounded-full transition-all duration-300"
             style={{ background: i < currentSection ? '#10b981' : i === currentSection ? s.color : '#f3f4f6' }} />
         ))}
@@ -863,7 +1097,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
         <div className="mb-3 p-3 rounded-xl border" style={{ background: section.color + '08', borderColor: section.color + '30' }}>
           <div className="flex items-center gap-1.5 mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: section.color }} />
-            <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: section.color }}>Why this matters</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: section.color }}>{isAr ? "لماذا هذا مهم" : "Why this matters"}</span>
           </div>
           <p className="text-xs text-[#374151] leading-relaxed">{question.why}</p>
         </div>
@@ -872,14 +1106,14 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
         <button onClick={() => setShowExample(v => !v)}
           className="flex items-center gap-1.5 text-xs text-[#9ca3af] hover:text-[#6b7280] mb-4 transition-colors">
           <HelpCircle className="w-3.5 h-3.5" />
-          {showExample ? 'Hide example' : 'Show a real-world example'}
+          {showExample ? (isAr ? 'إخفاء المثال' : 'Hide example') : (isAr ? 'عرض مثال من العالم الحقيقي' : 'Show a real-world example')}
         </button>
 
         {showExample && (
           <div className="mb-4 p-3 bg-[#f0f6ff] border border-[#4494D130] rounded-xl">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Info className="w-3.5 h-3.5 text-[#4494D1]" />
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4494D1]">Example</span>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4494D1]">{isAr ? "مثال" : "Example"}</span>
             </div>
             <p className="text-xs text-[#374151] leading-relaxed">{question.example}</p>
           </div>
@@ -898,12 +1132,12 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
           <button onClick={() => answer(true)}
             className="flex items-center justify-center gap-2 py-4 bg-[#f0fdf4] border-2 border-[#10b981] text-[#059669] rounded-xl font-bold text-sm hover:bg-[#dcfce7] transition-all">
             <CheckCircle className="w-5 h-5" />
-            <span>Yes — In place</span>
+            <span>{isAr ? "نعم — مطبَّق" : "Yes — In place"}</span>
           </button>
           <button onClick={() => answer(false)}
             className="flex items-center justify-center gap-2 py-4 bg-[#fef2f2] border-2 border-[#ef4444] text-[#dc2626] rounded-xl font-bold text-sm hover:bg-[#fee2e2] transition-all">
             <XCircle className="w-5 h-5" />
-            <span>No — Not in place</span>
+            <span>{isAr ? "لا — غير مطبَّق" : "No — Not in place"}</span>
           </button>
         </div>
       </div>
@@ -911,7 +1145,7 @@ export default function CEReadiness({ accountName, domain }: { accountName: stri
       {/* Answered trail */}
       {currentQ > 0 && (
         <div className="space-y-1.5">
-          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wide">Already answered in this section</div>
+          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wide">{isAr ? "تمت الإجابة مسبقًا في هذا القسم" : "Already answered in this section"}</div>
           {section.questions.slice(0, currentQ).map(q => (
             <div key={q.id} className="flex items-center gap-2.5 p-2.5 bg-white border border-[#e5e7eb] rounded-lg">
               {answers[q.id] === true
