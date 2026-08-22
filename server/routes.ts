@@ -261,11 +261,11 @@ router.get('/api/customer/:domain', async (req, res) => {
 // ── Translation helper (Arabic → English via Groq) ──────────
 async function translateToEnglish(text: string, apiKey: string): Promise<string> {
   try {
-    const r = await directFetch('https://api.groq.com/openai/v1/chat/completions', {
+    const r = await directFetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-120b',
+        model: 'gpt-4o-mini',
         max_tokens: 500,
         stream: false,
         messages: [
@@ -332,21 +332,21 @@ When answering:
 
 Always be helpful and professional. Focus on genuine relevance, not sales pressure.${langInstruction}`;
 
-  const GROQ_KEY = process.env.GROQ_API_KEY || '';
+  const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    const groqRes = await directFetch('https://api.groq.com/openai/v1/chat/completions', {
+    const openaiRes = await directFetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${GROQ_KEY}`,
+        Authorization: `Bearer ${OPENAI_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-120b',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: question },
@@ -357,8 +357,8 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
       ...fetchOpts(),
     });
 
-    if (!groqRes.ok) {
-      const err = await groqRes.text();
+    if (!openaiRes.ok) {
+      const err = await openaiRes.text();
       res.write(`data: ${JSON.stringify({ error: `Groq error: ${err}` })}\n\n`);
       res.end();
       return;
@@ -367,7 +367,7 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
     // Send relevant products first
     res.write(`data: ${JSON.stringify({ relevantProducts: relevant.map(p => ({ id: p.id, name: p.name, vendor: p.vendor, categories: p.categories, datasheetUrl: p.datasheetUrl })) })}\n\n`);
 
-    const body = groqRes.body as any;
+    const body = openaiRes.body as any;
     const decoder = new TextDecoder();
     for await (const chunk of body) {
       const text = decoder.decode(chunk);
@@ -677,14 +677,14 @@ async function searchVendorKB(vendor: string, question: string): Promise<{ title
   } catch { return []; }
 }
 
-async function* streamGroqSupport(
+async function* streamOpenAISupport(
   messages: { role: string; content: string }[],
   apiKey: string
 ): AsyncGenerator<string> {
-  const res = await directFetch('https://api.groq.com/openai/v1/chat/completions', {
+  const res = await directFetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: 'openai/gpt-oss-120b', max_tokens: 1500, stream: true, messages }),
+    body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 1500, stream: true, messages }),
     signal: AbortSignal.timeout(30000),
     ...fetchOpts(),
   }) as any;
@@ -711,7 +711,7 @@ router.post('/api/support-chat', async (req, res) => {
   if (!question || !vendor) return res.status(400).json({ error: 'Missing question or vendor' });
 
   const cfg = VENDOR_KB_CONFIG[vendor];
-  const GROQ_KEY = process.env.GROQ_API_KEY || '';
+  const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -742,7 +742,7 @@ router.post('/api/support-chat', async (req, res) => {
     ];
 
     let fullResponse = '';
-    for await (const chunk of streamGroqSupport(messages, GROQ_KEY)) {
+    for await (const chunk of streamOpenAISupport(messages, OPENAI_KEY)) {
       fullResponse += chunk;
       send({ type: 'delta', text: chunk });
     }
@@ -900,7 +900,7 @@ router.post('/api/tickets', requireAuth, async (req, res) => {
   const { subject, description, priority, type, domain, customerName, lang } = req.body;
   if (!subject || !description) return res.status(400).json({ ok: false, error: 'subject and description required' });
   try {
-    const GROQ_KEY = process.env.GROQ_API_KEY || '';
+    const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
 
     // If submitted in Arabic, translate to English for the Broad Peak team
     // Keep the original Arabic text appended so context is not lost
@@ -908,8 +908,8 @@ router.post('/api/tickets', requireAuth, async (req, res) => {
     let finalDescription = description;
     if (lang === 'ar') {
       const [translatedSubject, translatedDescription] = await Promise.all([
-        translateToEnglish(subject, GROQ_KEY),
-        translateToEnglish(description, GROQ_KEY),
+        translateToEnglish(subject, OPENAI_KEY),
+        translateToEnglish(description, OPENAI_KEY),
       ]);
       finalSubject = translatedSubject;
       finalDescription = `${translatedDescription}\n\n---\n[Original Arabic / النص الأصلي بالعربية]\n${description}`;
