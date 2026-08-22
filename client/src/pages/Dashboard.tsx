@@ -398,19 +398,32 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
 
 function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategory }: { domain: string; accountName: string; accountOwner?: AccountOwner; onHighlight?: (cats: string[]) => void; onOpenCategory?: (cat: string) => void }) {
   const { t, lang, isAr } = useLang();
+  const INTRO_EN = `Hi! I'm your Broad Peak AI assistant. I can answer questions about cybersecurity, your products, and our vendor portfolio. What would you like to know?`;
+  const INTRO_AR = 'مرحباً! أنا مساعد Broad Peak الذكي. يمكنني الإجابة على أسئلتك حول الأمن الإلكتروني ومنتجاتك وحلول موردينا. كيف يمكنني مساعدتك؟';
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: isAr
-      ? 'مرحباً! أنا مساعد Broad Peak الذكي. يمكنني الإجابة على أسئلتك حول الأمن الإلكتروني ومنتجاتك وحلول موردينا. كيف يمكنني مساعدتك؟'
-      : `Hi! I'm your Broad Peak AI assistant. I can answer questions about cybersecurity, your products, and our vendor portfolio. What would you like to know?` }
+    { role: 'assistant', content: isAr ? INTRO_AR : INTRO_EN }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [vendorPrompt, setVendorPrompt] = useState<{ needed: boolean; originalQ: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const prevLang = useRef(lang);
   const ALL_VENDORS = ['Barracuda', 'Keepit', 'Arctic Wolf', 'Boxphish', 'BullWall', 'CyberSmart', 'Druva', 'WatchGuard'];
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  // Update intro message when language toggles (only if no conversation started yet)
+  useEffect(() => {
+    if (prevLang.current === lang) return;
+    prevLang.current = lang;
+    setMessages(prev => {
+      if (prev.length === 1 && prev[0].role === 'assistant') {
+        return [{ role: 'assistant', content: isAr ? INTRO_AR : INTRO_EN }];
+      }
+      return prev;
+    });
+  }, [lang, isAr]);
 
   const sendMessage = async (q: string, vendor?: string) => {
     const effectiveVendor = vendor || selectedVendor;
