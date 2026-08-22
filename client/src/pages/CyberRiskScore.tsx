@@ -739,9 +739,9 @@ function calcFunctionScore(fn: NISTFunction, answers: Answers): number {
   return totalWeight > 0 ? Math.round((earnedWeight / totalWeight) * 100) : 0;
 }
 
-function calcOverallScore(answers: Answers): number {
-  const scores = NIST_FUNCTIONS.map(f => calcFunctionScore(f, answers));
-  const answered = scores.filter((_, i) => NIST_FUNCTIONS[i].questions.some(q => answers[q.id] !== undefined));
+function calcOverallScore(answers: Answers, fns: NISTFunction[] = NIST_FUNCTIONS): number {
+  const scores = fns.map(f => calcFunctionScore(f, answers));
+  const answered = scores.filter((_, i) => fns[i].questions.some(q => answers[q.id] !== undefined));
   if (answered.length === 0) return 0;
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
@@ -757,7 +757,7 @@ function generateRiskPDF(answers: Answers, accountName: string) {
   const lightGrey: [number, number, number] = [248, 248, 252];
 
   const activeFunctions = isAr ? NIST_FUNCTIONS_AR : NIST_FUNCTIONS;
-  const overallScore = calcOverallScore(answers);
+  const overallScore = calcOverallScore(answers, activeFunctions);
   const risk = getRiskLevel(overallScore, isAr);
   const riskRgb = overallScore >= 80 ? [16, 185, 129] as [number,number,number] : overallScore >= 60 ? [245, 158, 11] as [number,number,number] : overallScore >= 40 ? [249, 115, 22] as [number,number,number] : [239, 68, 68] as [number,number,number];
 
@@ -1014,7 +1014,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
   useEffect(() => {
     if (!started) return;
     const queue: (Question & { fnId: string })[] = [];
-    for (const fn of NIST_FUNCTIONS) {
+    for (const fn of activeFunctions) {
       for (const q of fn.questions) {
         if (q.skipIf) {
           const depAns = answers[q.skipIf.questionId];
@@ -1045,7 +1045,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
     fetch('/api/assessments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ domain, type: 'cyber-risk-score', answers, score: calcOverallScore(answers), label: `${getRiskLevel(calcOverallScore(answers), false).label} · ${calcOverallScore(answers)}/100` }),
+      body: JSON.stringify({ domain, type: 'cyber-risk-score', answers, score: calcOverallScore(answers, activeFunctions), label: `${getRiskLevel(calcOverallScore(answers, activeFunctions), false).label} · ${calcOverallScore(answers, activeFunctions)}/100` }),
     }).then(r => r.ok ? r.json() : null).then(data => {
       if (data?.id) {
         setSavedAssessmentId(data.id);
@@ -1104,7 +1104,7 @@ export default function CyberRiskScore({ accountName, domain, onSave }: { accoun
   }
 
   const activeFunctions = isAr ? NIST_FUNCTIONS_AR : NIST_FUNCTIONS;
-  const overallScore = calcOverallScore(answers);
+  const overallScore = calcOverallScore(answers, activeFunctions);
   const risk = getRiskLevel(overallScore, isAr);
   const progress = queuedQuestions.length > 0 ? Math.round((currentIdx / queuedQuestions.length) * 100) : 0;
   const currentQuestion = queuedQuestions[currentIdx];
