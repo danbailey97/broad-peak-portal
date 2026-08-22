@@ -29,6 +29,7 @@ export interface AccountOwner {
   phone?: string;
   photo?: string;
   calendly?: string;
+  welcome_video?: string | null;
 }
 
 export interface CustomerData {

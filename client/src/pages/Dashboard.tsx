@@ -37,16 +37,16 @@ const CATEGORY_ICONS: Record<string, any> = {
   'Ransomware Protection': ShieldAlert,
 };
 
-const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  'Email Protection': 'Email security, anti-phishing, and BEC prevention',
-  'Data Protection': 'Backup, recovery, and data resilience',
-  'Network Protection': 'Firewall, SD-WAN, and perimeter security',
-  'Application Protection': 'WAF, MFA, and endpoint defence',
-  'MDR/SOC': '24/7 managed detection and response',
-  'Penetration Testing': 'Vulnerability testing and security validation',
-  'Security Awareness': 'Phishing simulation and staff training',
-  'GRC': 'Governance, risk, compliance and Cyber Essentials',
-  'Ransomware Protection': 'Ransomware containment and rapid response',
+const CATEGORY_DESC_KEYS: Record<string, string> = {
+  'Email Protection': 'desc_emailProtection',
+  'Data Protection': 'desc_dataProtection',
+  'Network Protection': 'desc_networkProtection',
+  'Application Protection': 'desc_applicationProtection',
+  'MDR/SOC': 'desc_mdrSoc',
+  'Penetration Testing': 'desc_penetrationTesting',
+  'Security Awareness': 'desc_securityAwareness',
+  'GRC': 'desc_grc',
+  'Ransomware Protection': 'desc_ransomwareProtection',
 };
 
 // Research data pre-loaded from vendor-urls.json logic
@@ -138,6 +138,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; onClick: () => void; highlighted?: boolean }) {
+  const { t } = useLang();
   const Icon = CATEGORY_ICONS[entry.category] || Shield;
   const isOwned = entry.status === 'active' || entry.status === 'expired';
   return (
@@ -160,7 +161,7 @@ function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; o
       </div>
       <div>
         <h3 className="font-semibold text-[#1f2937] text-xs sm:text-sm leading-tight">{entry.category}</h3>
-        <p className="text-[#6b7280] text-[10px] sm:text-xs mt-0.5 sm:mt-1 leading-snug hidden sm:block">{CATEGORY_DESCRIPTIONS[entry.category]}</p>
+        <p className="text-[#6b7280] text-[10px] sm:text-xs mt-0.5 sm:mt-1 leading-snug hidden sm:block">{t((CATEGORY_DESC_KEYS[entry.category] || 'desc_emailProtection') as any)}</p>
       </div>
       {isOwned && entry.products.length > 0 && (
         <div className="flex flex-wrap gap-1">
@@ -186,7 +187,7 @@ function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; o
         </div>
       )}
       {!isOwned && (
-        <p className="text-xs text-[#9ca3af] mt-auto">Not currently subscribed</p>
+        <p className="text-xs text-[#9ca3af] mt-auto">{t('notCurrentlySubscribed')}</p>
       )}
     </button>
   );
@@ -213,7 +214,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
               {(entry.startedAt || entry.expiresAt) && (
                 <span className="flex items-center gap-1.5 text-xs text-[#6b7280]">
                   <Calendar className="w-3.5 h-3.5 text-[#9ca3af]" />
-                  <span>Contract:</span>
+                  <span>{t('contract')}:</span>
                   <span className="font-medium text-[#1f2937]">{entry.startedAt ? fmtDate(entry.startedAt) : '—'}</span>
                   <span>→</span>
                   {entry.expiresAt ? (
@@ -245,10 +246,10 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
                           {(p.startedAt || p.expiresAt) && (
                             <div className="flex items-center gap-1.5 mt-1.5 text-xs">
                               <Calendar className="w-3 h-3 text-[#9ca3af] flex-shrink-0" />
-                              <span className="text-[#6b7280]">Start:</span>
+                              <span className="text-[#6b7280]">{t('start')}:</span>
                               <span className="font-medium text-[#1f2937]">{p.startedAt ? fmtDate(p.startedAt) : '—'}</span>
                               <span className="text-[#9ca3af] mx-0.5">•</span>
-                              <span className="text-[#6b7280]">End:</span>
+                              <span className="text-[#6b7280]">{t('end')}:</span>
                               <span className={`font-medium ${expired ? 'text-[#ef4444]' : 'text-[#059669]'}`}>
                                 {p.expiresAt ? fmtDate(p.expiresAt) : '—'}
                               </span>
@@ -269,7 +270,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
             <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <BookOpen className="w-4 h-4 text-[#4494D1]" />
-                <h3 className="text-sm font-semibold text-[#1f2937]">Further Research & Business Case</h3>
+                <h3 className="text-sm font-semibold text-[#1f2937]">{t('furtherResearch')}</h3>
               </div>
               <p className="text-[#6b7280] text-sm leading-relaxed mb-4">{research.summary}</p>
               <div className="space-y-2">
@@ -333,7 +334,7 @@ function AccountManagerCard({ owner }: { owner: AccountOwner }) {
         )}
         <div>
           <div className="text-lg font-bold text-[#1f2937]">{owner.name}</div>
-          <div className="text-sm text-[#6b7280]">Broad Peak Cyber</div>
+          <div className="text-sm text-[#6b7280]">{t('accountManagerRole')}</div>
         </div>
       </div>
       <div className="space-y-2 text-sm">
@@ -356,10 +357,10 @@ function AccountManagerCard({ owner }: { owner: AccountOwner }) {
 }
 
 const CONTACT_ACTIONS = [
-  { label: 'Request Demo / POC', subject: 'Demo / Proof of Concept Request', icon: '🎯' },
-  { label: 'Get a Quote', subject: 'Quote Request', icon: '💼' },
-  { label: 'More Information', subject: 'Request for More Information', icon: '📋' },
-  { label: 'Book a Meeting', subject: 'Meeting Request', icon: '📅' },
+  { labelKey: 'requestDemo', subject: 'Demo / Proof of Concept Request', icon: '🎯' },
+  { labelKey: 'getQuote', subject: 'Quote Request', icon: '💼' },
+  { labelKey: 'moreInformation', subject: 'Request for More Information', icon: '📋' },
+  { labelKey: 'bookMeeting', subject: 'Meeting Request', icon: '📅' },
 ];
 
 function ContactActionButtons({ accountOwner, accountName, relevantCategories }: {
@@ -367,6 +368,7 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
   accountName: string;
   relevantCategories?: string[];
 }) {
+  const { t } = useLang();
   const catContext = relevantCategories && relevantCategories.length > 0
     ? `\n\nSecurity categories of interest: ${relevantCategories.join(', ')}` : '';
 
@@ -375,13 +377,14 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
 
   return (
     <div className="ml-9 mt-2 flex flex-wrap gap-1.5">
-      {CONTACT_ACTIONS.map(({ label, subject, icon }) => {
+      {CONTACT_ACTIONS.map(({ labelKey, subject, icon }) => {
+        const label = t(labelKey as any);
         const body = encodeURIComponent(
           `Hi ${recipientName},\n\nI'm reaching out from ${accountName} via the Broad Peak customer portal.${catContext}\n\nI'd like to ${label.toLowerCase()}.\n\nPlease get in touch at your earliest convenience.\n\nKind regards`
         );
         return (
           <a
-            key={label}
+            key={labelKey}
             href={`mailto:${email}?subject=${encodeURIComponent(subject + ' — ' + accountName)}&body=${body}`}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#C65793] hover:text-[#C65793] hover:bg-[#fdf4f9] transition-all shadow-sm"
           >
@@ -571,15 +574,15 @@ const VENDOR_NEWS = [
   { vendor: 'WatchGuard', url: 'https://www.watchguard.com/wgrd-resource-center/datasheets' },
 ];
 
-const VENDOR_LOGOS: Record<string, { logo: string; bg: string; tagline: string }> = {
-  Barracuda: { logo: 'https://www.barracuda.com/favicon.ico', bg: '#d32f2f', tagline: 'Email, Network & Data Security' },
-  Keepit: { logo: 'https://www.keepit.com/favicon.ico', bg: '#0d47a1', tagline: 'Immutable Cloud Backup' },
-  'Arctic Wolf': { logo: 'https://arcticwolf.com/favicon.ico', bg: '#1565c0', tagline: 'MDR & Managed Risk' },
-  Boxphish: { logo: 'https://www.boxphish.com/favicon.ico', bg: '#6a1b9a', tagline: 'Phishing Simulation & Awareness' },
-  BullWall: { logo: 'https://bullwall.com/favicon.ico', bg: '#e65100', tagline: 'Ransomware Containment' },
-  CyberSmart: { logo: 'https://cybersmart.co.uk/favicon.ico', bg: '#2e7d32', tagline: 'Cyber Essentials & GRC' },
-  Druva: { logo: 'https://www.druva.com/favicon.ico', bg: '#00838f', tagline: 'SaaS & Endpoint Data Protection' },
-  WatchGuard: { logo: 'https://www.watchguard.com/favicon.ico', bg: '#f57c00', tagline: 'Network & Identity Security' },
+const VENDOR_LOGOS: Record<string, { logo: string; bg: string; taglineKey: string }> = {
+  Barracuda: { logo: 'https://www.barracuda.com/favicon.ico', bg: '#d32f2f', taglineKey: 'tagline_barracuda' },
+  Keepit: { logo: 'https://www.keepit.com/favicon.ico', bg: '#0d47a1', taglineKey: 'tagline_keepit' },
+  'Arctic Wolf': { logo: 'https://arcticwolf.com/favicon.ico', bg: '#1565c0', taglineKey: 'tagline_arcticWolf' },
+  Boxphish: { logo: 'https://www.boxphish.com/favicon.ico', bg: '#6a1b9a', taglineKey: 'tagline_boxphish' },
+  BullWall: { logo: 'https://bullwall.com/favicon.ico', bg: '#e65100', taglineKey: 'tagline_bullwall' },
+  CyberSmart: { logo: 'https://cybersmart.co.uk/favicon.ico', bg: '#2e7d32', taglineKey: 'tagline_cybersmart' },
+  Druva: { logo: 'https://www.druva.com/favicon.ico', bg: '#00838f', taglineKey: 'tagline_druva' },
+  WatchGuard: { logo: 'https://www.watchguard.com/favicon.ico', bg: '#f57c00', taglineKey: 'tagline_watchguard' },
 };
 
 function NewsTab({ domain }: { domain: string }) {
@@ -632,7 +635,7 @@ function NewsTab({ domain }: { domain: string }) {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {VENDOR_NEWS.map(v => {
-            const meta = VENDOR_LOGOS[v.vendor] || { logo: '', bg: '#4494D1', tagline: 'Resources & Updates' };
+            const meta = VENDOR_LOGOS[v.vendor] || { logo: '', bg: '#4494D1', taglineKey: 'tagline_barracuda' };
             return (
               <a key={v.vendor} href={v.url} target="_blank" rel="noopener noreferrer"
                 className="flex flex-col bg-white border border-[#e5e7eb] hover:border-[#4494D1] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(68,148,209,0.15)] transition-all group overflow-hidden">
@@ -654,7 +657,7 @@ function NewsTab({ domain }: { domain: string }) {
                 {/* Content */}
                 <div className="p-4 flex-1 flex flex-col gap-1">
                   <div className="text-sm font-bold text-[#1f2937] group-hover:text-[#4494D1] transition-colors">{v.vendor}</div>
-                  <div className="text-xs text-[#6b7280] leading-tight flex-1">{meta.tagline}</div>
+                  <div className="text-xs text-[#6b7280] leading-tight flex-1">{t((meta as any).taglineKey as any)}</div>
                   <div className="flex items-center gap-1 mt-2 text-xs text-[#4494D1] font-medium">
                     {t('visitLibrary')} <ExternalLink className="w-3 h-3" />
                   </div>
@@ -1061,7 +1064,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Left: category tile picker */}
         <div className="lg:col-span-2 gradient-bg rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
-          <p className="text-white/90 text-sm leading-relaxed">The Broad Peak Technical Support AI has been trained on the vendor documentation for your products and can provide quick, precise answers to technical support issues. And whilst we might be AI first for speed, we're people focussed, and at any time you can contact a real human by selecting <span className="font-semibold">&ldquo;Log a Ticket&rdquo;</span> to get through to our technical team as well as being able to find your Account Manager's direct contact details on the right side of this page.</p>
+          <p className="text-white/90 text-sm leading-relaxed">{t('technicalSupportDescription')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             {SUPPORT_CATEGORIES.map(({ cat, vendors }) => {
               const Icon = CATEGORY_ICONS[cat] || Shield;
@@ -1079,7 +1082,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                         {VENDOR_KB[v]?.hasKB ? v : `${v} (soon)`}
                       </span>
                     ))}
-                    {vendors.length === 0 && <span className="text-xs text-[#9ca3af]">Coming soon</span>}
+                    {vendors.length === 0 && <span className="text-xs text-[#9ca3af]">{t('comingSoon')}</span>}
                   </div>
                 </button>
               );
@@ -1091,7 +1094,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
         <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden flex flex-col">
           <div className="h-1 flex-shrink-0" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
           <div className="p-5 flex flex-col gap-4 flex-1">
-            <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">Contact Our Team</h3>
+            <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">{t('contactOurTeamHeader')}</h3>
             {accountOwner ? (
               <>
                 <div className="flex items-center gap-3">
@@ -1104,7 +1107,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                   )}
                   <div>
                     <div className="text-base font-bold text-[#1f2937]">{accountOwner.name}</div>
-                    <div className="text-xs text-[#6b7280]">Account Manager · Broad Peak Cyber</div>
+                    <div className="text-xs text-[#6b7280]">{t('accountManagerRole')}</div>
                   </div>
                 </div>
                 <div className="space-y-2.5 text-sm">
@@ -1130,7 +1133,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                       <div className="w-7 h-7 rounded-lg bg-[#7b5ea712] flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-3.5 h-3.5 text-[#7b5ea7]" />
                       </div>
-                      <span className="group-hover:underline">Book a meeting</span>
+                      <span className="group-hover:underline">{t('bookMeetingLink')}</span>
                     </a>
                   )}
                 </div>
@@ -1144,24 +1147,24 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                     <div className="w-10 h-10 rounded-full bg-[#C6579312] flex items-center justify-center">
                       <Video className="w-5 h-5 text-[#C65793]" />
                     </div>
-                    <p className="text-xs font-medium text-[#6b7280]">Welcome video</p>
-                    <p className="text-[11px] text-[#9ca3af] leading-tight px-2">Your account manager can add a personal welcome video via the admin panel</p>
+                    <p className="text-xs font-medium text-[#6b7280]">{t('welcomeVideo')}</p>
+                    <p className="text-[11px] text-[#9ca3af] leading-tight px-2">{t('noVideoYet')}</p>
                   </div>
                 )}
 
                 <a href={`mailto:${accountOwner.email}?subject=Technical Support Request — ${accountName}`}
                   className="mt-auto flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                   style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
-                  <Mail className="w-4 h-4" /> Email for Support
+                  <Mail className="w-4 h-4" /> {t('emailForSupport')}
                 </a>
               </>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm text-[#6b7280]">Need help? Reach out to the Broad Peak Cyber team directly.</p>
+                <p className="text-sm text-[#6b7280]">{t('needHelp')}</p>
                 <a href="mailto:support@broadpeakcyber.com?subject=Technical Support Request — ${accountName}"
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                   style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}>
-                  <Mail className="w-4 h-4" /> Contact Support
+                  <Mail className="w-4 h-4" /> {t('contactSupport')}
                 </a>
               </div>
             )}
@@ -1175,7 +1178,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
             <div className="w-7 h-7 rounded-lg bg-[#4494D112] flex items-center justify-center">
               <Ticket className="w-4 h-4 text-[#4494D1]" />
             </div>
-            <h3 className="font-semibold text-[#1f2937] text-sm">Support Tickets</h3>
+            <h3 className="font-semibold text-[#1f2937] text-sm">{t('supportTickets')}</h3>
             {tickets.length > 0 && (
               <span className="text-xs bg-[#f3f4f6] text-[#6b7280] px-2 py-0.5 rounded-full">{tickets.length}</span>
             )}
@@ -1186,7 +1189,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
             style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}
             data-testid="button-new-ticket"
           >
-            <Plus className="w-3.5 h-3.5" /> Log a Ticket
+            <Plus className="w-3.5 h-3.5" /> {t('logATicket')}
           </button>
         </div>
 
@@ -1208,42 +1211,42 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Subject *</label>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">{t('subjectLabel')}</label>
                     <input
                       value={newSubject} onChange={e => setNewSubject(e.target.value)}
-                      placeholder="e.g. Email quarantine issue with Barracuda"
+                      placeholder={t('subjectPlaceholder')}
                       className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30 focus:border-[#4494D1]"
                       data-testid="input-ticket-subject"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Priority</label>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">{t('priorityLabel')}</label>
                     <select value={newPriority} onChange={e => setNewPriority(Number(e.target.value))}
                       className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30"
                       data-testid="select-ticket-priority">
-                      <option value={1}>Low</option>
-                      <option value={2}>Medium</option>
-                      <option value={3}>High</option>
-                      <option value={4}>Urgent</option>
+                      <option value={1}>{t('priorityLow')}</option>
+                      <option value={2}>{t('priorityMedium')}</option>
+                      <option value={3}>{t('priorityHigh')}</option>
+                      <option value={4}>{t('priorityUrgent')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Type (optional)</label>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">{t('typeLabel')}</label>
                     <select value={newType} onChange={e => setNewType(e.target.value)}
                       className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30"
                       data-testid="select-ticket-type">
-                      <option value="">— Select type —</option>
-                      <option value="Question">Question</option>
-                      <option value="Incident">Incident</option>
-                      <option value="Problem">Problem</option>
-                      <option value="Feature Request">Feature Request</option>
+                      <option value="">{t('selectType')}</option>
+                      <option value="Question">{t('ticketTypeQuestion')}</option>
+                      <option value="Incident">{t('typeIncident')}</option>
+                      <option value="Problem">{t('typeProblem')}</option>
+                      <option value="Feature Request">{t('typeFeatureRequest')}</option>
                     </select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Description *</label>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">{t('descriptionLabel')}</label>
                     <textarea
                       value={newDescription} onChange={e => setNewDescription(e.target.value)}
-                      placeholder="Describe the issue in detail..."
+                      placeholder={t('descriptionPlaceholder')}
                       rows={4}
                       className="w-full text-sm border border-[#e5e7eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4494D1]/30 focus:border-[#4494D1] resize-none"
                       data-testid="textarea-ticket-description"
@@ -1251,7 +1254,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                   </div>
                 </div>
                 <div className="flex items-center gap-2 justify-end">
-                  <button onClick={() => setShowNewTicket(false)} className="text-sm text-[#6b7280] hover:text-[#1f2937] px-3 py-1.5">Cancel</button>
+                  <button onClick={() => setShowNewTicket(false)} className="text-sm text-[#6b7280] hover:text-[#1f2937] px-3 py-1.5">{t('cancel')}</button>
                   <button
                     onClick={submitNewTicket}
                     disabled={submittingNew || !newSubject.trim() || !newDescription.trim()}
@@ -1259,7 +1262,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                     style={{ background: 'linear-gradient(135deg, #C65793, #4494D1)' }}
                     data-testid="button-submit-ticket"
                   >
-                    {submittingNew ? 'Submitting...' : 'Submit Ticket'}
+{submittingNew ? t('submitting') : t('submitTicket')}
                   </button>
                 </div>
               </>
@@ -1270,7 +1273,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
         {/* Ticket list */}
         <div className="divide-y divide-[#f3f4f6]">
           {ticketsLoading && (
-            <div className="px-5 py-6 text-center text-sm text-[#9ca3af]">Loading tickets...</div>
+            <div className="px-5 py-6 text-center text-sm text-[#9ca3af]">{t('loadingTickets')}</div>
           )}
           {!ticketsLoading && ticketsError && (
             <div className="px-5 py-4 text-sm text-[#ef4444]">{ticketsError}</div>
@@ -1278,8 +1281,8 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
           {!ticketsLoading && !ticketsError && tickets.length === 0 && (
             <div className="px-5 py-8 text-center">
               <Ticket className="w-8 h-8 text-[#d1d5db] mx-auto mb-2" />
-              <p className="text-sm text-[#9ca3af]">No tickets found for your account</p>
-              <p className="text-xs text-[#d1d5db] mt-1">Tickets are matched by your company domain</p>
+              <p className="text-sm text-[#9ca3af]">{t('noTicketsFound')}</p>
+              <p className="text-xs text-[#d1d5db] mt-1">{t('ticketsDomainHint')}</p>
             </div>
           )}
           {tickets.map(t => (
@@ -1314,7 +1317,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     const vendors = CATEGORY_VENDORS[selectedCat] || [];
     return (
       <div className="space-y-4">
-        <button onClick={() => setSelectedCat(null)} className="text-sm text-[#9ca3af] hover:text-[#1f2937] flex items-center gap-1">← Back</button>
+        <button onClick={() => setSelectedCat(null)} className="text-sm text-[#9ca3af] hover:text-[#1f2937] flex items-center gap-1">← {t('cancel')}</button>
         <h3 className="text-lg font-bold text-[#1f2937]">{selectedCat} — Select Vendor</h3>
         <div className="grid grid-cols-2 gap-3">
           {vendors.map(v => {
@@ -1325,7 +1328,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                 <div>
                   <div className="text-sm font-medium text-[#1f2937]">{v}</div>
                   <div className={`text-xs mt-1 ${kb?.hasKB ? 'text-[#059669]' : 'text-[#9ca3af]'}`}>
-                    {kb?.hasKB ? `KB: ${kb.label}` : 'In Development'}
+{kb?.hasKB ? `KB: ${kb.label}` : t('comingSoon')}
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-[#9ca3af]" />
@@ -1342,7 +1345,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     <div className="flex flex-col h-[500px] sm:h-[560px]">
       <div className="flex items-center gap-3 mb-3">
         <button onClick={() => { setSelectedCat(null); setSelectedVendor(null); setMessages([]); setInitDone(false); }}
-          className="text-sm text-[#9ca3af] hover:text-[#1f2937]">← Back</button>
+          className="text-sm text-[#9ca3af] hover:text-[#1f2937]">← {t('cancel')}</button>
         <span className="text-sm font-medium text-[#1f2937]">{selectedCat} — {selectedVendor}</span>
         {kb?.url && (
           <a href={kb.url} target="_blank" rel="noopener noreferrer"
@@ -1381,7 +1384,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                       <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
                         {ticketState === 'idle' && (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#9ca3af] mr-1">Was this helpful?</span>
+                            <span className="text-xs text-[#9ca3af] mr-1">{t('happyWithResponse')}?</span>
                             <button
                               onClick={() => handleHappy(userQ, msg.content)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f0fdf4] border border-[#86efac] text-[#166534] hover:bg-[#dcfce7] transition-colors">
@@ -1439,7 +1442,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                         {ticketState === 'done-happy' && (
                           <div className="flex items-center gap-2 text-xs text-[#166534] font-medium">
                             <CheckCircle2 className="w-4 h-4 text-[#10b981]" />
-                            Great! A resolved ticket has been logged for your records.
+{t('ticketRaised')}
                           </div>
                         )}
                         {ticketState === 'done-human' && (
@@ -1463,7 +1466,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
               <span className="w-2 h-2 rounded-full bg-[#9b4da8] animate-bounce" style={{animationDelay:'150ms'}} />
               <span className="w-2 h-2 rounded-full bg-[#4494D1] animate-bounce" style={{animationDelay:'300ms'}} />
             </div>
-            <span className="text-xs text-[#9ca3af]">Searching {kb?.label}...</span>
+            <span className="text-xs text-[#9ca3af]">{t('loadingTickets').replace('...', '')} {kb?.label}...</span>
           </div>
         )}
         <div ref={bottomRef} />
@@ -1553,15 +1556,15 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
         <div className="w-full rounded-2xl overflow-hidden shadow-[0_4px_16px_rgba(123,94,167,0.18)] overflow-x-auto"
           style={{ background: 'linear-gradient(160deg, #C65793 0%, #9b4da8 40%, #5a6bbf 70%, #4494D1 100%)' }}>
           <div className="flex min-w-max sm:min-w-0 w-full">
-            {tabs.map(t => (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} data-testid={`tab-${t.id}`}
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} data-testid={`tab-${tab.id}`}
                 className={`flex-1 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base font-bold whitespace-nowrap transition-all relative ${
-                  activeTab === t.id
+                  activeTab === tab.id
                     ? 'text-white'
                     : 'text-white/60 hover:text-white/90'
                 }`}>
-                {t.label}
-                {activeTab === t.id && (
+                {tab.label}
+                {activeTab === tab.id && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-white rounded-full" />
                 )}
               </button>
