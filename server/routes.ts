@@ -352,7 +352,7 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
           { role: 'user', content: question },
         ],
         stream: true,
-        max_tokens: 1000,
+        max_tokens: 1500,
       }),
       ...fetchOpts(),
     });
@@ -369,11 +369,14 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
 
     const body = openaiRes.body as any;
     const decoder = new TextDecoder();
+    let buf = '';
     for await (const chunk of body) {
-      const text = decoder.decode(chunk);
-      const lines = text.split('\n').filter(l => l.startsWith('data: '));
+      buf += decoder.decode(chunk, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || ''; // keep incomplete last line in buffer
       for (const line of lines) {
-        const data = line.slice(6);
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
         if (data === '[DONE]') { res.write('data: [DONE]\n\n'); break; }
         try {
           const json = JSON.parse(data);
@@ -382,6 +385,7 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
         } catch {}
       }
     }
+    res.write('data: [DONE]\n\n');
     res.end();
   } catch (err: any) {
     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
