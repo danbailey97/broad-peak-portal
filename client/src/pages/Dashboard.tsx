@@ -37,6 +37,18 @@ const CATEGORY_ICONS: Record<string, any> = {
   'Ransomware Protection': ShieldAlert,
 };
 
+const CATEGORY_NAMES_AR: Record<string, string> = {
+  'Email Protection': 'حماية البريد الإلكتروني',
+  'Data Protection': 'حماية البيانات',
+  'Network Protection': 'حماية الشبكة',
+  'Application Protection': 'حماية التطبيقات',
+  'MDR/SOC': 'MDR/SOC',
+  'Penetration Testing': 'اختبار الاختراق',
+  'Security Awareness': 'التوعية الأمنية',
+  'GRC': 'GRC',
+  'Ransomware Protection': 'الحماية من الفدية',
+};
+
 const CATEGORY_DESC_KEYS: Record<string, string> = {
   'Email Protection': 'desc_emailProtection',
   'Data Protection': 'desc_dataProtection',
@@ -138,7 +150,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; onClick: () => void; highlighted?: boolean }) {
-  const { t } = useLang();
+  const { t, isAr } = useLang();
   const Icon = CATEGORY_ICONS[entry.category] || Shield;
   const isOwned = entry.status === 'active' || entry.status === 'expired';
   return (
@@ -160,7 +172,7 @@ function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; o
         <StatusBadge status={entry.status} />
       </div>
       <div>
-        <h3 className="font-semibold text-[#1f2937] text-xs sm:text-sm leading-tight">{entry.category}</h3>
+        <h3 className="font-semibold text-[#1f2937] text-xs sm:text-sm leading-tight">{isAr ? (CATEGORY_NAMES_AR[entry.category] || entry.category) : entry.category}</h3>
         <p className="text-[#6b7280] text-[10px] sm:text-xs mt-0.5 sm:mt-1 leading-snug hidden sm:block">{t((CATEGORY_DESC_KEYS[entry.category] || 'desc_emailProtection') as any)}</p>
       </div>
       {isOwned && entry.products.length > 0 && (
@@ -197,7 +209,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
   const research = CATEGORY_RESEARCH[entry.category];
   const [docs, setDocs] = useState<ResearchDoc[]>([]);
   const vendors = CATEGORY_VENDORS[entry.category] || [];
-  const { t } = useLang();
+  const { t, isAr } = useLang();
 
   useEffect(() => {
     apiFetch(`/api/research-docs/${encodeURIComponent(entry.category)}`).then(r => r.json()).then(setDocs).catch(() => {});
@@ -208,7 +220,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
       <div className="bg-white border border-[#e5e7eb] shadow-xl rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-[#e5e7eb] flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-[#1f2937]">{entry.category}</h2>
+            <h2 className="text-xl font-bold text-[#1f2937]">{isAr ? (CATEGORY_NAMES_AR[entry.category] || entry.category) : entry.category}</h2>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <StatusBadge status={entry.status} />
               {(entry.startedAt || entry.expiresAt) && (
@@ -887,7 +899,7 @@ function TicketPriorityDot({ code }: { code: number }) {
 }
 
 function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: string; accountName: string; accountOwner?: AccountOwner }) {
-  const { t, lang } = useLang();
+  const { t, lang, isAr } = useLang();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1088,7 +1100,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                   <div className="p-2 rounded-xl bg-[#4494D112] w-fit">
                     <Icon className="w-5 h-5 text-[#4494D1]" />
                   </div>
-                  <div className="text-sm font-semibold text-[#1f2937] leading-tight">{cat}</div>
+                  <div className="text-sm font-semibold text-[#1f2937] leading-tight">{isAr ? (CATEGORY_NAMES_AR[cat] || cat) : cat}</div>
                   <div className="flex flex-wrap gap-1 mt-auto">
                     {vendors.map(v => (
                       <span key={v} className={`text-xs px-2 py-0.5 rounded-full font-medium ${VENDOR_KB[v]?.hasKB ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
