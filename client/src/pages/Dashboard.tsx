@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CEReadiness from './CEReadiness';
 import CyberRiskScore from './CyberRiskScore';
+import { useLang, LangToggleDark } from '../lib/LanguageContext';
 
 interface ProductEntry { name: string; vendor: string; startedAt?: string | null; expiresAt?: string | null; }
 interface RelevantProduct { id: string; name: string; vendor: string; categories: string[]; }
@@ -130,8 +131,9 @@ const CATEGORY_VENDORS: Record<string, string[]> = {
 };
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === 'active') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#10b98112] text-[#059669] border border-[#10b98130]">● Active</span>;
-  if (status === 'expired') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ef444412] text-[#dc2626] border border-[#ef444430]">⚠ Expired</span>;
+  const { t } = useLang();
+  if (status === 'active') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#10b98112] text-[#059669] border border-[#10b98130]">● {t('active')}</span>;
+  if (status === 'expired') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ef444412] text-[#dc2626] border border-[#ef444430]">⚠ {t('expired')}</span>;
   return null;
 }
 
@@ -194,6 +196,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
   const research = CATEGORY_RESEARCH[entry.category];
   const [docs, setDocs] = useState<ResearchDoc[]>([]);
   const vendors = CATEGORY_VENDORS[entry.category] || [];
+  const { t } = useLang();
 
   useEffect(() => {
     apiFetch(`/api/research-docs/${encodeURIComponent(entry.category)}`).then(r => r.json()).then(setDocs).catch(() => {});
@@ -228,7 +231,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
           {/* Your products */}
           {entry.products.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">Your Products</h3>
+              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">{t('yourProducts')}</h3>
               <div className="space-y-2">
                 {entry.products.map(p => {
                   const expired = p.expiresAt && new Date(p.expiresAt) < new Date();
@@ -283,7 +286,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
           {/* Admin-uploaded research docs */}
           {docs.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">Supporting Documents</h3>
+              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">{t('supportingDocuments')}</h3>
               <div className="space-y-2">
                 {docs.map(d => (
                   <a key={d.id} href={d.url} target="_blank" rel="noopener noreferrer"
@@ -299,7 +302,7 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
 
           {/* Vendors in this category */}
           <div>
-            <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">Vendor Expertise</h3>
+            <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-3">{t('vendorExpertise')}</h3>
             <div className="flex flex-wrap gap-2">
               {vendors.map(v => (
                 <a key={v} href={VENDOR_RESOURCE_LIBRARY[v]} target="_blank" rel="noopener noreferrer"
@@ -316,9 +319,10 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
 }
 
 function AccountManagerCard({ owner }: { owner: AccountOwner }) {
+  const { t } = useLang();
   return (
     <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-5 flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">Your Account Manager</h3>
+      <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">{t('yourAccountManager')}</h3>
       <div className="flex items-center gap-4">
         {owner.photo ? (
           <img src={owner.photo} alt={owner.name} className="w-14 h-14 rounded-full object-cover border-2 border-[#e5e7eb]" />
@@ -343,7 +347,7 @@ function AccountManagerCard({ owner }: { owner: AccountOwner }) {
         )}
         {owner.calendly && (
           <a href={owner.calendly} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#6b7280] hover:text-[#4494D1] transition-colors">
-            <Calendar className="w-4 h-4 text-[#7b5ea7]" /> Book a meeting
+            <Calendar className="w-4 h-4 text-[#7b5ea7]" /> {t('bookMeeting')}
           </a>
         )}
       </div>
@@ -390,8 +394,11 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
 }
 
 function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategory }: { domain: string; accountName: string; accountOwner?: AccountOwner; onHighlight?: (cats: string[]) => void; onOpenCategory?: (cat: string) => void }) {
+  const { t, lang, isAr } = useLang();
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: `Hi! I'm your Broad Peak AI assistant. I can answer questions about cybersecurity, your products, and our vendor portfolio. What would you like to know?` }
+    { role: 'assistant', content: isAr
+      ? 'مرحباً! أنا مساعد Broad Peak الذكي. يمكنني الإجابة على أسئلتك حول الأمن الإلكتروني ومنتجاتك وحلول موردينا. كيف يمكنني مساعدتك؟'
+      : `Hi! I'm your Broad Peak AI assistant. I can answer questions about cybersecurity, your products, and our vendor portfolio. What would you like to know?` }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -415,7 +422,7 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: userMsg, domain, vendor: effectiveVendor }),
+        body: JSON.stringify({ question: userMsg, domain, vendor: effectiveVendor, lang }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const reader = resp.body!.getReader();
@@ -539,7 +546,7 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
             data-testid="chat-input"
             value={input}
             onChange={e => setInput(e.target.value)}
-            placeholder="Ask about your security products..."
+            placeholder={t('typeQuestion')}
             className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] rounded-[10px] px-4 py-2.5 text-sm text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1]"
           />
           <button type="submit" disabled={loading || !input.trim()} data-testid="chat-send"
@@ -576,6 +583,7 @@ const VENDOR_LOGOS: Record<string, { logo: string; bg: string; tagline: string }
 };
 
 function NewsTab({ domain }: { domain: string }) {
+  const { t } = useLang();
   const { data: newsletters } = useQuery({ queryKey: ['/api/newsletters', domain], queryFn: () => apiFetch(`/api/newsletters?domain=${domain}`).then(r => r.json()) });
   return (
     <div className="space-y-8">
@@ -585,7 +593,7 @@ function NewsTab({ domain }: { domain: string }) {
           <div className="w-8 h-8 rounded-xl gradient-cta flex items-center justify-center">
             <FileText className="w-4 h-4 text-white" />
           </div>
-          <h2 className="text-lg font-bold text-[#1f2937]">Broad Peak Newsletters</h2>
+          <h2 className="text-lg font-bold text-[#1f2937]">{t('broadPeakNewsletters')}</h2>
         </div>
         {newsletters?.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -607,8 +615,8 @@ function NewsTab({ domain }: { domain: string }) {
           <div className="flex items-center gap-4 p-5 bg-[#f9fafb] border border-dashed border-[#d1d5db] rounded-xl text-[#9ca3af]">
             <BookOpen className="w-6 h-6 opacity-40 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium">No newsletters yet</p>
-              <p className="text-xs">Broad Peak newsletters will appear here when published</p>
+              <p className="text-sm font-medium">{t('noNewsletters')}</p>
+              <p className="text-xs">{t('noNewslettersHint')}</p>
             </div>
           </div>
         )}
@@ -620,7 +628,7 @@ function NewsTab({ domain }: { domain: string }) {
           <div className="w-8 h-8 rounded-xl bg-[#4494D1] flex items-center justify-center">
             <BookOpen className="w-4 h-4 text-white" />
           </div>
-          <h2 className="text-lg font-bold text-[#1f2937]">Vendor Resource Libraries</h2>
+          <h2 className="text-lg font-bold text-[#1f2937]">{t('vendorResourceLibraries')}</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {VENDOR_NEWS.map(v => {
@@ -648,7 +656,7 @@ function NewsTab({ domain }: { domain: string }) {
                   <div className="text-sm font-bold text-[#1f2937] group-hover:text-[#4494D1] transition-colors">{v.vendor}</div>
                   <div className="text-xs text-[#6b7280] leading-tight flex-1">{meta.tagline}</div>
                   <div className="flex items-center gap-1 mt-2 text-xs text-[#4494D1] font-medium">
-                    Visit library <ExternalLink className="w-3 h-3" />
+                    {t('visitLibrary')} <ExternalLink className="w-3 h-3" />
                   </div>
                 </div>
               </a>
@@ -728,6 +736,7 @@ const VENDOR_COLORS: Record<string, string> = {
 };
 
 function ResourcesTab({ domain }: { domain: string }) {
+  const { t } = useLang();
   const { data: adminSheets } = useQuery({ queryKey: ['/api/datasheets'], queryFn: () => apiFetch(`/api/datasheets?domain=${domain}`).then(r => r.json()) });
 
   // Group by vendor, then by category within each vendor
@@ -742,7 +751,7 @@ function ResourcesTab({ domain }: { domain: string }) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-bold text-[#1f2937] mb-5">Vendor Datasheets & Product Guides</h2>
+        <h2 className="text-lg font-bold text-[#1f2937] mb-5">{t('vendorDatasheets')}</h2>
         <div className="space-y-8">
           {Object.entries(grouped).map(([vendor, cats]) => (
             <div key={vendor} className="bg-white border border-[#e5e7eb] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] overflow-hidden">
@@ -752,7 +761,7 @@ function ResourcesTab({ domain }: { domain: string }) {
                   <span className="text-white text-xs font-bold">{vendor[0]}</span>
                 </div>
                 <span className="text-sm font-bold text-[#1f2937]">{vendor}</span>
-                <span className="ml-auto text-xs text-[#9ca3af]">{Object.values(cats).flat().length} resources</span>
+                <span className="ms-auto text-xs text-[#9ca3af]">{Object.values(cats).flat().length} {t('resources_count')}</span>
               </div>
               {/* Categories within vendor */}
               <div className="p-4 space-y-4">
@@ -862,6 +871,7 @@ function TicketPriorityDot({ code }: { code: number }) {
 }
 
 function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: string; accountName: string; accountOwner?: AccountOwner }) {
+  const { t, lang } = useLang();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -902,7 +912,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
       const r = await apiFetch('/api/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: newSubject, description: newDescription, priority: newPriority, type: newType || null, domain, customerName: accountName }),
+        body: JSON.stringify({ subject: newSubject, description: newDescription, priority: newPriority, type: newType || null, domain, customerName: accountName, lang }),
       });
       const d = await r.json();
       if (d.ok && d.ticket) {
@@ -935,6 +945,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
           type: 'Question',
           domain,
           customerName: accountName,
+          lang,
         }),
       });
     } catch { /* still show done */ }
@@ -955,6 +966,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
           type: 'Problem',
           domain,
           customerName: accountName,
+          lang,
         }),
       });
       const d = await r.json();
@@ -1373,28 +1385,28 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                             <button
                               onClick={() => handleHappy(userQ, msg.content)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f0fdf4] border border-[#86efac] text-[#166534] hover:bg-[#dcfce7] transition-colors">
-                              <ThumbsUp className="w-3.5 h-3.5" /> Happy with this
+                              <ThumbsUp className="w-3.5 h-3.5" /> {t('happyWithResponse')}
                             </button>
                             <button
                               onClick={() => { setTicketState('human-form'); setHumanTicketSubject(`[${selectedVendor}] ${userQ.slice(0, 80)}`); setHumanTicketDesc(''); }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fff7ed] border border-[#fed7aa] text-[#9a3412] hover:bg-[#ffedd5] transition-colors">
-                              <UserRound className="w-3.5 h-3.5" /> Speak to a human
+                              <UserRound className="w-3.5 h-3.5" /> {t('speakToHuman')}
                             </button>
                           </div>
                         )}
                         {ticketState === 'human-form' && (
                           <div className="space-y-2">
-                            <p className="text-xs font-medium text-[#1f2937]">Log a support ticket — our team will be in touch</p>
+                            <p className="text-xs font-medium text-[#1f2937]">{t('logSupportTicket')}</p>
                             <input
                               value={humanTicketSubject}
                               onChange={e => setHumanTicketSubject(e.target.value)}
-                              placeholder="Subject"
+                              placeholder={t('ticketSubjectPlaceholder')}
                               className="w-full border border-[#e5e7eb] rounded-lg px-3 py-1.5 text-xs text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1]"
                             />
                             <textarea
                               value={humanTicketDesc}
                               onChange={e => setHumanTicketDesc(e.target.value)}
-                              placeholder="Describe your issue in more detail (optional)"
+                              placeholder={t('ticketDescriptionPlaceholder')}
                               rows={3}
                               className="w-full border border-[#e5e7eb] rounded-lg px-3 py-1.5 text-xs text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1] resize-none"
                             />
@@ -1403,25 +1415,25 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                                 value={humanTicketPriority}
                                 onChange={e => setHumanTicketPriority(Number(e.target.value))}
                                 className="border border-[#e5e7eb] rounded-lg px-2 py-1.5 text-xs text-[#1f2937] focus:outline-none focus:border-[#4494D1]">
-                                <option value={1}>Low priority</option>
-                                <option value={2}>Medium priority</option>
-                                <option value={3}>High priority</option>
-                                <option value={4}>Urgent</option>
+                                <option value={1}>{t('priorityLow')}</option>
+                                <option value={2}>{t('priorityMedium')}</option>
+                                <option value={3}>{t('priorityHigh')}</option>
+                                <option value={4}>{t('priorityUrgent')}</option>
                               </select>
                               <button
                                 onClick={() => submitHumanTicket(userQ, msg.content)}
                                 disabled={humanTicketSubmitting || !humanTicketSubject.trim()}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium gradient-cta text-white disabled:opacity-40">
                                 {humanTicketSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
-                                Submit ticket
+                                {t('logTicket')}
                               </button>
-                              <button onClick={() => setTicketState('idle')} className="text-xs text-[#9ca3af] hover:text-[#1f2937] px-2">Cancel</button>
+                              <button onClick={() => setTicketState('idle')} className="text-xs text-[#9ca3af] hover:text-[#1f2937] px-2">{t('cancel')}</button>
                             </div>
                           </div>
                         )}
                         {ticketState === 'submitting' && (
                           <div className="flex items-center gap-2 text-xs text-[#9ca3af]">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating support ticket...
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('loggingTicket')}
                           </div>
                         )}
                         {ticketState === 'done-happy' && (
@@ -1433,7 +1445,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                         {ticketState === 'done-human' && (
                           <div className="flex items-center gap-2 text-xs text-[#9a3412] font-medium">
                             <Ticket className="w-4 h-4 text-[#f97316]" />
-                            Support ticket raised — your account manager will be in touch shortly.
+                            {t('ticketRaised')}
                           </div>
                         )}
                       </div>
@@ -1474,6 +1486,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
 
 // ─── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 export default function Dashboard({ domain, onLogout }: { domain: string; onLogout: () => void }) {
+  const { t, dir, isAr } = useLang();
   const [activeTab, setActiveTab] = useState<'products' | 'support' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
   const [selectedCategory, setSelectedCategory] = useState<CategoryEntry | null>(null);
   const [highlightedCategories, setHighlightedCategories] = useState<string[]>([]);
@@ -1499,16 +1512,17 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
   });
 
   const tabs = [
-    { id: 'products' as const, label: 'My Products' },
-    { id: 'support' as const, label: 'Technical Support' },
-    { id: 'news' as const, label: 'News & Updates' },
-    { id: 'resources' as const, label: 'Resources' },
-    { id: 'ce-readiness' as const, label: 'CE Readiness' },
-    { id: 'risk-score' as const, label: 'Risk Score' },
+    { id: 'products' as const, label: t('myProducts') },
+    { id: 'support' as const, label: t('technicalSupport') },
+    { id: 'news' as const, label: t('newsUpdates') },
+    { id: 'resources' as const, label: t('resources') },
+    { id: 'ce-readiness' as const, label: t('ceReadiness') },
+    { id: 'risk-score' as const, label: t('riskScore') },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f0f2f5]">
+    <div className="min-h-screen flex flex-col bg-[#f0f2f5]" dir={dir}
+      style={{ fontFamily: isAr ? "'Cairo', sans-serif" : undefined }}>
       {/* Header */}
       <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
@@ -1517,9 +1531,10 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
           </div>
           <div className="flex items-center gap-3">
             {customer && <span className="text-sm text-[#6b7280] hidden md:block">{customer.accountName}</span>}
+            <LangToggleDark />
             <button onClick={onLogout} data-testid="logout-button"
               className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#1f2937] transition-colors">
-              <LogOut className="w-4 h-4" /> Sign out
+              <LogOut className="w-4 h-4" /> {t('signOut')}
             </button>
           </div>
         </div>
@@ -1529,8 +1544,8 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
         {/* Welcome */}
         {customer && (
           <div className="gradient-cta rounded-2xl px-4 sm:px-6 py-4 sm:py-5 shadow-[0_8px_24px_rgba(123,94,167,0.20)]">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Welcome back</h1>
-            <p className="text-white/80 text-xs sm:text-sm mt-1">{customer.accountName} · {customer.grid.filter(g => g.status === 'active').length} active security services</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">{t('welcomeBack')}</h1>
+            <p className="text-white/80 text-xs sm:text-sm mt-1">{customer.accountName} · {customer.grid.filter(g => g.status === 'active').length} {t('activeSecurityServices')}</p>
           </div>
         )}
 
@@ -1558,7 +1573,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#C65793] animate-spin" /></div>
         ) : !customer ? (
-          <div className="flex-1 flex items-center justify-center text-[#9ca3af] text-sm">No data found for this account</div>
+          <div className="flex-1 flex items-center justify-center text-[#9ca3af] text-sm">{t('noDataFound')}</div>
         ) : (
           <>
             {/* MY PRODUCTS TAB */}
@@ -1587,7 +1602,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                       <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
                         <Shield className="w-3 h-3 text-white" />
                       </div>
-                      <span className="text-sm font-semibold text-[#1f2937]">Ask Broad Peak AI</span>
+                      <span className="text-sm font-semibold text-[#1f2937]">{t('askBroadPeakAI')}</span>
                     </div>
                     <div className="flex-1 min-h-0">
                       <ChatBot domain={domain} accountName={customer.accountName}
@@ -1609,11 +1624,11 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                           <div className="w-6 h-6 rounded-lg bg-[#8b5cf612] flex items-center justify-center">
                             <TrendingUp className="w-3.5 h-3.5 text-[#8b5cf6]" />
                           </div>
-                          <span className="text-sm font-semibold text-[#1f2937]">Cyber Risk Score</span>
+                          <span className="text-sm font-semibold text-[#1f2937]">{t('cyberRiskScore')}</span>
                         </div>
                         <button onClick={() => setActiveTab('risk-score')}
                           className="text-xs text-[#4494D1] hover:underline font-medium">
-                          {latestRiskScore ? 'Retake ↗' : 'Take Assessment ↗'}
+                          {latestRiskScore ? t('retake') : t('takeAssessmentLink')}
                         </button>
                       </div>
 
@@ -1637,9 +1652,9 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                             </div>
                             <div className="rounded-xl p-3 text-xs" style={{ background: bgColor, border: `1px solid ${color}30` }}>
                               <span className="font-semibold" style={{ color }}>
-                                {score >= 80 ? '✓ Strong security posture' : score >= 60 ? '⚠ Some areas need attention' : '⚠ Significant gaps identified'}
+                                {score >= 80 ? t('strongPosture') : score >= 60 ? t('someAttention') : t('significantGaps')}
                               </span>
-                              <span className="text-[#6b7280] ml-1">— click Retake to reassess</span>
+                              <span className="text-[#6b7280] ms-1">{t('clickRetake')}</span>
                             </div>
                           </div>
                         );
@@ -1648,11 +1663,11 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                           <div className="w-12 h-12 rounded-full bg-[#f3f4f6] flex items-center justify-center mx-auto mb-2">
                             <Shield className="w-5 h-5 text-[#9ca3af]" />
                           </div>
-                          <p className="text-sm text-[#6b7280] mb-3">No risk assessment on file for your organisation.</p>
+                          <p className="text-sm text-[#6b7280] mb-3">{t('noRiskAssessment')}</p>
                           <button onClick={() => setActiveTab('risk-score')}
                             className="text-sm font-semibold text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
                             style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}>
-                            Take Assessment
+                            {t('takeAssessment')}
                           </button>
                         </div>
                       )}

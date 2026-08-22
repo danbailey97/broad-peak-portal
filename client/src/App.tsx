@@ -3,6 +3,7 @@ import LoginPage from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminPage from './pages/Admin';
 import { setToken, setAdminToken, clearTokens } from './lib/api';
+import { LanguageProvider } from './lib/LanguageContext';
 
 export default function App() {
   const [page, setPage] = useState<'login' | 'dashboard' | 'admin'>('login');
@@ -30,7 +31,11 @@ export default function App() {
     window.location.hash = '';
   }
 
-  if (page === 'admin') return <AdminPage onLogout={handleLogout} />;
-  if (page === 'dashboard' && session) return <Dashboard domain={session.domain} onLogout={handleLogout} />;
-  return <LoginPage onLogin={handleLogin} onAdmin={() => { window.location.hash = '#admin'; setPage('admin'); }} />;
+  return (
+    <LanguageProvider>
+      {page === 'admin' && <AdminPage onLogout={handleLogout} />}
+      {page === 'dashboard' && session && <Dashboard domain={session.domain} onLogout={handleLogout} />}
+      {page === 'login' && <LoginPage onLogin={handleLogin} onAdmin={() => { window.location.hash = '#admin'; setPage('admin'); }} />}
+    </LanguageProvider>
+  );
 }

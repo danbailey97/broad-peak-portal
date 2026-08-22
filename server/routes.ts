@@ -258,9 +258,32 @@ router.get('/api/customer/:domain', async (req, res) => {
   }
 });
 
+// ── Translation helper (Arabic → English via Groq) ──────────
+async function translateToEnglish(text: string, apiKey: string): Promise<string> {
+  try {
+    const r = await directFetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'openai/gpt-oss-120b',
+        max_tokens: 500,
+        stream: false,
+        messages: [
+          { role: 'system', content: 'You are a professional translator. Translate the following Arabic text to English. Output only the translated text — no explanations, no preamble.' },
+          { role: 'user', content: text },
+        ],
+      }),
+      ...fetchOpts(),
+    }) as any;
+    if (!r.ok) return text; // fallback: use original
+    const data: any = await r.json();
+    return data.choices?.[0]?.message?.content?.trim() || text;
+  } catch { return text; }
+}
+
 // ── Chatbot ───────────────────────────────────────────────────
 router.post('/api/chat', async (req, res) => {
-  const { question, domain } = req.body;
+  const { question, domain, lang } = req.body;
   if (!question) return res.status(400).json({ error: 'Missing question' });
 
   // Find relevant products from catalogue
@@ -287,6 +310,10 @@ router.post('/api/chat', async (req, res) => {
     `Product: ${p.name} (${p.vendor}) — Categories: ${p.categories.join(', ')}\nDescription: ${p.description}\nKey features: ${p.features.slice(0, 5).join(', ')}`
   ).join('\n\n');
 
+  const langInstruction = lang === 'ar'
+    ? '\n\nIMPORTANT: The customer is using the Arabic interface. You MUST respond entirely in Arabic. Use clear, professional Arabic. Technical product names (e.g. Barracuda, XDR, WAF, MFA) may be kept in English within your Arabic response as they are industry-standard terms.'
+    : '';
+
   const systemPrompt = `You are the Broad Peak Cyber customer portal assistant. Broad Peak is a UK-based MSP specialising in cybersecurity.
 
 Your job is to help customers understand where in the Broad Peak portfolio solutions exist for their challenges.
@@ -303,7 +330,7 @@ When answering:
 4. Keep responses concise and practical
 5. If the customer already owns a relevant product, acknowledge this and suggest they speak to the technical team for help using it
 
-Always be helpful and professional. Focus on genuine relevance, not sales pressure.`;
+Always be helpful and professional. Focus on genuine relevance, not sales pressure.${langInstruction}`;
 
   const GROQ_KEY = process.env.GROQ_API_KEY || '';
 
@@ -319,7 +346,7 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: question },
@@ -657,7 +684,7 @@ async function* streamGroqSupport(
   const res = await directFetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1500, stream: true, messages }),
+    body: JSON.stringify({ model: 'openai/gpt-oss-120b', max_tokens: 1500, stream: true, messages }),
     signal: AbortSignal.timeout(30000),
     ...fetchOpts(),
   }) as any;
@@ -870,12 +897,27 @@ router.get('/api/tickets', requireAuth, async (req, res) => {
 
 // POST /api/tickets — create a new ticket from the portal
 router.post('/api/tickets', requireAuth, async (req, res) => {
-  const { subject, description, priority, type, domain, customerName } = req.body;
+  const { subject, description, priority, type, domain, customerName, lang } = req.body;
   if (!subject || !description) return res.status(400).json({ ok: false, error: 'subject and description required' });
   try {
+    const GROQ_KEY = process.env.GROQ_API_KEY || '';
+
+    // If submitted in Arabic, translate to English for the Broad Peak team
+    // Keep the original Arabic text appended so context is not lost
+    let finalSubject = subject;
+    let finalDescription = description;
+    if (lang === 'ar') {
+      const [translatedSubject, translatedDescription] = await Promise.all([
+        translateToEnglish(subject, GROQ_KEY),
+        translateToEnglish(description, GROQ_KEY),
+      ]);
+      finalSubject = translatedSubject;
+      finalDescription = `${translatedDescription}\n\n---\n[Original Arabic / النص الأصلي بالعربية]\n${description}`;
+    }
+
     const ticketBody = {
-      subject,
-      description,
+      subject: finalSubject,
+      description: finalDescription,
       email: `portal@${domain || 'customer.com'}`,
       name: customerName || `Portal User (${domain})`,
       priority: priority || 2,
