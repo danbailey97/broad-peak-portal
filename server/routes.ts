@@ -900,8 +900,9 @@ router.get('/api/tickets', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/tickets — submit a support ticket via email to support@broadpeakcyber.com
-// Freshdesk auto-logs inbound emails as tickets.
+// POST /api/tickets — create ticket in Freshdesk via API
+// Freshdesk will notify the team per its own notification rules.
+// The requester email is set to portal@<domain> so Freshdesk associates it with the right account.
 router.post('/api/tickets', requireAuth, async (req, res) => {
   const { subject, description, priority, type, domain, customerName, lang } = req.body;
   if (!subject || !description) return res.status(400).json({ ok: false, error: 'subject and description required' });
@@ -921,74 +922,45 @@ router.post('/api/tickets', requireAuth, async (req, res) => {
       finalDescription = `${translatedDescription}\n\n---\n[Original Arabic / النص الأصلي بالعربية]\n${description}`;
     }
 
-    const PRIORITY_LABELS: Record<number, string> = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Urgent' };
-    const priorityLabel = PRIORITY_LABELS[priority] || 'Medium';
     const customerEmail = `portal@${domain || 'customer.com'}`;
     const senderName = customerName || `Portal User (${domain})`;
-    const ticketRef = `BP-${Date.now().toString(36).toUpperCase()}`;
 
-    // Build a clean HTML email body that Freshdesk will parse as the ticket description
-    const htmlBody = `
-<p><strong>New support ticket submitted via Broad Peak Customer Portal</strong></p>
-<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px">
-  <tr><td style="padding:4px 12px 4px 0;color:#666">Reference</td><td><strong>${ticketRef}</strong></td></tr>
-  <tr><td style="padding:4px 12px 4px 0;color:#666">Account</td><td>${senderName}</td></tr>
-  <tr><td style="padding:4px 12px 4px 0;color:#666">Domain</td><td>${domain || '—'}</td></tr>
-  <tr><td style="padding:4px 12px 4px 0;color:#666">Priority</td><td>${priorityLabel}</td></tr>
-  ${type ? `<tr><td style="padding:4px 12px 4px 0;color:#666">Type</td><td>${type}</td></tr>` : ''}
-</table>
-<br/>
-<p><strong>Description</strong></p>
-<p style="white-space:pre-wrap">${finalDescription.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
-`;
+    const ticketBody = {
+      subject: finalSubject,
+      description: finalDescription,
+      email: customerEmail,
+      name: senderName,
+      priority: priority || 2,
+      status: 2,
+      type: type || null,
+      tags: ['portal', domain || 'unknown'],
+    };
 
-    // Build SMTP transporter from env vars (set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS on Render)
-    // Falls back to a direct sendmail if no SMTP configured (for local dev)
-    const smtpHost = process.env.SMTP_HOST;
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
-    const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+    const r = await directFetch(`https://${FD_DOMAIN}.freshdesk.com/api/v2/tickets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${FD_AUTH}` },
+      body: JSON.stringify(ticketBody),
+      ...fetchOpts(),
+    }) as any;
+    const data: any = await r.json();
+    if (!r.ok) return res.status(r.status).json({ ok: false, error: data.description || 'Freshdesk error', details: data });
 
-    let transporter: nodemailer.Transporter;
-    if (smtpHost && smtpUser && smtpPass) {
-      transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: { user: smtpUser, pass: smtpPass },
-      });
-    } else {
-      // Fallback: use Gmail via OPENAI key holder's account isn't ideal —
-      // use Render-native sendmail if available
-      transporter = nodemailer.createTransport({ sendmail: true });
-    }
-
-    await transporter.sendMail({
-      from: `"${senderName}" <${smtpUser || customerEmail}>`,
-      replyTo: customerEmail,
-      to: 'support@broadpeakcyber.com',
-      subject: `[${priorityLabel}] ${finalSubject}`,
-      html: htmlBody,
-      text: `Ticket Ref: ${ticketRef}\nAccount: ${senderName}\nDomain: ${domain}\nPriority: ${priorityLabel}\n${type ? `Type: ${type}\n` : ''}\n${finalDescription}`,
-    });
-
-    const now = new Date().toISOString();
     res.json({
       ok: true,
-      ticketId: ticketRef,
+      ticketId: data.id,
       ticket: {
-        id: ticketRef,
-        subject: finalSubject,
-        status: 'Open',
-        statusCode: 2,
-        priority: priorityLabel,
-        priorityCode: priority || 2,
-        createdAt: now,
-        updatedAt: now,
+        id: data.id,
+        subject: data.subject,
+        status: FD_STATUS[data.status] || String(data.status),
+        statusCode: data.status,
+        priority: FD_PRIORITY[data.priority] || String(data.priority),
+        priorityCode: data.priority,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
         requesterName: senderName,
         requesterEmail: customerEmail,
-        type: type || null,
-        tags: ['portal', domain || 'unknown'],
+        type: data.type || null,
+        tags: data.tags || [],
       },
     });
   } catch (err: any) {
