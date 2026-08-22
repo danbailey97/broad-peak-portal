@@ -795,6 +795,7 @@ function generateCEPDF(answers: Answers, accountName: string, ceLevel: 'CE' | 'C
 interface Answers { [questionId: string]: boolean | null; }
 
 export default function CEReadiness({ accountName, domain }: { accountName: string; domain?: string }) {
+  const { t, isAr, dir } = useLang();
   const [answers, setAnswers] = useState<Answers>({});
   const [currentSection, setCurrentSection] = useState(0);
   const [currentQ, setCurrentQ] = useState(0);
