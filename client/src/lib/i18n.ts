@@ -221,6 +221,7 @@ export const translations = {
     tagline_boxphish: 'Phishing Simulation & Awareness',
     tagline_bullwall: 'Ransomware Containment',
     tagline_cybersmart: 'Cyber Essentials & GRC',
+    tagline_vanta: 'GRC & Compliance Automation',
     tagline_druva: 'SaaS & Endpoint Data Protection',
     tagline_watchguard: 'Network & Identity Security',
 
@@ -500,6 +501,7 @@ export const translations = {
     tagline_boxphish: 'محاكاة التصيد الاحتيالي والتوعية',
     tagline_bullwall: 'احتواء برامج الفدية',
     tagline_cybersmart: 'Cyber Essentials والحوكمة والمخاطر والامتثال',
+    tagline_vanta: 'أتمتة الحوكمة والمخاطر والامتثال',
     tagline_druva: 'حماية بيانات SaaS ونقاط النهاية',
     tagline_watchguard: 'أمن الشبكة والهوية',
 

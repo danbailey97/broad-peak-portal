@@ -118,6 +118,7 @@ const VENDOR_KB: Record<string, { label: string; url: string | null; hasKB: bool
   'Arctic Wolf': { label: 'Arctic Wolf Docs', url: 'https://docs.arcticwolf.com', hasKB: true },
   BullWall: { label: 'Contact Support', url: null, hasKB: false },
   CyberSmart: { label: 'CyberSmart Support', url: 'https://support.cybersmart.co.uk/s/', hasKB: true },
+  Vanta: { label: 'Vanta Help Center', url: 'https://help.vanta.com', hasKB: true },
 };
 
 const VENDOR_RESOURCE_LIBRARY: Record<string, string> = {
@@ -128,6 +129,7 @@ const VENDOR_RESOURCE_LIBRARY: Record<string, string> = {
   BullWall: 'https://www.bullwall.com/resources',
   CyberSmart: 'https://cybersmart.co.uk/products/',
   Druva: 'https://www.druva.com/learning-center/resources',
+  Vanta: 'https://www.vanta.com/resources',
   WatchGuard: 'https://www.watchguard.com/wgrd-resource-center/datasheets',
 };
 
@@ -139,7 +141,7 @@ const CATEGORY_VENDORS: Record<string, string[]> = {
   'MDR/SOC': ['Arctic Wolf', 'WatchGuard', 'Barracuda'],
   'Penetration Testing': ['CyberSmart'],
   'Security Awareness': ['Boxphish'],
-  'GRC': ['CyberSmart', 'Arctic Wolf'],
+  'GRC': ['CyberSmart', 'Arctic Wolf', 'Vanta'],
   'Ransomware Protection': ['BullWall'],
 };
 
@@ -521,7 +523,7 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
   const [vendorPrompt, setVendorPrompt] = useState<{ needed: boolean; originalQ: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevLang = useRef(lang);
-  const ALL_VENDORS = ['Barracuda', 'Keepit', 'Arctic Wolf', 'Boxphish', 'BullWall', 'CyberSmart', 'Druva', 'WatchGuard'];
+  const ALL_VENDORS = ['Barracuda', 'Keepit', 'Arctic Wolf', 'Boxphish', 'BullWall', 'CyberSmart', 'Druva', 'WatchGuard', 'Vanta'];
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -704,6 +706,7 @@ const VENDOR_NEWS = [
   { vendor: 'Boxphish', url: 'https://www.boxphish.com/resources/' },
   { vendor: 'BullWall', url: 'https://www.bullwall.com/resources' },
   { vendor: 'CyberSmart', url: 'https://cybersmart.co.uk/products/' },
+  { vendor: 'Vanta', url: 'https://www.vanta.com/resources' },
   { vendor: 'Druva', url: 'https://www.druva.com/learning-center/resources' },
   { vendor: 'WatchGuard', url: 'https://www.watchguard.com/wgrd-resource-center/datasheets' },
 ];
@@ -715,6 +718,7 @@ const VENDOR_LOGOS: Record<string, { logo: string; bg: string; taglineKey: strin
   Boxphish: { logo: 'https://www.boxphish.com/favicon.ico', bg: '#6a1b9a', taglineKey: 'tagline_boxphish' },
   BullWall: { logo: 'https://bullwall.com/favicon.ico', bg: '#e65100', taglineKey: 'tagline_bullwall' },
   CyberSmart: { logo: 'https://cybersmart.co.uk/favicon.ico', bg: '#2e7d32', taglineKey: 'tagline_cybersmart' },
+  Vanta: { logo: 'https://www.vanta.com/favicon.ico', bg: '#6a3de8', taglineKey: 'tagline_vanta' },
   Druva: { logo: 'https://www.druva.com/favicon.ico', bg: '#00838f', taglineKey: 'tagline_druva' },
   WatchGuard: { logo: 'https://www.watchguard.com/favicon.ico', bg: '#f57c00', taglineKey: 'tagline_watchguard' },
 };
@@ -858,6 +862,15 @@ const DATASHEETS = [
   // ── CyberSmart ───────────────────────────────────────────────────────────
   { vendor: 'CyberSmart', product: 'Cyber Essentials', category: 'Compliance', url: 'https://cybersmart.co.uk/products/cyber-essentials/' },
   { vendor: 'CyberSmart', product: 'Cyber Essentials Plus', category: 'Compliance', url: 'https://cybersmart.co.uk/products/cyber-essentials-plus/' },
+  // ── Vanta ────────────────────────────────────────────────────────────────
+  { vendor: 'Vanta', product: 'GRC Implementation Guide', category: 'GRC', url: 'https://help.vanta.com/en/articles/11488007-vanta-grc-implementation-guide' },
+  { vendor: 'Vanta', product: 'Trust Center Implementation Guide', category: 'Trust Center', url: 'https://help.vanta.com/en/articles/11487960-vanta-trust-center-implementation-guide' },
+  { vendor: 'Vanta', product: 'Third-Party Risk Management Guide', category: 'Risk Management', url: 'https://help.vanta.com/en/articles/11487926-third-party-risk-management-implementation-guide' },
+  { vendor: 'Vanta', product: 'SOC 2 Type I & II Guide', category: 'Compliance', url: 'https://help.vanta.com/en/articles/11345835-vanta-guide-to-soc-2-type-i-and-type-ii' },
+  { vendor: 'Vanta', product: 'ISO 27001 Audit Readiness Checklist', category: 'Compliance', url: 'https://help.vanta.com/en/articles/13189529-iso-27001-audit-readiness-checklist' },
+  { vendor: 'Vanta', product: 'Questionnaire Automation Guide', category: 'Automation', url: 'https://help.vanta.com/en/articles/11488356-vanta-questionnaire-automation-implementation-guide' },
+  { vendor: 'Vanta', product: 'Security Frameworks Overview', category: 'Compliance', url: 'https://help.vanta.com/en/collections/12884176-security-frameworks' },
+  { vendor: 'Vanta', product: 'Vanta Security & Privacy Brief', category: 'Overview', url: 'https://help.vanta.com/en/articles/11346104-vanta-security-and-privacy-brief' },
   // ── BullWall ─────────────────────────────────────────────────────────────
   { vendor: 'BullWall', product: 'Ransomware Containment', category: 'Ransomware Protection', url: 'https://bullwall.com/wp-content/uploads/2023/04/BullWall-Product-Brief_Ransomware-Containment.pdf' },
   { vendor: 'BullWall', product: 'Server Intrusion Protection (SIP)', category: 'Ransomware Protection', url: 'https://bullwall.com/wp-content/uploads/2023/09/BullWall-Product-Brief-SIP.pdf' },
@@ -869,7 +882,7 @@ const DATASHEETS = [
 const VENDOR_COLORS: Record<string, string> = {
   Barracuda: 'text-red-300', Keepit: 'text-sky-300', 'Arctic Wolf': 'text-[#4494D1]',
   Boxphish: 'text-[#4494D1]', BullWall: 'text-orange-300', CyberSmart: 'text-emerald-300',
-  Druva: 'text-teal-300', WatchGuard: 'text-amber-300',
+  Druva: 'text-teal-300', WatchGuard: 'text-amber-300', Vanta: 'text-violet-300',
 };
 
 function ResourcesTab({ domain }: { domain: string }) {
