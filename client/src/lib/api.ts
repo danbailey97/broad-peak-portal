@@ -18,12 +18,13 @@ export async function apiFetch(path: string, opts: RequestInit = {}) {
   return res;
 }
 
-export async function login(domain: string, password: string) {
+export async function login(domain: string, password: string, totpCode?: string) {
   const res = await fetch(`${API_BASE}/api/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ domain, password }),
+    body: JSON.stringify({ domain, password, ...(totpCode ? { totpCode } : {}) }),
   });
+  if (res.status === 202) throw new Error('requires2FA');
   if (!res.ok) throw new Error((await res.json()).error);
   return res.json();
 }

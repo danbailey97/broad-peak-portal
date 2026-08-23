@@ -72,6 +72,16 @@ db.exec(`
     score INTEGER,
     label TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS customer_auth (
+    domain TEXT PRIMARY KEY,
+    password_hash TEXT,           -- bcrypt hash; NULL = use universal CUSTOMER_PASSWORD
+    totp_secret TEXT,             -- base32 TOTP secret; NULL = not set up
+    totp_enabled INTEGER DEFAULT 0, -- 1 = 2FA required on login
+    reset_token TEXT,             -- short-lived reset token (UUID)
+    reset_expires TEXT,           -- ISO timestamp
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Safe migrations for columns added after initial deployment

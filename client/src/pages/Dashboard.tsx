@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch, getToken } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, CheckCircle, UserRound, Ticket, Plus, Video } from 'lucide-react';
+import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, CheckCircle, UserRound, Ticket, Plus, Video, Settings } from 'lucide-react';
+import SecuritySettings from './SecuritySettings';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CEReadiness from './CEReadiness';
@@ -1626,6 +1627,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
   const [activeTab, setActiveTab] = useState<'products' | 'support' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
   const [selectedCategory, setSelectedCategory] = useState<CategoryEntry | null>(null);
   const [highlightedCategories, setHighlightedCategories] = useState<string[]>([]);
+  const [showSecurity, setShowSecurity] = useState(false);
   const [latestRiskScore, setLatestRiskScore] = useState<{ score: number; label: string; submitted_at: string } | null>(null);
 
   // Load latest risk score for this domain
@@ -1659,6 +1661,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
   return (
     <div className="min-h-screen flex flex-col bg-[#f0f2f5]" dir={dir}
       style={{ fontFamily: isAr ? "'Cairo', sans-serif" : undefined }}>
+      {showSecurity && <SecuritySettings domain={domain} onClose={() => setShowSecurity(false)} />}
       {/* Header */}
       <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
@@ -1668,6 +1671,12 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
           <div className="flex items-center gap-3">
             {customer && <span className="text-sm text-[#6b7280] hidden md:block">{customer.accountName}</span>}
             <LangToggleDark />
+            <button onClick={() => setShowSecurity(true)} data-testid="security-settings-button"
+              className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#1f2937] transition-colors"
+              title={t('securitySettings')}>
+              <Settings className="w-4 h-4" />
+              <span className="hidden md:inline">{t('securitySettings')}</span>
+            </button>
             <button onClick={onLogout} data-testid="logout-button"
               className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#1f2937] transition-colors">
               <LogOut className="w-4 h-4" /> {t('signOut')}

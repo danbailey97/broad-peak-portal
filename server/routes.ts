@@ -55,6 +55,7 @@ import { fetch as directFetch, Agent as DirectAgent } from 'undici';
 import nodemailer from 'nodemailer';
 import db from './db.js';
 import { getCustomerByDomain, getAllCustomers, upsertCustomerCache, getCacheStats } from './salesforce.js';
+import { verifyPassword, setPassword, generateResetToken, consumeResetToken, verifyTotp, enableTotp, disableTotp, getTotpQR, getTotpStatus, isTotpEnabled } from './auth.js';
 import { PRODUCTS, ALL_CATEGORIES, ALL_VENDORS, VENDOR_INFO, findRelevantProducts, getVendorsByCategory } from './vendors.js';
 
 const router = express.Router();
@@ -78,9 +79,19 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'BPAdmin2024!';
 
 // ── Customer login ────────────────────────────────────────────
 router.post('/api/login', async (req, res) => {
-  const { domain, password } = req.body;
+  const { domain, password, totpCode } = req.body;
   if (!domain || !password) return res.status(400).json({ error: 'Missing domain or password' });
-  if (password !== CUSTOMER_PASSWORD) return res.status(401).json({ error: 'Invalid credentials' });
+  const passwordOk = await verifyPassword(domain.toLowerCase().trim(), password);
+  if (!passwordOk) return res.status(401).json({ error: 'Invalid credentials' });
+
+  // If 2FA is enabled for this domain, check TOTP before issuing token
+  const cleanDomainForTotp = domain.toLowerCase().trim().replace(/^www\./, '');
+  if (isTotpEnabled(cleanDomainForTotp)) {
+    if (!totpCode) return res.status(202).json({ requires2FA: true });
+    if (!verifyTotp(cleanDomainForTotp, String(totpCode))) {
+      return res.status(401).json({ error: 'Invalid authenticator code' });
+    }
+  }
 
   // Strip any @ prefix
   const cleanDomain = domain.replace(/^@/, '').toLowerCase().trim();
@@ -885,6 +896,130 @@ router.get('/api/assessments/:id', (req, res) => {
   const row = db.prepare('SELECT * FROM assessments WHERE id = ?').get(req.params.id) as any;
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json({ ...row, answers: JSON.parse(row.answers) });
+});
+
+
+// ─── CUSTOMER AUTH — forgot password, reset, 2FA ─────────────────────────────
+
+// POST /api/auth/forgot-password — send reset email
+router.post('/api/auth/forgot-password', async (req, res) => {
+  const { domain } = req.body;
+  if (!domain) return res.status(400).json({ error: 'Missing domain' });
+  const cleanDomain = domain.toLowerCase().trim().replace(/^www\./, '');
+
+  // Verify the domain exists
+  try {
+    const customer = await getCustomerByDomain(cleanDomain);
+    if (!customer) {
+      // Don't reveal whether domain exists — always return ok
+      return res.json({ ok: true });
+    }
+
+    const token = generateResetToken(cleanDomain);
+    const resetUrl = `${process.env.PORTAL_URL || 'https://portal.broadpeakcyber.com'}/#/reset-password?token=${token}`;
+
+    // Send email via Outlook (using directFetch to M365 Graph if available, else log)
+    // For now, prepare the email content — frontend will handle display
+    const emailBody = `
+Hello,
+
+A password reset was requested for your Broad Peak Customer Portal account (${cleanDomain}).
+
+Click the link below to reset your password. This link expires in 30 minutes.
+
+${resetUrl}
+
+If you did not request this, please ignore this email or contact support@broadpeakcyber.com.
+
+Best regards,
+Broad Peak Cyber Team
+    `.trim();
+
+    // Send via Outlook connector if available
+    try {
+      const { sendOutlookEmail } = await import('./email.js').catch(() => ({ sendOutlookEmail: null }));
+      if (sendOutlookEmail) {
+        await (sendOutlookEmail as any)(
+          'support@broadpeakcyber.com',
+          `portal@${cleanDomain}`,
+          'Broad Peak Portal — Password Reset',
+          emailBody
+        );
+      }
+    } catch { /* email optional */ }
+
+    res.json({ ok: true, resetUrl }); // Include URL in response so we can show it if email fails
+  } catch {
+    res.json({ ok: true }); // Always return ok
+  }
+});
+
+// POST /api/auth/reset-password — consume token and set new password
+router.post('/api/auth/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'Missing token or password' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  const ok = await consumeResetToken(token, newPassword);
+  if (!ok) return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
+  res.json({ ok: true });
+});
+
+// POST /api/auth/change-password — change password while logged in
+router.post('/api/auth/change-password', requireAuth, async (req, res) => {
+  const { domain, currentPassword, newPassword } = req.body;
+  if (!domain || !currentPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  const cleanDomain = domain.toLowerCase().trim();
+  const ok = await verifyPassword(cleanDomain, currentPassword);
+  if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
+  await setPassword(cleanDomain, newPassword);
+  res.json({ ok: true });
+});
+
+// GET /api/auth/2fa-status — get 2FA status for domain
+router.get('/api/auth/2fa-status', requireAuth, (req, res) => {
+  const domain = String(req.query.domain || '').toLowerCase().trim();
+  if (!domain) return res.status(400).json({ error: 'Missing domain' });
+  const status = getTotpStatus(domain);
+  res.json(status);
+});
+
+// POST /api/auth/2fa-setup — generate TOTP secret + QR code
+router.post('/api/auth/2fa-setup', requireAuth, async (req, res) => {
+  const { domain } = req.body;
+  if (!domain) return res.status(400).json({ error: 'Missing domain' });
+  const cleanDomain = domain.toLowerCase().trim();
+  try {
+    const { secret, qrDataUrl } = await getTotpQR(cleanDomain);
+    res.json({ ok: true, secret, qrDataUrl });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/2fa-enable — verify code then enable 2FA
+router.post('/api/auth/2fa-enable', requireAuth, (req, res) => {
+  const { domain, code } = req.body;
+  if (!domain || !code) return res.status(400).json({ error: 'Missing domain or code' });
+  const ok = enableTotp(domain.toLowerCase().trim(), String(code));
+  if (!ok) return res.status(400).json({ error: 'Invalid code — please try again' });
+  res.json({ ok: true });
+});
+
+// POST /api/auth/2fa-disable — disable 2FA (requires current TOTP or password)
+router.post('/api/auth/2fa-disable', requireAuth, async (req, res) => {
+  const { domain, code, password } = req.body;
+  if (!domain) return res.status(400).json({ error: 'Missing domain' });
+  const cleanDomain = domain.toLowerCase().trim();
+
+  // Verify either a valid TOTP code or current password
+  let verified = false;
+  if (code) verified = verifyTotp(cleanDomain, String(code));
+  if (!verified && password) verified = await verifyPassword(cleanDomain, password);
+  if (!verified) return res.status(401).json({ error: 'Please provide a valid authenticator code or your current password' });
+
+  disableTotp(cleanDomain);
+  res.json({ ok: true });
 });
 
 // ─── FRESHDESK TICKET ────────────────────────────────────────────────────────
