@@ -116,8 +116,8 @@ const VENDOR_KB: Record<string, { label: string; url: string | null; hasKB: bool
   Druva: { label: 'Druva Help Centre', url: 'https://help.druva.com/en/', hasKB: true },
   WatchGuard: { label: 'WatchGuard Support', url: 'https://www.watchguard.com/wgrd-support/find-answers', hasKB: true },
   'Arctic Wolf': { label: 'Arctic Wolf Docs', url: 'https://docs.arcticwolf.com', hasKB: true },
-  BullWall: { label: 'In Development', url: null, hasKB: false },
-  CyberSmart: { label: 'In Development', url: null, hasKB: false },
+  BullWall: { label: 'Contact Support', url: null, hasKB: false },
+  CyberSmart: { label: 'CyberSmart Support', url: 'https://support.cybersmart.co.uk/s/', hasKB: true },
 };
 
 const VENDOR_RESOURCE_LIBRARY: Record<string, string> = {
@@ -1124,7 +1124,10 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     setTicketState('idle');
     setMessages([{ role: 'assistant', content: kb.hasKB
       ? `Hi! I'm ready to help with ${vendor} questions. I'll search the ${kb.label} knowledge base for accurate answers. What issue are you experiencing?`
-      : `Hi! Support for ${vendor} is coming soon. For now, please contact Broad Peak directly and we'll assist you with ${cat} queries.`
+      : vendor === 'BullWall'
+        ? `__BULLWALL_NO_KB__`
+        : `Hi! Support for ${vendor} is coming soon. For now, please contact Broad Peak directly and we'll assist you with ${cat} queries.`
+
     }]);
     setInitDone(true);
   };
@@ -1137,7 +1140,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     setInput('');
     setTicketState('idle');
     if (!kb.hasKB) {
-      setMessages(m => [...m, { role: 'assistant', content: `Support for ${selectedVendor} is coming soon. Please contact your account manager for assistance.` }]);
+      setMessages(m => [...m, { role: 'assistant', content: '__BULLWALL_NO_KB__' }]);
       return;
     }
     setLoading(true);
@@ -1213,7 +1216,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                   <div className="flex flex-wrap gap-1 mt-auto">
                     {vendors.map(v => (
                       <span key={v} className={`text-xs px-2 py-0.5 rounded-full font-medium ${VENDOR_KB[v]?.hasKB ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
-                        {VENDOR_KB[v]?.hasKB ? v : `${v} (soon)`}
+                        {VENDOR_KB[v]?.hasKB ? v : v === 'BullWall' ? `${v} (contact support)` : `${v} (soon)`}
                       </span>
                     ))}
                     {vendors.length === 0 && <span className="text-xs text-[#9ca3af]">{t('comingSoon')}</span>}
@@ -1462,7 +1465,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                 <div>
                   <div className="text-sm font-medium text-[#1f2937]">{v}</div>
                   <div className={`text-xs mt-1 ${kb?.hasKB ? 'text-[#059669]' : 'text-[#9ca3af]'}`}>
-{kb?.hasKB ? `KB: ${kb.label}` : t('comingSoon')}
+{kb?.hasKB ? `KB: ${kb.label}` : (v === 'BullWall' ? 'Contact Support' : t('comingSoon'))}
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-[#9ca3af]" />
@@ -1511,10 +1514,34 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                     {/* Gradient top accent */}
                     <div className="h-0.5" style={{background:'linear-gradient(90deg,#C65793,#9b4da8,#4494D1)'}} />
                     <div className="p-4">
-                      <MarkdownContent content={msg.content} />
+                      {msg.content === '__BULLWALL_NO_KB__' ? (
+                        <div className="space-y-3">
+                          <p className="text-sm text-[#374151] leading-relaxed">
+                            BullWall doesn’t currently have a self-service knowledge base. For technical support, please log a ticket directly with Broad Peak or with BullWall’s own support team.
+                          </p>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <a
+                              href="https://broadpeakcyber.freshdesk.com/support/tickets/new"
+                              target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-[#C65793] text-white hover:bg-[#b04a82] transition-colors shadow-sm">
+                              <Ticket className="w-3.5 h-3.5" />
+                              Log ticket with Broad Peak
+                            </a>
+                            <a
+                              href="https://www.bullwall.com/contact-support"
+                              target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-[#e65100] text-white hover:bg-[#c84800] transition-colors shadow-sm">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              Log ticket with BullWall
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <MarkdownContent content={msg.content} />
+                      )}
                     </div>
                     {/* Satisfaction buttons — only on last assistant message when not loading and has content */}
-                    {isLast && !loading && msg.content.length > 40 && i > 0 && (
+                    {isLast && !loading && msg.content.length > 40 && msg.content !== '__BULLWALL_NO_KB__' && i > 0 && (
                       <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
                         {ticketState === 'idle' && (
                           <div className="flex items-center gap-2">
