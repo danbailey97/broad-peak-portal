@@ -471,7 +471,7 @@ function ChatActionButtons({ isAr, domain, accountName, accountOwner, messageCon
       <button
         onClick={() => submitTicket('support')}
         disabled={ticketState[supportKey] === 'loading' || ticketState[supportKey] === 'done'}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#C65793] hover:text-[#C65793] hover:bg-[#fdf4f9] transition-all shadow-sm disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#C65793] border border-[#C65793] text-white hover:bg-[#b04a82] hover:border-[#b04a82] transition-all shadow-sm disabled:opacity-60"
         data-testid={`chat-log-ticket-${messageIndex}`}
       >
         <Clipboard className="w-3 h-3" />
@@ -485,7 +485,7 @@ function ChatActionButtons({ isAr, domain, accountName, accountOwner, messageCon
       <button
         onClick={() => submitTicket('info')}
         disabled={ticketState[infoKey] === 'loading' || ticketState[infoKey] === 'done'}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#4494D1] hover:text-[#4494D1] hover:bg-[#f0f7ff] transition-all shadow-sm disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#4494D1] border border-[#4494D1] text-white hover:bg-[#3278b8] hover:border-[#3278b8] transition-all shadow-sm disabled:opacity-60"
         data-testid={`chat-info-pricing-${messageIndex}`}
       >
         <Search className="w-3 h-3" />
@@ -498,7 +498,7 @@ function ChatActionButtons({ isAr, domain, accountName, accountOwner, messageCon
       {/* Email account manager */}
       <a
         href={`mailto:${managerEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#9b4da8] hover:text-[#9b4da8] hover:bg-[#fdf4ff] transition-all shadow-sm"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#9b4da8] border border-[#9b4da8] text-white hover:bg-[#7e3d8a] hover:border-[#7e3d8a] transition-all shadow-sm"
         data-testid={`chat-email-manager-${messageIndex}`}
       >
         <Mail className="w-3 h-3" />
@@ -610,17 +610,6 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
                 {msg.content}
               </div>
             </div>
-            {/* Action buttons after every non-intro assistant message */}
-            {msg.role === 'assistant' && i > 0 && msg.content && (
-              <ChatActionButtons
-                isAr={isAr}
-                domain={domain}
-                accountName={accountName}
-                accountOwner={accountOwner}
-                messageContent={msg.content}
-                messageIndex={i}
-              />
-            )}
             {/* Category chips + business case for assistant messages */}
             {msg.role === 'assistant' && msg.relevantCategories && msg.relevantCategories.length > 0 && (
               <div className="ml-9 mt-2 space-y-2 max-w-[85%]">
@@ -652,6 +641,17 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
                   </div>
                 )}
               </div>
+            )}
+            {/* Action buttons — after the business case / category chips */}
+            {msg.role === 'assistant' && i > 0 && msg.content && (
+              <ChatActionButtons
+                isAr={isAr}
+                domain={domain}
+                accountName={accountName}
+                accountOwner={accountOwner}
+                messageContent={msg.content}
+                messageIndex={i}
+              />
             )}
           </div>
         ))}
