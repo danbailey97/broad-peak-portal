@@ -114,7 +114,7 @@ const VENDOR_KB: Record<string, { label: string; url: string | null; hasKB: bool
   Boxphish: { label: 'Boxphish HelpDocs', url: 'https://boxphishsupport.helpdocs.io/', hasKB: true },
   Druva: { label: 'Druva Help Centre', url: 'https://help.druva.com/en/', hasKB: true },
   WatchGuard: { label: 'WatchGuard Support', url: 'https://www.watchguard.com/wgrd-support/find-answers', hasKB: true },
-  'Arctic Wolf': { label: 'In Development', url: null, hasKB: false },
+  'Arctic Wolf': { label: 'Arctic Wolf Docs', url: 'https://docs.arcticwolf.com', hasKB: true },
   BullWall: { label: 'In Development', url: null, hasKB: false },
   CyberSmart: { label: 'In Development', url: null, hasKB: false },
 };
