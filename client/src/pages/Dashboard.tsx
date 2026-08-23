@@ -116,7 +116,7 @@ const VENDOR_KB: Record<string, { label: string; url: string | null; hasKB: bool
   Druva: { label: 'Druva Help Centre', url: 'https://help.druva.com/en/', hasKB: true },
   WatchGuard: { label: 'WatchGuard Support', url: 'https://www.watchguard.com/wgrd-support/find-answers', hasKB: true },
   'Arctic Wolf': { label: 'Arctic Wolf Docs', url: 'https://docs.arcticwolf.com', hasKB: true },
-  BullWall: { label: 'Contact Support', url: null, hasKB: false },
+  BullWall: { label: 'Contact Support', url: 'https://www.bullwall.com/contact-support', hasKB: true },
   CyberSmart: { label: 'CyberSmart Support', url: 'https://support.cybersmart.co.uk/s/', hasKB: true },
   Vanta: { label: 'Vanta Help Center', url: 'https://help.vanta.com', hasKB: true },
 };
@@ -1229,7 +1229,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                   <div className="flex flex-wrap gap-1 mt-auto">
                     {vendors.map(v => (
                       <span key={v} className={`text-xs px-2 py-0.5 rounded-full font-medium ${VENDOR_KB[v]?.hasKB ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
-                        {VENDOR_KB[v]?.hasKB ? v : v === 'BullWall' ? `${v} (contact support)` : `${v} (soon)`}
+                        {VENDOR_KB[v]?.hasKB ? v : `${v} (soon)`}
                       </span>
                     ))}
                     {vendors.length === 0 && <span className="text-xs text-[#9ca3af]">{t('comingSoon')}</span>}
@@ -1478,7 +1478,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                 <div>
                   <div className="text-sm font-medium text-[#1f2937]">{v}</div>
                   <div className={`text-xs mt-1 ${kb?.hasKB ? 'text-[#059669]' : 'text-[#9ca3af]'}`}>
-{kb?.hasKB ? `KB: ${kb.label}` : (v === 'BullWall' ? 'Contact Support' : t('comingSoon'))}
+{kb?.hasKB ? (v === 'BullWall' ? 'Contact Support' : `KB: ${kb.label}`) : t('comingSoon')}
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-[#9ca3af]" />
