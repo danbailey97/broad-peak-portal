@@ -408,6 +408,105 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
   );
 }
 
+
+interface ChatActionButtonsProps {
+  isAr: boolean;
+  domain: string;
+  accountName: string;
+  accountOwner?: AccountOwner;
+  messageContent: string;
+  messageIndex: number;
+}
+
+function ChatActionButtons({ isAr, domain, accountName, accountOwner, messageContent, messageIndex }: ChatActionButtonsProps) {
+  const [ticketState, setTicketState] = useState<Record<string, 'idle' | 'loading' | 'done' | 'error'>>({});
+
+  const submitTicket = async (type: 'support' | 'info') => {
+    const key = `${messageIndex}-${type}`;
+    setTicketState(s => ({ ...s, [key]: 'loading' }));
+    const subject = type === 'support'
+      ? (isAr ? `طلب دعم فني — ${accountName}` : `Technical Support Request — ${accountName}`)
+      : (isAr ? `طلب معلومات / أسعار — ${accountName}` : `Information / Pricing Request — ${accountName}`);
+    const description = type === 'support'
+      ? (isAr
+          ? `سؤال مُرسَل من خلال Broad Peak AI:\n\n${messageContent}`
+          : `Query raised via Broad Peak AI:\n\n${messageContent}`)
+      : (isAr
+          ? `طلب معلومات / أسعار مُرسَل من خلال Broad Peak AI:\n\n${messageContent}`
+          : `Information / pricing request raised via Broad Peak AI:\n\n${messageContent}`);
+    try {
+      const token = getToken();
+      const res = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          subject,
+          description,
+          domain,
+          customerName: accountName,
+          priority: type === 'support' ? 2 : 1,
+          type: type === 'support' ? 'Technical Issue' : 'Sales',
+          lang: isAr ? 'ar' : 'en',
+        }),
+      });
+      const data = await res.json();
+      setTicketState(s => ({ ...s, [key]: data.ok ? 'done' : 'error' }));
+    } catch {
+      setTicketState(s => ({ ...s, [key]: 'error' }));
+    }
+  };
+
+  const supportKey = `${messageIndex}-support`;
+  const infoKey = `${messageIndex}-info`;
+  const managerEmail = accountOwner?.email || 'support@broadpeakcyber.com';
+  const emailSubject = isAr ? `استفسار — ${accountName}` : `Enquiry — ${accountName}`;
+  const emailBody = isAr
+    ? `مرحباً،\n\nأودّ الاستفسار عن المعلومات التالية:\n\n${messageContent}`
+    : `Hi,\n\nI would like to follow up on the following information:\n\n${messageContent}`;
+
+  return (
+    <div className="ml-9 mt-2 flex flex-wrap gap-1.5" dir={isAr ? 'rtl' : 'ltr'}>
+      {/* Log a support ticket */}
+      <button
+        onClick={() => submitTicket('support')}
+        disabled={ticketState[supportKey] === 'loading' || ticketState[supportKey] === 'done'}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#C65793] hover:text-[#C65793] hover:bg-[#fdf4f9] transition-all shadow-sm disabled:opacity-60"
+        data-testid={`chat-log-ticket-${messageIndex}`}
+      >
+        <Clipboard className="w-3 h-3" />
+        {ticketState[supportKey] === 'loading' ? (isAr ? 'جارٍ الإرسال...' : 'Logging...') :
+         ticketState[supportKey] === 'done'    ? (isAr ? '✓ تم تسجيل التذكرة' : '✓ Ticket Logged') :
+         ticketState[supportKey] === 'error'   ? (isAr ? '✗ خطأ' : '✗ Error') :
+         (isAr ? 'تسجيل تذكرة دعم' : 'Log a Support Ticket')}
+      </button>
+
+      {/* Get more information / pricing */}
+      <button
+        onClick={() => submitTicket('info')}
+        disabled={ticketState[infoKey] === 'loading' || ticketState[infoKey] === 'done'}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#4494D1] hover:text-[#4494D1] hover:bg-[#f0f7ff] transition-all shadow-sm disabled:opacity-60"
+        data-testid={`chat-info-pricing-${messageIndex}`}
+      >
+        <Search className="w-3 h-3" />
+        {ticketState[infoKey] === 'loading' ? (isAr ? 'جارٍ الإرسال...' : 'Sending...') :
+         ticketState[infoKey] === 'done'    ? (isAr ? '✓ تم الإرسال' : '✓ Request Sent') :
+         ticketState[infoKey] === 'error'   ? (isAr ? '✗ خطأ' : '✗ Error') :
+         (isAr ? 'معلومات / أسعار' : 'Get More Info / Pricing')}
+      </button>
+
+      {/* Email account manager */}
+      <a
+        href={`mailto:${managerEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-[#e5e7eb] text-[#1f2937] hover:border-[#9b4da8] hover:text-[#9b4da8] hover:bg-[#fdf4ff] transition-all shadow-sm"
+        data-testid={`chat-email-manager-${messageIndex}`}
+      >
+        <Mail className="w-3 h-3" />
+        {isAr ? 'مراسلة مدير الحساب' : 'Email Account Manager'}
+      </a>
+    </div>
+  );
+}
+
 function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategory }: { domain: string; accountName: string; accountOwner?: AccountOwner; onHighlight?: (cats: string[]) => void; onOpenCategory?: (cat: string) => void }) {
   const { t, lang, isAr } = useLang();
   const INTRO_EN = `Hi! I'm your Broad Peak AI assistant. I can answer questions about cybersecurity, your products, and our vendor portfolio. What would you like to know?`;
@@ -425,17 +524,15 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  // Update intro message when language toggles (only if no conversation started yet)
+  // Update intro message whenever language changes (only if conversation hasn't started)
   useEffect(() => {
-    if (prevLang.current === lang) return;
-    prevLang.current = lang;
     setMessages(prev => {
       if (prev.length === 1 && prev[0].role === 'assistant') {
         return [{ role: 'assistant', content: isAr ? INTRO_AR : INTRO_EN }];
       }
       return prev;
     });
-  }, [lang, isAr]);
+  }, [isAr]);
 
   const sendMessage = async (q: string, vendor?: string) => {
     const effectiveVendor = vendor || selectedVendor;
@@ -512,6 +609,17 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
                 {msg.content}
               </div>
             </div>
+            {/* Action buttons after every non-intro assistant message */}
+            {msg.role === 'assistant' && i > 0 && msg.content && (
+              <ChatActionButtons
+                isAr={isAr}
+                domain={domain}
+                accountName={accountName}
+                accountOwner={accountOwner}
+                messageContent={msg.content}
+                messageIndex={i}
+              />
+            )}
             {/* Category chips + business case for assistant messages */}
             {msg.role === 'assistant' && msg.relevantCategories && msg.relevantCategories.length > 0 && (
               <div className="ml-9 mt-2 space-y-2 max-w-[85%]">
