@@ -16,13 +16,13 @@ interface CustomerData { accountName: string; domain: string; grid: CategoryEntr
 interface Message { role: 'user' | 'assistant'; content: string; relevantCategories?: string[]; relevantProducts?: RelevantProduct[]; }
 interface ResearchDoc { id: string; title: string; filename: string; url: string; uploadedAt: string; }
 
-function fmtDate(iso: string | null | undefined, opts?: Intl.DateTimeFormatOptions): string {
+function fmtDate(iso: string | null | undefined, opts?: Intl.DateTimeFormatOptions, locale = 'en-GB'): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-GB', opts || { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(locale, opts || { day: 'numeric', month: 'short', year: 'numeric' });
 }
-function fmtDateShort(iso: string | null | undefined): string {
+function fmtDateShort(iso: string | null | undefined, locale = 'en-GB'): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 }
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -187,11 +187,11 @@ function CategoryCard({ entry, onClick, highlighted }: { entry: CategoryEntry; o
         <div className="mt-auto pt-1 border-t border-[#f3f4f6]">
           <div className="flex items-center gap-1 text-[10px] text-[#9ca3af]">
             <Calendar className="w-3 h-3 flex-shrink-0" />
-            <span>
-              {entry.startedAt ? fmtDateShort(entry.startedAt) : '—'}
+            <span dir="ltr">
+              {entry.startedAt ? fmtDateShort(entry.startedAt, isAr ? 'ar-AE' : 'en-GB') : '—'}
               {' → '}
               {entry.expiresAt
-                ? <span className={new Date(entry.expiresAt) < new Date() ? 'text-[#ef4444] font-medium' : 'text-[#059669] font-medium'}>{fmtDateShort(entry.expiresAt)}</span>
+                ? <span className={new Date(entry.expiresAt) < new Date() ? 'text-[#ef4444] font-medium' : 'text-[#059669] font-medium'}>{fmtDateShort(entry.expiresAt, isAr ? 'ar-AE' : 'en-GB')}</span>
                 : '—'
               }
             </span>
@@ -227,11 +227,11 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
                 <span className="flex items-center gap-1.5 text-xs text-[#6b7280]">
                   <Calendar className="w-3.5 h-3.5 text-[#9ca3af]" />
                   <span>{t('contract')}:</span>
-                  <span className="font-medium text-[#1f2937]">{entry.startedAt ? fmtDate(entry.startedAt) : '—'}</span>
+                  <span className="font-medium text-[#1f2937]">{entry.startedAt ? fmtDate(entry.startedAt, undefined, isAr ? 'ar-AE' : 'en-GB') : '—'}</span>
                   <span>→</span>
                   {entry.expiresAt ? (
                     <span className={`font-medium ${new Date(entry.expiresAt) < new Date() ? 'text-[#ef4444]' : 'text-[#059669]'}`}>
-                      {fmtDate(entry.expiresAt)}
+                      {fmtDate(entry.expiresAt, undefined, isAr ? 'ar-AE' : 'en-GB')}
                     </span>
                   ) : <span className="font-medium">—</span>}
                 </span>
@@ -259,11 +259,11 @@ function CategoryDetailModal({ entry, onClose }: { entry: CategoryEntry; onClose
                             <div className="flex items-center gap-1.5 mt-1.5 text-xs">
                               <Calendar className="w-3 h-3 text-[#9ca3af] flex-shrink-0" />
                               <span className="text-[#6b7280]">{t('start')}:</span>
-                              <span className="font-medium text-[#1f2937]">{p.startedAt ? fmtDate(p.startedAt) : '—'}</span>
+                              <span className="font-medium text-[#1f2937]">{p.startedAt ? fmtDate(p.startedAt, undefined, isAr ? 'ar-AE' : 'en-GB') : '—'}</span>
                               <span className="text-[#9ca3af] mx-0.5">•</span>
                               <span className="text-[#6b7280]">{t('end')}:</span>
                               <span className={`font-medium ${expired ? 'text-[#ef4444]' : 'text-[#059669]'}`}>
-                                {p.expiresAt ? fmtDate(p.expiresAt) : '—'}
+                                {p.expiresAt ? fmtDate(p.expiresAt, undefined, isAr ? 'ar-AE' : 'en-GB') : '—'}
                               </span>
                               {expired && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">Expired</span>}
                             </div>
@@ -1430,7 +1430,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                   <TicketStatusBadge status={t.status} code={t.statusCode} />
                   <span className="text-[10px] text-[#9ca3af]">{t.priority} priority</span>
                   {t.type && <span className="text-[10px] text-[#9ca3af]">· {t.type}</span>}
-                  <span className="text-[10px] text-[#9ca3af] ml-auto">{fmtDate(t.createdAt)}</span>
+                  <span className="text-[10px] text-[#9ca3af] ml-auto">{fmtDate(t.createdAt, undefined, isAr ? 'ar-AE' : 'en-GB')}</span>
                 </div>
                 {t.requesterName && t.requesterEmail && !t.requesterEmail.includes('barracuda') && !t.requesterEmail.includes('boxphish') && (
                   <div className="text-[10px] text-[#c4c9d4] mt-0.5">{t.requesterName} · {t.requesterEmail}</div>

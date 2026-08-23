@@ -10,18 +10,36 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [waking, setWaking] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setWaking(false);
+
+    const attemptLogin = async (retriesLeft: number): Promise<void> => {
+      try {
+        const data = await login(domain.replace(/^@/, ''), password);
+        onLogin(data);
+      } catch (err: any) {
+        const msg = err.message || '';
+        // 502/503 = Render cold start — auto-retry up to 3 times
+        if (retriesLeft > 0 && (msg.includes('502') || msg.includes('503') || msg.includes('Failed to fetch') || msg.includes('NetworkError'))) {
+          setWaking(true);
+          await new Promise(res => setTimeout(res, 4000));
+          return attemptLogin(retriesLeft - 1);
+        }
+        setWaking(false);
+        setError(err.message || t('noAccount'));
+      }
+    };
+
     try {
-      const data = await login(domain.replace(/^@/, ''), password);
-      onLogin(data);
-    } catch (err: any) {
-      setError(err.message || t('noAccount'));
+      await attemptLogin(3);
     } finally {
       setLoading(false);
+      setWaking(false);
     }
   }
 
@@ -84,6 +102,11 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
                 {error}
               </div>
             )}
+            {waking && (
+              <div className="rounded-xl px-4 py-3 text-sm text-center" style={{ background: 'rgba(255,193,7,0.15)', border: '1px solid rgba(255,193,7,0.35)', color: '#fde68a' }}>
+                {isAr ? '⏳ جارٍ تشغيل الخادم، يُرجى الانتظار...' : '⏳ Server is waking up, retrying…'}
+              </div>
+            )}
             <button
               type="submit"
               disabled={loading}
@@ -91,7 +114,7 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
               style={{ background: GRADIENT }}
               data-testid="login-submit"
             >
-              {loading ? t('signingIn') : t('signIn')}
+              {waking ? (isAr ? 'جارٍ الاتصال...' : 'Connecting…') : loading ? t('signingIn') : t('signIn')}
             </button>
           </form>
         </div>
