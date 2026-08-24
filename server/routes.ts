@@ -520,7 +520,7 @@ router.post('/api/chat', async (req, res) => {
   // 2. Otherwise → detect the language of the question and respond in that language
   const langInstruction = lang === 'ar'
     ? '\n\nIMPORTANT: The customer is using the Arabic interface. You MUST respond entirely in Arabic. Use clear, professional Arabic. Technical product names (e.g. Barracuda, XDR, WAF, MFA) may be kept in English within your Arabic response as they are industry-standard terms.'
-    : '\n\nIMPORTANT: Detect the language of the customer's question and respond in that exact same language. If they write in French, respond in French. If they write in Spanish, respond in Spanish. If they write in English, respond in English. Always match the customer's language. Technical product names (e.g. Barracuda, XDR, WAF, MFA, Keepit, Druva) may be kept in English as they are industry-standard terms.';
+    : `\n\nIMPORTANT: Detect the language of the customer's question and respond in that exact same language. If they write in French, respond in French. If they write in Spanish, respond in Spanish. If they write in English, respond in English. Always match the customer's language. Technical product names (e.g. Barracuda, XDR, WAF, MFA, Keepit, Druva) may be kept in English as they are industry-standard terms.`;
 
   const systemPrompt = `You are the Broad Peak Cyber customer portal assistant. Broad Peak is a UK-based MSP specialising in cybersecurity.
 
