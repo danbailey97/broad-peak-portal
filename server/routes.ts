@@ -1779,7 +1779,7 @@ router.post('/api/tickets', requireAuth, async (req, res) => {
       name: senderName,
       priority: priority || 2,
       status: 2,
-      type: type || null,
+      type: type === 'Technical Issue' ? 'Incident' : type === 'Sales' ? 'Question' : (type || null),
       tags: ['portal', domain || 'unknown'],
     };
 
