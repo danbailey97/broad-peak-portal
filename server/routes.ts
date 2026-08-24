@@ -457,6 +457,18 @@ async function translateToEnglish(text: string, apiKey: string): Promise<string>
 }
 
 // ── Chatbot ───────────────────────────────────────────────────
+// Category → primary vendors mapping (for chat context enrichment)
+const CATEGORY_VENDORS: Record<string, string> = {
+  'Email Protection': 'Barracuda (Email Gateway Defense / Email Security Premium)',
+  'Data Protection': 'Keepit (cloud-to-cloud backup — covers Microsoft 365, Google Workspace, Salesforce, and more) / Druva inSync / Barracuda Cloud-to-Cloud Backup',
+  'Network Protection': 'Barracuda CloudGen Firewall / WatchGuard',
+  'MDR/SOC': 'Arctic Wolf MDR / WatchGuard MDR',
+  'Security Awareness': 'Boxphish / Arctic Wolf Managed Security Awareness',
+  'Ransomware Protection': 'BullWall',
+  'GRC': 'CyberSmart Cyber Essentials / Arctic Wolf Managed Risk / Vanta',
+  'Penetration Testing': 'CyberSmart',
+};
+
 router.post('/api/chat', async (req, res) => {
   const { question, domain, lang } = req.body;
   if (!question) return res.status(400).json({ error: 'Missing question' });
@@ -470,12 +482,30 @@ router.post('/api/chat', async (req, res) => {
     try {
       const customer = await getCustomerByDomain(domain);
       if (customer) {
-        const activeProducts = customer.grid
-          .filter(g => g.status === 'active')
-          .flatMap(g => g.products.map(p => p.name));
-        customerContext = activeProducts.length
-          ? `The customer currently has active subscriptions to: ${activeProducts.join(', ')}.`
-          : 'The customer has no active Broad Peak products yet.';
+        const activeEntries = customer.grid.filter((g: any) => g.status === 'active');
+        const expiredEntries = customer.grid.filter((g: any) => g.status === 'expired');
+
+        if (activeEntries.length) {
+          // Build a detailed list: category + vendor names from products array (if present) or category itself
+          const activeLines = activeEntries.map((g: any) => {
+            const vendors = g.products && g.products.length
+              ? g.products.map((p: any) => p.vendor || p.name).filter(Boolean)
+              : [];
+            const categoryVendors = CATEGORY_VENDORS[g.category] || '';
+            const expiresNote = g.expiresAt ? ` (expires ${g.expiresAt})` : '';
+            const vendorStr = vendors.length ? vendors.join(', ') : categoryVendors;
+            return vendorStr
+              ? `- ${g.category}: ${vendorStr}${expiresNote}`
+              : `- ${g.category}${expiresNote}`;
+          });
+          customerContext = `The customer currently has ACTIVE subscriptions with Broad Peak:\n${activeLines.join('\n')}\n\nIMPORTANT: Always acknowledge these existing products first. If the customer asks about a need that one of their existing products can address, tell them clearly — e.g. if they have Keepit and ask about Salesforce backup, explain that Keepit supports Salesforce backup natively.\n`;
+          if (expiredEntries.length) {
+            const expiredLines = expiredEntries.map((g: any) => `- ${g.category} (expired ${g.expiresAt || 'unknown'})`);
+            customerContext += `\nThe customer also has EXPIRED subscriptions:\n${expiredLines.join('\n')}\n`;
+          }
+        } else {
+          customerContext = 'The customer has no active Broad Peak products yet.';
+        }
       }
     } catch {}
   }
@@ -503,7 +533,9 @@ When answering:
 2. Be specific about product names and features
 3. Suggest which category areas may be relevant
 4. Keep responses concise and practical
-5. If the customer already owns a relevant product, acknowledge this and suggest they speak to the technical team for help using it
+5. CRITICAL: If the customer already has an ACTIVE product that directly addresses their need, lead with that — do NOT say Broad Peak doesn't have a solution. E.g. if they have Keepit and ask about Salesforce backup, confirm Keepit covers it.
+6. If the customer has an active product in a related category, always mention it alongside any new recommendations.
+7. When recommending a new product, check if an existing vendor in the portfolio (e.g. Barracuda, Keepit, Druva) has an expanded capability that covers the need before suggesting a new vendor.
 
 Always be helpful and professional. Focus on genuine relevance, not sales pressure.${langInstruction}`;
 

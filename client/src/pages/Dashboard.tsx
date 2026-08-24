@@ -1791,6 +1791,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                     </div>
                     <div className="flex-1 min-h-0">
                       <ChatBot domain={domain} accountName={customer.accountName}
+                        accountOwner={customer.accountOwner}
                         onHighlight={(cats) => setHighlightedCategories(cats)}
                         onOpenCategory={(cat) => {
                           const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
