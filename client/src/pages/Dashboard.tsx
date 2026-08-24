@@ -1025,6 +1025,115 @@ function TicketPriorityDot({ code }: { code: number }) {
   return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} />;
 }
 
+// Generate AI prompt (Claude CoWork / Computer Use) section
+function GeneratePromptSection({ isAr, vendor, question, answer, domain }: {
+  isAr: boolean; vendor: string; question: string; answer: string; domain: string;
+}) {
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [prompt, setPrompt] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const generate = async () => {
+    setState('loading');
+    try {
+      const token = getToken();
+      const res = await fetch('/api/generate-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ vendor, question, answer, domain }),
+      });
+      const data = await res.json();
+      if (data.ok && data.prompt) {
+        setPrompt(data.prompt);
+        setState('done');
+      } else {
+        setState('error');
+      }
+    } catch { setState('error'); }
+  };
+
+  const copy = () => {
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  if (state === 'idle') {
+    return (
+      <div className="border-t border-[#f3f4f6] px-4 py-3">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-[#f5f0ff] border border-[#d8b4fe] flex items-center justify-center mt-0.5">
+            <Cpu className="w-3.5 h-3.5 text-[#7c3aed]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-[#1f2937] mb-0.5">
+              {isAr ? 'أتمتة هذا التغيير باستخدام Claude CoWork' : 'Automate this with Claude CoWork'}
+            </p>
+            <p className="text-xs text-[#6b7280] leading-relaxed mb-2">
+              {isAr
+                ? 'يمكننا إنشاء أمر ذكاء اصطناعي مصمم لـ Claude CoWork يتحكم في متصفح Chrome ويُنفّذ خطوات الإعداد هذه تلقائياً نيابةً عنك. هل تريد إنشاء هذا الأمر؟'
+                : 'We can generate an AI prompt designed for Claude CoWork that controls Chrome and carries out these configuration steps automatically on your behalf. Would you like to create it?'}
+            </p>
+            <button
+              onClick={generate}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors shadow-sm">
+              <Cpu className="w-3 h-3" />
+              {isAr ? 'إنشاء أمر AI' : 'Generate AI Prompt'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === 'loading') {
+    return (
+      <div className="border-t border-[#f3f4f6] px-4 py-3 flex items-center gap-2 text-xs text-[#9ca3af]">
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#7c3aed]" />
+        {isAr ? 'جارٍ إنشاء الأمر...' : 'Generating your AI prompt…'}
+      </div>
+    );
+  }
+
+  if (state === 'error') {
+    return (
+      <div className="border-t border-[#f3f4f6] px-4 py-3 text-xs text-[#9a3412]">
+        {isAr ? 'حدث خطأ أثناء إنشاء الأمر. حاول مجدداً.' : 'Failed to generate prompt. Please try again.'}
+      </div>
+    );
+  }
+
+  // state === 'done'
+  return (
+    <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Cpu className="w-3.5 h-3.5 text-[#7c3aed]" />
+          <span className="text-xs font-semibold text-[#1f2937]">
+            {isAr ? 'أمر Claude CoWork جاهز' : 'Claude CoWork Prompt Ready'}
+          </span>
+        </div>
+        <button
+          onClick={copy}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#f5f0ff] border border-[#d8b4fe] text-[#7c3aed] hover:bg-[#ede9fe] transition-colors">
+          {copied
+            ? <><CheckCircle className="w-3 h-3 text-[#10b981]" /> {isAr ? 'تم النسخ!' : 'Copied!'}</>
+            : <><Clipboard className="w-3 h-3" /> {isAr ? 'نسخ' : 'Copy'}</>}
+        </button>
+      </div>
+      <pre className="text-xs text-[#374151] bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-3 whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto font-mono">
+        {prompt}
+      </pre>
+      <p className="text-xs text-[#9ca3af]">
+        {isAr
+          ? 'انسخ هذا الأمر والصقه في Claude CoWork مع تفعيل التحكم في متصفح Chrome.'
+          : 'Paste this prompt into Claude CoWork with Chrome browser control enabled. Make sure you are logged into your ' + vendor + ' admin account first.'}
+      </p>
+    </div>
+  );
+}
+
 // Inline ticket button used inside vendor support needs_human prompt
 function VendorTicketButton({ isAr, domain, accountName, vendor, question, answer }: {
   isAr: boolean; domain: string; accountName: string; vendor: string; question: string; answer: string;
@@ -1703,6 +1812,16 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                           </div>
                         )}
                       </div>
+                    )}
+                    {/* AI Prompt Generator — shown on every non-bullwall assistant message that has content */}
+                    {isLast && !loading && msg.content.length > 40 && msg.content !== '__BULLWALL_NO_KB__' && i > 0 && (
+                      <GeneratePromptSection
+                        isAr={isAr}
+                        vendor={selectedVendor || ''}
+                        question={userQ}
+                        answer={msg.content}
+                        domain={domain}
+                      />
                     )}
                   </div>
                 </div>

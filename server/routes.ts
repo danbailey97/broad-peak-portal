@@ -1848,4 +1848,56 @@ router.post('/api/tickets', requireAuth, async (req, res) => {
   }
 });
 
+
+// ─── AI PROMPT GENERATOR (Claude CoWork / Computer Use) ──────────────────────
+// Generates a detailed browser-automation prompt the customer can paste into
+// Claude CoWork / Claude Computer Use to have Claude make the config change for them.
+router.post('/api/generate-prompt', requireAuth, async (req, res) => {
+  const { vendor, question, answer } = req.body;
+  if (!vendor || !question || !answer) return res.status(400).json({ ok: false, error: 'Missing fields' });
+
+  const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
+
+  const systemMsg = `You are an expert at writing precise, step-by-step browser automation prompts for Claude Computer Use (also called Claude CoWork). These prompts are used with Chrome browser control so Claude can navigate to vendor admin portals and make configuration changes on behalf of the user.
+
+Your output should be a single, self-contained prompt the user can copy and paste directly into Claude CoWork. The prompt must:
+1. Start with "Open Chrome and navigate to [the relevant admin portal URL]"
+2. Give step-by-step instructions for every click, menu, field, and button needed
+3. Be specific to the vendor's actual UI (use real menu names, settings paths, button labels from your knowledge of the product)
+4. Include what to verify at the end to confirm the change was successful
+5. Include a note that the user should be logged into their ${vendor} admin account before running the prompt
+6. Be formatted as a clean prompt the user pastes verbatim — no preamble, no "here is the prompt", just the prompt itself
+
+If the question is general or informational (not an actionable configuration change), write a prompt that helps the user navigate to the relevant section of the ${vendor} admin portal to review the relevant settings, even if no specific change is needed.`;
+
+  const userMsg = `Vendor: ${vendor}
+Customer question: ${question}
+Support answer provided: ${answer}
+
+Write a Claude Computer Use / CoWork browser prompt that would allow Claude to take control of Chrome and carry out or verify the configuration relevant to this question in the ${vendor} admin portal.`;
+
+  try {
+    const r = await directFetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${OPENAI_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemMsg },
+          { role: 'user', content: userMsg },
+        ],
+        max_tokens: 1200,
+        temperature: 0.3,
+      }),
+      ...fetchOpts(),
+    }) as any;
+    const data: any = await r.json();
+    if (!r.ok) return res.status(r.status).json({ ok: false, error: data.error?.message || 'OpenAI error' });
+    const prompt = data.choices?.[0]?.message?.content?.trim() || '';
+    res.json({ ok: true, prompt });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 export default router;
