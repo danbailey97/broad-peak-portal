@@ -540,7 +540,9 @@ When answering:
 6. If the customer has an active product in a related category, always mention it alongside any new recommendations.
 7. When recommending a new product, check if an existing vendor in the portfolio (e.g. Barracuda, Keepit, Druva) has an expanded capability that covers the need before suggesting a new vendor.
 
-Always be helpful and professional. Focus on genuine relevance, not sales pressure.${langInstruction}`;
+Always be helpful and professional. Focus on genuine relevance, not sales pressure.
+
+IMPLEMENTATION-SPECIFIC DETECTION: If the question requires knowledge of the customer's specific configuration, environment, account settings, or data that you cannot know (e.g. "where exactly is MY data stored", "why is MY sync failing", "what is MY specific retention policy", "show me MY backup logs"), append the exact token [NEEDS_HUMAN] on a new line at the very end of your response — nothing after it. Do NOT add [NEEDS_HUMAN] for general product questions that you can answer fully from documentation.${langInstruction}`;
 
   const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
 
@@ -580,6 +582,7 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
     const body = openaiRes.body as any;
     const decoder = new TextDecoder();
     let buf = '';
+    let accumulated = '';
     for await (const chunk of body) {
       buf += decoder.decode(chunk, { stream: true });
       const lines = buf.split('\n');
@@ -587,13 +590,22 @@ Always be helpful and professional. Focus on genuine relevance, not sales pressu
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const data = line.slice(6).trim();
-        if (data === '[DONE]') { res.write('data: [DONE]\n\n'); break; }
+        if (data === '[DONE]') break;
         try {
           const json = JSON.parse(data);
           const content = json.choices?.[0]?.delta?.content;
-          if (content) res.write(`data: ${JSON.stringify({ content })}\n\n`);
+          if (content) {
+            accumulated += content;
+            res.write(`data: ${JSON.stringify({ content })}\n\n`);
+          }
         } catch {}
       }
+    }
+    // Detect and strip [NEEDS_HUMAN] sentinel
+    const needsHuman = accumulated.includes('[NEEDS_HUMAN]');
+    if (needsHuman) {
+      // Tell frontend to replace the sentinel with the human-support prompt
+      res.write(`data: ${JSON.stringify({ needs_human: true })}\n\n`);
     }
     res.write('data: [DONE]\n\n');
     res.end();
@@ -1453,7 +1465,9 @@ router.post('/api/support-chat', async (req, res) => {
       });
     }
 
-    const systemPrompt = cfg?.systemPrompt || `You are a technical support specialist for ${vendor} products. Provide specific, accurate, step-by-step answers.`;
+    const vendorBasePrompt = cfg?.systemPrompt || `You are a technical support specialist for ${vendor} products. Provide specific, accurate, step-by-step answers.`;
+    const needsHumanInstruction = `\n\nIMPORTANT — IMPLEMENTATION-SPECIFIC DETECTION: If the question requires knowledge of the customer's specific configuration, account settings, data locations, or environment that cannot be answered from documentation (e.g. "where exactly is MY data stored", "why is MY specific backup failing", "what is MY retention policy set to"), append the exact token [NEEDS_HUMAN] on a new line at the very end of your response — nothing after it. Do NOT add [NEEDS_HUMAN] for general how-to or product questions that documentation can answer.`;
+    const systemPrompt = vendorBasePrompt + needsHumanInstruction;
     const userMessage = docContext ? `Question: ${question}\n${docContext}` : question;
 
     send({ type: 'status', text: '' });
@@ -1466,7 +1480,14 @@ router.post('/api/support-chat', async (req, res) => {
     let fullResponse = '';
     for await (const chunk of streamOpenAISupport(messages, OPENAI_KEY)) {
       fullResponse += chunk;
-      send({ type: 'delta', text: chunk });
+      // Stream delta without the sentinel
+      const displayChunk = chunk.replace(/\[NEEDS_HUMAN\]\s*$/g, '');
+      if (displayChunk) send({ type: 'delta', text: displayChunk });
+    }
+
+    // Detect [NEEDS_HUMAN] sentinel and send flag before done
+    if (fullResponse.includes('[NEEDS_HUMAN]')) {
+      send({ needs_human: true });
     }
 
     const sources = kbResults.filter(r => r.url && r.url !== cfg?.baseUrl).map(r => ({ title: r.title, url: r.url }));

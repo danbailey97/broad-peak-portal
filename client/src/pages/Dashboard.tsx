@@ -14,7 +14,7 @@ interface RelevantProduct { id: string; name: string; vendor: string; categories
 interface CategoryEntry { category: string; status: 'active' | 'expired' | 'not_owned'; products: ProductEntry[]; expiresAt: string | null; startedAt?: string | null; }
 interface AccountOwner { name: string; email: string; phone?: string; photo?: string; calendly?: string; welcome_video?: string; }
 interface CustomerData { accountName: string; domain: string; grid: CategoryEntry[]; accountOwner?: AccountOwner; }
-interface Message { role: 'user' | 'assistant'; content: string; relevantCategories?: string[]; relevantProducts?: RelevantProduct[]; }
+interface Message { role: 'user' | 'assistant'; content: string; relevantCategories?: string[]; relevantProducts?: RelevantProduct[]; needsHuman?: boolean; }
 interface ResearchDoc { id: string; title: string; filename: string; url: string; uploadedAt: string; }
 
 function fmtDate(iso: string | null | undefined, opts?: Intl.DateTimeFormatOptions, locale = 'en-GB'): string {
@@ -580,7 +580,12 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
             }
             if (parsed.content) {
               fullText += parsed.content;
-              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: fullText } : msg));
+              // Strip [NEEDS_HUMAN] sentinel from displayed content
+              const displayText = fullText.replace(/\[NEEDS_HUMAN\]\s*$/g, '').trimEnd();
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: displayText } : msg));
+            }
+            if (parsed.needs_human) {
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, needsHuman: true } : msg));
             }
             if (parsed.error) throw new Error(parsed.error);
           } catch (e: any) { if (e.message && !e.message.includes('JSON')) throw e; }
@@ -1020,6 +1025,44 @@ function TicketPriorityDot({ code }: { code: number }) {
   return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} />;
 }
 
+// Inline ticket button used inside vendor support needs_human prompt
+function VendorTicketButton({ isAr, domain, accountName, vendor, question, answer }: {
+  isAr: boolean; domain: string; accountName: string; vendor: string; question: string; answer: string;
+}) {
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const submit = async () => {
+    setState('loading');
+    try {
+      const token = getToken();
+      const subject = isAr
+        ? `طلب دعم فني — ${vendor} — ${accountName}`
+        : `Technical Support Request — ${vendor} — ${accountName}`;
+      const description = isAr
+        ? `سؤال مُرسَل من خلال الدعم التقني:\n\n${question}\n\nإجابة الذكاء الاصطناعي:\n${answer}`
+        : `Question raised via Technical Support:\n\n${question}\n\nAI response for context:\n${answer}`;
+      const res = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ subject, description, domain, customerName: accountName, priority: 2, type: 'Technical Issue', lang: isAr ? 'ar' : 'en' }),
+      });
+      const data = await res.json();
+      setState(data.ok ? 'done' : 'error');
+    } catch { setState('error'); }
+  };
+  return (
+    <button
+      onClick={submit}
+      disabled={state === 'loading' || state === 'done'}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#C65793] text-white hover:bg-[#b04a82] transition-colors shadow-sm disabled:opacity-60">
+      {state === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ticket className="w-3 h-3" />}
+      {state === 'done'    ? (isAr ? '✓ تم تسجيل التذكرة' : '✓ Ticket Logged') :
+       state === 'error'   ? (isAr ? '✗ خطأ' : '✗ Error') :
+       state === 'loading' ? (isAr ? 'جارٍ الإرسال...' : 'Logging...') :
+       (isAr ? 'تسجيل تذكرة دعم' : 'Log a Support Ticket')}
+    </button>
+  );
+}
+
 function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: string; accountName: string; accountOwner?: AccountOwner }) {
   const { t, lang, isAr } = useLang();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
@@ -1192,9 +1235,12 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
             } else if (parsed.type === 'delta' && parsed.text) {
               if (statusText) { fullText = ''; statusText = ''; }
               fullText += parsed.text;
-              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: fullText } : msg));
+              const displayVendorText = fullText.replace(/\[NEEDS_HUMAN\]\s*$/g, '').trimEnd();
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, content: displayVendorText } : msg));
             } else if (parsed.type === 'done') {
               // Sources available in parsed.sources if needed
+            } else if (parsed.needs_human) {
+              setMessages(m => m.map((msg, i) => i === assistantIdx.current ? { ...msg, needsHuman: true } : msg));
             } else if (parsed.type === 'error') {
               throw new Error(parsed.message);
             }
@@ -1554,7 +1600,34 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                           </div>
                         </div>
                       ) : (
-                        <MarkdownContent content={msg.content} />
+                        <>
+                          <MarkdownContent content={msg.content} />
+                          {msg.needsHuman && (
+                            <div className="mt-4 pt-3 border-t border-[#f3f4f6]">
+                              <p className="text-xs text-[#6b7280] leading-relaxed mb-2.5">
+                                {isAr
+                                  ? 'يتطلب هذا السؤال معرفة بيئتك أو إعداداتك المحددة. يسعدنا مساعدتك في إيجاد الإجابة الدقيقة — تواصل مع فريق الدعم لدينا.'
+                                  : 'This question requires specific knowledge of your implementation or configuration. We can help you find the exact answer — please contact our support team.'}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <VendorTicketButton
+                                  isAr={isAr}
+                                  domain={domain}
+                                  accountName={accountName}
+                                  vendor={selectedVendor || ''}
+                                  question={userQ}
+                                  answer={msg.content}
+                                />
+                                <button
+                                  onClick={() => handleHappy(userQ, msg.content)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f0fdf4] border border-[#86efac] text-[#166534] hover:bg-[#dcfce7] transition-colors">
+                                  <ThumbsUp className="w-3 h-3" />
+                                  {isAr ? 'الرد مناسب' : "I'm happy with this reply"}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                     {/* Satisfaction buttons — only on last assistant message when not loading and has content */}
