@@ -1136,10 +1136,14 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     setSelectedVendor(vendor);
     setTicketState('idle');
     setMessages([{ role: 'assistant', content: kb.hasKB
-      ? `Hi! I'm ready to help with ${vendor} questions. I'll search the ${kb.label} knowledge base for accurate answers. What issue are you experiencing?`
+      ? (isAr
+          ? `مرحباً! أنا جاهز للإجابة على أسئلتك حول ${vendor}. سأبحث في قاعدة معرفة ${kb.label} للحصول على إجابات دقيقة. ما المشكلة التي تواجهها؟`
+          : `Hi! I'm ready to help with ${vendor} questions. I'll search the ${kb.label} knowledge base for accurate answers. What issue are you experiencing?`)
       : vendor === 'BullWall'
         ? `__BULLWALL_NO_KB__`
-        : `Hi! Support for ${vendor} is coming soon. For now, please contact Broad Peak directly and we'll assist you with ${cat} queries.`
+        : (isAr
+            ? `مرحباً! سيتوفر دعم ${vendor} قريباً. في الوقت الحالي، يرجى التواصل مع Broad Peak مباشرةً وسنساعدك في استفساراتك المتعلقة بـ ${cat}.`
+            : `Hi! Support for ${vendor} is coming soon. For now, please contact Broad Peak directly and we'll assist you with ${cat} queries.`)
 
     }]);
     setInitDone(true);
@@ -1648,7 +1652,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
       {kb?.hasKB && (
         <div className="mt-3">
           <form onSubmit={e => { e.preventDefault(); sendSupportMsg(); }} className="flex gap-2">
-            <input value={input} onChange={e => setInput(e.target.value)} placeholder={`Ask a ${selectedVendor} question...`}
+            <input value={input} onChange={e => setInput(e.target.value)} placeholder={isAr ? `اطرح سؤالاً حول ${selectedVendor}...` : `Ask a ${selectedVendor} question...`}
               className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] rounded-[10px] px-4 py-2.5 text-sm text-[#1f2937] placeholder-[#9ca3af] focus:outline-none focus:border-[#4494D1]" />
             <button type="submit" disabled={loading || !input.trim()}
               className="gradient-cta text-white rounded-xl px-4 py-2.5 disabled:opacity-40">
