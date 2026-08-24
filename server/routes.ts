@@ -1864,11 +1864,17 @@ Your output should be a single, self-contained prompt the user can copy and past
 1. Start with "Open Chrome and navigate to [the relevant admin portal URL]"
 2. Give step-by-step instructions for every click, menu, field, and button needed
 3. Be specific to the vendor's actual UI (use real menu names, settings paths, button labels from your knowledge of the product)
-4. Include what to verify at the end to confirm the change was successful
-5. Include a note that the user should be logged into their ${vendor} admin account before running the prompt
-6. Be formatted as a clean prompt the user pastes verbatim — no preamble, no "here is the prompt", just the prompt itself
+4. Include a note that the user should be logged into their ${vendor} admin account before running the prompt
+5. Be formatted as a clean prompt the user pastes verbatim — no preamble, no "here is the prompt", just the prompt itself
 
-If the question is general or informational (not an actionable configuration change), write a prompt that helps the user navigate to the relevant section of the ${vendor} admin portal to review the relevant settings, even if no specific change is needed.`;
+CRITICAL — SUMMARY REPORT SECTION: At the very end of the prompt (after all steps are complete), include a clearly separated section with the heading "## Summary Report" that instructs Claude to:
+- Document every setting that was changed, including the old value and the new value
+- Explain in plain English what each change means for the organisation's security posture and configuration
+- Flag any warnings: potential security risks introduced by the change, permissions that were broadened, features that were disabled, or settings that may conflict with other policies
+- Flag any recommended follow-up actions (e.g. notify affected users, test the change, update documentation)
+- Present this as a structured report the customer can save or share with their IT/security team
+
+If the question is general or informational (not an actionable configuration change), write a prompt that helps the user navigate to the relevant section of the ${vendor} admin portal to review the relevant settings, and instruct Claude to produce a Summary Report of what it observed — current settings, what they mean, and any configuration concerns noted.`;
 
   const userMsg = `Vendor: ${vendor}
 Customer question: ${question}
