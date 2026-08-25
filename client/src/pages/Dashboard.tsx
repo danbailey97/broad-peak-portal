@@ -120,7 +120,7 @@ const VENDOR_PRODUCTS: Record<string, { id: string; label: string; hint: string 
     { id: 'xdr', label: 'Barracuda XDR', hint: '24/7 managed SOC & threat detection' },
     { id: 'firewall', label: 'CloudGen Firewall', hint: 'Cloud-managed next-gen firewall' },
   ],
-  Arctic Wolf: [
+  'Arctic Wolf': [
     { id: 'mdr', label: 'MDR / Managed Detection & Response', hint: '24/7 SOC monitoring & incident response' },
     { id: 'ma', label: 'Managed Security Awareness', hint: 'Phishing simulations & staff training' },
     { id: 'risk', label: 'Managed Risk', hint: 'Vulnerability scanning & risk reporting' },
