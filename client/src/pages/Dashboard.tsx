@@ -109,6 +109,31 @@ const ALL_CATEGORIES = [
 ];
 
 // -- VENDOR SUPPORT KB LINKS (for Technical Support page)
+// Products the customer may select to get accurate product-specific support
+// Key = vendor name, value = array of product chips to show in the support chat
+const VENDOR_PRODUCTS: Record<string, { id: string; label: string; hint: string }[]> = {
+  Barracuda: [
+    { id: 'egd', label: 'Email Gateway Defense', hint: 'Cloud email filtering — ess.barracudanetworks.com' },
+    { id: 'premium', label: 'Email Security Premium', hint: 'EGD + AI inbox protection + account takeover' },
+    { id: 'premium-plus', label: 'Email Security Premium Plus', hint: 'Premium + awareness training + archiving' },
+    { id: 'ccb', label: 'Cloud-to-Cloud Backup', hint: 'Microsoft 365 backup — Exchange, SharePoint, Teams' },
+    { id: 'xdr', label: 'Barracuda XDR', hint: '24/7 managed SOC & threat detection' },
+    { id: 'firewall', label: 'CloudGen Firewall', hint: 'Cloud-managed next-gen firewall' },
+  ],
+  Arctic Wolf: [
+    { id: 'mdr', label: 'MDR / Managed Detection & Response', hint: '24/7 SOC monitoring & incident response' },
+    { id: 'ma', label: 'Managed Security Awareness', hint: 'Phishing simulations & staff training' },
+    { id: 'risk', label: 'Managed Risk', hint: 'Vulnerability scanning & risk reporting' },
+    { id: 'aurora', label: 'Aurora Endpoint Security', hint: 'Endpoint detection & prevention agent' },
+  ],
+  Keepit: [
+    { id: 'm365', label: 'Microsoft 365 Backup', hint: 'Exchange, SharePoint, OneDrive, Teams' },
+    { id: 'google', label: 'Google Workspace Backup', hint: 'Gmail, Drive, Calendar, Contacts' },
+    { id: 'salesforce', label: 'Salesforce Backup', hint: 'CRM data, files, metadata' },
+    { id: 'dynamics', label: 'Dynamics 365 Backup', hint: 'Business Central, Sales, Finance & Operations' },
+  ],
+};
+
 const VENDOR_KB: Record<string, { label: string; url: string | null; hasKB: boolean }> = {
   Barracuda: { label: 'Barracuda Campus', url: 'https://campus.barracuda.com/', hasKB: true },
   Keepit: { label: 'Keepit Help Centre', url: 'https://help.keepit.com/support/solutions', hasKB: true },
@@ -1176,6 +1201,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
   const { t, lang, isAr } = useLang();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -1286,6 +1312,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
     const kb = VENDOR_KB[vendor];
     setSelectedCat(cat);
     setSelectedVendor(vendor);
+    setSelectedProduct(null);
     setTicketState('idle');
     setMessages([{ role: 'assistant', content: kb.hasKB
       ? (isAr
@@ -1318,7 +1345,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
       const resp = await apiFetch('/api/support-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, vendor: selectedVendor, domain }),
+        body: JSON.stringify({ question: selectedProduct ? `[Product: ${selectedProduct}] ${q}` : q, vendor: selectedVendor, product: selectedProduct, domain }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const reader = resp.body!.getReader();
@@ -1653,7 +1680,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
   return (
     <div className="flex flex-col h-[500px] sm:h-[560px]">
       <div className="flex items-center gap-3 mb-3">
-        <button onClick={() => { setSelectedCat(null); setSelectedVendor(null); setMessages([]); setInitDone(false); }}
+        <button onClick={() => { setSelectedCat(null); setSelectedVendor(null); setSelectedProduct(null); setMessages([]); setInitDone(false); }}
           className="text-sm text-[#9ca3af] hover:text-[#1f2937]">← {t('cancel')}</button>
         <span className="text-sm font-medium text-[#1f2937]">{selectedCat} — {selectedVendor}</span>
         {kb?.url && (
@@ -1663,6 +1690,43 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
           </a>
         )}
       </div>
+      {/* Product selector — shown for multi-product vendors so responses use exact UI paths */}
+      {VENDOR_PRODUCTS[selectedVendor!] && (
+        <div className="px-1 pb-1">
+          <div className="bg-[#faf5ff] border border-[#e9d5ff] rounded-xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-[#6d28d9]">
+                {isAr ? 'حدد المنتج للحصول على إجابات دقيقة:' : 'Select your exact product for accurate answers:'}
+              </span>
+              {selectedProduct && (
+                <button onClick={() => setSelectedProduct(null)} className="text-xs text-[#9ca3af] hover:text-[#6d28d9] transition-colors">
+                  {isAr ? 'تغيير' : 'Change'}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {VENDOR_PRODUCTS[selectedVendor!].map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProduct(p.label)}
+                  title={p.hint}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                    selectedProduct === p.label
+                      ? 'bg-[#7c3aed] border-[#7c3aed] text-white shadow-sm'
+                      : 'bg-white border-[#d8b4fe] text-[#6d28d9] hover:bg-[#f5f0ff]'
+                  }`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            {selectedProduct && (
+              <p className="text-xs text-[#7c3aed] mt-1.5">
+                {isAr ? `✓ الردود ستكون خاصة بـ ${selectedProduct}` : `✓ Responses tailored to ${selectedProduct}`}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto bg-[#f9fafb] rounded-xl border border-[#e5e7eb] p-4 space-y-4">
         {messages.map((msg, i) => {
           const isLast = i === messages.length - 1;
