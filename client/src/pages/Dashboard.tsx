@@ -2147,7 +2147,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                     </div>
                   </div>
 
-                  {/* Right: Account Manager + AW CSM (same card style, no chatbot here) */}
+                  {/* Right: Account Manager + AW CSM + Risk Score */}
                   <div className="flex flex-col gap-3 sm:gap-4">
                     {customer.accountOwner && (
                       <AccountManagerCard owner={customer.accountOwner} />
@@ -2156,11 +2156,57 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                       customer.grid.some(g => (g.category === 'MDR/SOC' || g.category === 'GRC') && g.status === 'active') && (
                       <AwCsmCard csms={customer.awCsms} isAr={isAr} />
                     )}
-                  </div>
-                </div>
+                    {/* Cyber Risk Score — in right sidebar below AW CSM */}
+                    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+                      <div className="h-1" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-[#8b5cf612] flex items-center justify-center">
+                              <TrendingUp className="w-3.5 h-3.5 text-[#8b5cf6]" />
+                            </div>
+                            <span className="text-sm font-semibold text-[#1f2937]">{t('cyberRiskScore')}</span>
+                          </div>
+                          <button onClick={() => setActiveTab('risk-score')}
+                            className="text-xs text-[#4494D1] hover:underline font-medium">
+                            {latestRiskScore ? t('retake') : t('takeAssessmentLink')}
+                          </button>
+                        </div>
+                        {latestRiskScore ? (() => {
+                          const score = latestRiskScore.score;
+                          const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : score >= 40 ? '#f97316' : '#ef4444';
+                          const bgColor = score >= 80 ? '#f0fdf4' : score >= 60 ? '#fffbeb' : score >= 40 ? '#fff7ed' : '#fef2f2';
+                          const rdate = new Date(latestRiskScore.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                          return (
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-end gap-2 shrink-0">
+                                <div className="text-4xl font-bold leading-none" style={{ color }}>{score}</div>
+                                <div className="text-sm text-[#6b7280] mb-0.5">/ 100</div>
+                                <div className="text-sm font-semibold ms-1" style={{ color }}>{latestRiskScore.label.split('·')[0].trim()}</div>
+                              </div>
+                              <div className="text-xs text-[#9ca3af]">Last assessed {rdate}</div>
+                              <div className="h-2 rounded-full bg-[#f3f4f6] overflow-hidden">
+                                <div className="h-2 rounded-full transition-all" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${color}99, ${color})` }} />
+                              </div>
+                            </div>
+                          );
+                        })() : (
+                          <div className="flex flex-col gap-3">
+                            <p className="text-sm text-[#6b7280]">{t('noRiskAssessment')}</p>
+                            <button onClick={() => setActiveTab('risk-score')}
+                              className="text-sm font-semibold text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity w-full"
+                              style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}>
+                              {t('takeAssessment')}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>{/* end right sidebar */}
+                </div>{/* end top grid */}
 
-                {/* Ask Broad Peak AI — full width, double depth */}
-                <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '720px' }}>
+                {/* Ask Broad Peak AI — full width, half depth */}
+                <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '360px' }}>
                   <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
                       <Shield className="w-3 h-3 text-white" />
@@ -2176,69 +2222,6 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                         setSelectedCategory(entry);
                       }}
                     />
-                  </div>
-                </div>
-
-                {/* Cyber Risk Score — full width at bottom */}
-                <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
-                  <div className="h-1" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
-                  <div className="p-4 sm:p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-[#8b5cf612] flex items-center justify-center">
-                          <TrendingUp className="w-3.5 h-3.5 text-[#8b5cf6]" />
-                        </div>
-                        <span className="text-sm font-semibold text-[#1f2937]">{t('cyberRiskScore')}</span>
-                      </div>
-                      <button onClick={() => setActiveTab('risk-score')}
-                        className="text-xs text-[#4494D1] hover:underline font-medium">
-                        {latestRiskScore ? t('retake') : t('takeAssessmentLink')}
-                      </button>
-                    </div>
-
-                    {latestRiskScore ? (() => {
-                      const score = latestRiskScore.score;
-                      const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : score >= 40 ? '#f97316' : '#ef4444';
-                      const bgColor = score >= 80 ? '#f0fdf4' : score >= 60 ? '#fffbeb' : score >= 40 ? '#fff7ed' : '#fef2f2';
-                      const rdate = new Date(latestRiskScore.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                      return (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                          <div className="flex items-end gap-3 shrink-0">
-                            <div className="text-5xl font-bold leading-none" style={{ color }}>{score}</div>
-                            <div className="text-sm text-[#6b7280] mb-1">/ 100</div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="text-sm font-semibold" style={{ color }}>{latestRiskScore.label.split('·')[0].trim()}</div>
-                              <div className="text-xs text-[#9ca3af]">Last assessed {rdate}</div>
-                            </div>
-                            <div className="h-2 rounded-full bg-[#f3f4f6] overflow-hidden mb-2">
-                              <div className="h-2 rounded-full transition-all" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${color}99, ${color})` }} />
-                            </div>
-                            <div className="rounded-xl p-3 text-xs" style={{ background: bgColor, border: `1px solid ${color}30` }}>
-                              <span className="font-semibold" style={{ color }}>
-                                {score >= 80 ? t('strongPosture') : score >= 60 ? t('someAttention') : t('significantGaps')}
-                              </span>
-                              <span className="text-[#6b7280] ms-1">{t('clickRetake')}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })() : (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-[#f3f4f6] flex items-center justify-center shrink-0">
-                          <Shield className="w-5 h-5 text-[#9ca3af]" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-[#6b7280] mb-3">{t('noRiskAssessment')}</p>
-                          <button onClick={() => setActiveTab('risk-score')}
-                            className="text-sm font-semibold text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
-                            style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}>
-                            {t('takeAssessment')}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

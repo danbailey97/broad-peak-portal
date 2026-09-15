@@ -74,7 +74,7 @@ export const translations = {
 
     // Products tab
     yourProducts: 'Your Products',
-    yourAccountManager: 'Your Account Manager',
+    yourAccountManager: 'Your Broad Peak Team',
     askBroadPeakAI: 'Ask Broad Peak AI',
     cyberRiskScore: 'Cyber Risk Score',
     noRiskAssessment: 'No risk assessment on file for your organisation.',
@@ -356,7 +356,7 @@ export const translations = {
 
     // Products tab
     yourProducts: 'منتجاتك',
-    yourAccountManager: 'مدير حسابك',
+    yourAccountManager: 'فريق Broad Peak الخاص بك',
     askBroadPeakAI: 'اسأل Broad Peak AI',
     cyberRiskScore: 'تقييم المخاطر الإلكترونية',
     noRiskAssessment: 'لا يوجد تقييم للمخاطر مسجّل لمؤسستك.',
