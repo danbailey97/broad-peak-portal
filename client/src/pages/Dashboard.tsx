@@ -1251,7 +1251,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [initDone, setInitDone] = useState(false);
-  const [ticketState, setTicketState] = useState<'idle' | 'submitting' | 'human-form' | 'done-happy' | 'done-human'>('idle');
+  const [ticketState, setTicketState] = useState<'idle' | 'submitting' | 'human-form' | 'done-happy' | 'done-human' | 'done-not-happy'>('idle');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Freshdesk tickets
@@ -1323,6 +1323,28 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
       });
     } catch { /* still show done */ }
     setTicketState('done-happy');
+  }
+
+  async function handleNotHappy(question: string, answer: string) {
+    setTicketState('submitting');
+    try {
+      await apiFetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: `[Escalation] [${selectedVendor}] Customer not satisfied — ${question.slice(0, 60)}`,
+          description: `⚠️ Customer indicated they were NOT satisfied with the AI support response.\n\nCustomer: ${accountName} (${domain})\nVendor: ${selectedVendor}\n\n---\nOriginal Question:\n${question}\n\n---\nAI Response:\n${answer}\n\n---\nPlease follow up with this customer as soon as possible.`,
+          priority: 4,
+          type: 'Problem',
+          domain,
+          customerName: accountName,
+          lang,
+          notHappy: true,
+          accountManagerEmail: accountOwner?.email || '',
+        }),
+      });
+    } catch { /* still show done */ }
+    setTicketState('done-not-happy');
   }
 
   async function submitHumanTicket(question: string, answer: string) {
@@ -1925,12 +1947,17 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                     {isLast && !loading && msg.content.length > 40 && msg.content !== '__BULLWALL_NO_KB__' && i > 0 && (
                       <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
                         {ticketState === 'idle' && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#9ca3af] mr-1">{t('happyWithResponse')}?</span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-[#9ca3af] mr-1">{isAr ? 'هل أنت راضي عن هذا الرد؟' : 'Are you happy with this response?'}</span>
                             <button
                               onClick={() => handleHappy(userQ, msg.content)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f0fdf4] border border-[#86efac] text-[#166534] hover:bg-[#dcfce7] transition-colors">
-                              <ThumbsUp className="w-3.5 h-3.5" /> {t('happyWithResponse')}
+                              <ThumbsUp className="w-3.5 h-3.5" /> {isAr ? 'نعم، شكراً' : "I'm happy with this"}
+                            </button>
+                            <button
+                              onClick={() => handleNotHappy(userQ, msg.content)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fef2f2] border border-[#fca5a5] text-[#991b1b] hover:bg-[#fee2e2] transition-colors">
+                              <ThumbsDown className="w-3.5 h-3.5" /> {isAr ? 'لم يحل هذا مشكلتي' : "I'm not happy with this"}
                             </button>
                             {/* Hide 'Speak to a Human' when there are AW CSMs to contact instead */}
                             {!(awCsms && awCsms.length > 0) && (
@@ -1994,6 +2021,14 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                           <div className="flex items-center gap-2 text-xs text-[#9a3412] font-medium">
                             <Ticket className="w-4 h-4 text-[#f97316]" />
                             {t('ticketRaised')}
+                          </div>
+                        )}
+                        {ticketState === 'done-not-happy' && (
+                          <div className="flex items-center gap-2 text-xs text-[#991b1b] font-medium">
+                            <CheckCircle2 className="w-4 h-4 text-[#ef4444]" />
+                            {isAr
+                              ? 'تم تسجيل تذكرتك وإخطار مدير حسابك. سيتواصلون معك قريباً.'
+                              : 'Your feedback has been logged and your Account Manager has been notified. They will follow up with you shortly.'}
                           </div>
                         )}
                       </div>

@@ -1796,7 +1796,7 @@ router.get('/api/tickets', requireAuth, async (req, res) => {
 // Freshdesk will notify the team per its own notification rules.
 // The requester email is set to portal@<domain> so Freshdesk associates it with the right account.
 router.post('/api/tickets', requireAuth, async (req, res) => {
-  const { subject, description, priority, type, domain, customerName, lang } = req.body;
+  const { subject, description, priority, type, domain, customerName, lang, notHappy, accountManagerEmail } = req.body;
   if (!subject || !description) return res.status(400).json({ ok: false, error: 'subject and description required' });
   try {
     const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
@@ -1817,15 +1817,19 @@ router.post('/api/tickets', requireAuth, async (req, res) => {
     const customerEmail = `portal@${domain || 'customer.com'}`;
     const senderName = customerName || `Portal User (${domain})`;
 
-    const ticketBody = {
+    const ccEmails: string[] = [];
+    if (notHappy && accountManagerEmail) ccEmails.push(accountManagerEmail);
+
+    const ticketBody: any = {
       subject: finalSubject,
       description: finalDescription,
       email: customerEmail,
       name: senderName,
-      priority: priority || 2,
+      priority: notHappy ? 4 : (priority || 2),  // Urgent if not happy
       status: 2,
-      type: type === 'Technical Issue' ? 'Incident' : type === 'Sales' ? 'Question' : (type || null),
-      tags: ['portal', domain || 'unknown'],
+      type: notHappy ? 'Problem' : (type === 'Technical Issue' ? 'Incident' : type === 'Sales' ? 'Question' : (type || null)),
+      tags: ['portal', domain || 'unknown', ...(notHappy ? ['not-happy', 'escalation'] : [])],
+      ...(ccEmails.length > 0 ? { cc_emails: ccEmails } : {}),
     };
 
     const r = await directFetch(`https://${FD_DOMAIN}.freshdesk.com/api/v2/tickets`, {
