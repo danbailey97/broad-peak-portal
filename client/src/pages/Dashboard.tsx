@@ -1859,44 +1859,68 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                       />
                     )}
                     {/* Arctic Wolf CSM contact buttons — shown on every AW support response */}
-                    {isLast && !loading && msg.content.length > 10 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (
-                      <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-2">
-                        <p className="text-xs font-semibold text-[#1a3a5c]">
-                          {awCsms.length === 1
-                            ? (isAr
-                                ? `${awCsms[0].name} هو مدير حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم`
-                                : `${awCsms[0].name} is your Arctic Wolf Vendor Account Manager — we recommend contacting them for further support`)
-                            : (isAr
-                                ? 'فريق حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم'
-                                : 'Your Arctic Wolf Vendor Account Managers — we recommend contacting them for further support')}
-                        </p>
-                        <div className="space-y-2">
-                          {awCsms.map((csm: AwCsm, idx: number) => (
-                            <div key={idx} className="flex flex-col gap-1.5">
-                              {awCsms.length > 1 && (
-                                <span className="text-xs font-medium text-[#374151]">{csm.name}</span>
-                              )}
-                              <div className="flex flex-wrap gap-1.5">
-                                <a href={`mailto:${csm.email}`}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
-                                  style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
-                                  <Mail className="w-3 h-3" />
-                                  {awCsms.length === 1 ? (isAr ? `إرسال بريد لـ ${csm.name}` : `Email ${csm.name}`) : (isAr ? 'بريد إلكتروني' : 'Email')}
-                                </a>
-                                {csm.phone && (
-                                  <a href={`tel:${csm.phone}`}
+                    {isLast && !loading && msg.content.length > 10 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (() => {
+                      const csmNames = awCsms.map((c: AwCsm) => c.name);
+                      const namesStr = csmNames.length === 1
+                        ? csmNames[0]
+                        : csmNames.slice(0, -1).join(', ') + ' and ' + csmNames[csmNames.length - 1];
+                      const managerWord = isAr ? 'مديرو نجاح العملاء' : (awCsms.length === 1 ? 'Customer Success Manager' : 'Customer Success Managers');
+                      const introEn = `${namesStr} ${awCsms.length === 1 ? 'is' : 'are'} your dedicated Arctic Wolf ${managerWord} — from what you've asked we recommend contacting them for further support as soon as possible.`;
+                      const introAr = `${namesStr} ${awCsms.length === 1 ? 'هو' : 'هم'} ${managerWord} المخصص${awCsms.length === 1 ? '' : 'ون'} من Arctic Wolf — بناءً على ما سألت عنه، نوصي بالتواصل معهم للحصول على مزيد من الدعم في أقرب وقت ممكن.`;
+                      return (
+                        <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
+                          {/* Intro text */}
+                          <p className="text-xs font-semibold text-[#1a3a5c]">{isAr ? introAr : introEn}</p>
+                          {/* CSM buttons */}
+                          <div className="space-y-2">
+                            {awCsms.map((csm: AwCsm, idx: number) => (
+                              <div key={idx} className="flex flex-col gap-1.5">
+                                {awCsms.length > 1 && (
+                                  <span className="text-xs font-medium text-[#374151]">{csm.name}</span>
+                                )}
+                                <div className="flex flex-wrap gap-1.5">
+                                  <a href={`mailto:${csm.email}`}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
                                     style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
-                                    <Phone className="w-3 h-3" />
-                                    {awCsms.length === 1 ? (isAr ? `الاتصال بـ ${csm.name}` : `Call ${csm.name}`) : (isAr ? 'اتصال' : 'Call')}
+                                    <Mail className="w-3 h-3" />
+                                    {awCsms.length === 1 ? (isAr ? `إرسال بريد لـ ${csm.name}` : `Email ${csm.name}`) : (isAr ? 'بريد إلكتروني' : 'Email')}
+                                  </a>
+                                  {csm.phone && (
+                                    <a href={`tel:${csm.phone}`}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
+                                      style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+                                      <Phone className="w-3 h-3" />
+                                      {awCsms.length === 1 ? (isAr ? `الاتصال بـ ${csm.name}` : `Call ${csm.name}`) : (isAr ? 'اتصال' : 'Call')}
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Broad Peak Account Manager fallback */}
+                          {accountOwner && (
+                            <div className="pt-2 border-t border-[#f3f4f6]">
+                              <p className="text-xs text-[#6b7280] mb-1.5">
+                                {isAr
+                                  ? 'إذا واجهت أي مشاكل، يرجى التواصل مع مدير حسابك في Broad Peak:'
+                                  : 'If you have any problems, please contact your Broad Peak Account Manager:'}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#374151]">
+                                <span className="font-semibold">{accountOwner.name}</span>
+                                <a href={`mailto:${accountOwner.email}`} className="flex items-center gap-1 text-[#C65793] hover:underline">
+                                  <Mail className="w-3 h-3" /> {accountOwner.email}
+                                </a>
+                                {accountOwner.phone && (
+                                  <a href={`tel:${accountOwner.phone}`} className="flex items-center gap-1 text-[#4494D1] hover:underline">
+                                    <Phone className="w-3 h-3" /> {accountOwner.phone}
                                   </a>
                                 )}
                               </div>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                     {/* Satisfaction buttons — at the very bottom, after AI prompt and CSM buttons */}
                     {isLast && !loading && msg.content.length > 40 && msg.content !== '__BULLWALL_NO_KB__' && i > 0 && (
                       <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
