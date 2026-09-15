@@ -457,7 +457,7 @@ function AwCsmCard({ csms, isAr, fullWidth }: { csms: AwCsm[]; isAr: boolean; fu
             </div>
             <div>
               <div className="text-lg font-bold text-[#1f2937]">{csm.name}</div>
-              <div className="text-sm text-[#6b7280]">{isAr ? 'مدير حساب Arctic Wolf' : 'Arctic Wolf Account Manager'}</div>
+              <div className="text-sm text-[#6b7280]">{isAr ? 'مدير نجاح عملاء Arctic Wolf (CSM)' : 'Arctic Wolf Customer Success Manager (CSM)'}</div>
             </div>
           </div>
           <div className="space-y-2 text-sm">
