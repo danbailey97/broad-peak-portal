@@ -443,92 +443,41 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
 function AwCsmCard({ csms, isAr, fullWidth }: { csms: AwCsm[]; isAr: boolean; fullWidth?: boolean }) {
   if (!csms || csms.length === 0) return null;
 
-  // Full-width mode: horizontal layout with CSMs side by side
-  if (fullWidth) {
-    return (
-      <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
-            <Shield className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-[#1f2937]">
-              {isAr ? 'مديرو حساب Arctic Wolf' : 'Your Arctic Wolf Team'}
+  // Shared inner content — same for both modes
+  const inner = (
+    <>
+      <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">
+        {isAr ? 'فريق Arctic Wolf الخاص بك' : 'Your Arctic Wolf Team'}
+      </h3>
+      {csms.map((csm, i) => (
+        <div key={i} className={`${csms.length > 1 && i > 0 ? 'pt-4 border-t border-[#f3f4f6]' : ''} flex flex-col gap-3`}>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white border-2 border-white shrink-0" style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+              {csm.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
             </div>
-            <div className="text-xs text-[#9ca3af]">
-              {isAr ? 'مديرو الحساب المخصصون لك' : 'Dedicated Vendor Account Manager' + (csms.length > 1 ? 's' : '')}
+            <div>
+              <div className="text-lg font-bold text-[#1f2937]">{csm.name}</div>
+              <div className="text-sm text-[#6b7280]">{isAr ? 'مدير حساب Arctic Wolf' : 'Arctic Wolf Account Manager'}</div>
             </div>
           </div>
-        </div>
-        <div className={`grid gap-4 ${csms.length > 1 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
-          {csms.map((csm, i) => (
-            <div key={i} className="flex items-center gap-3 bg-[#f8fafd] rounded-xl p-3 border border-[#e8f0fb]">
-              <div className="w-10 h-10 rounded-full bg-[#e8f0fb] flex items-center justify-center text-sm font-bold text-[#2d6ca2] shrink-0">
-                {csm.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-[#1f2937] truncate">{csm.name}</div>
-                <div className="text-xs text-[#6b7280] truncate">{csm.email}</div>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <a href={`mailto:${csm.email}`}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
-                  <Mail className="w-3 h-3" /> {isAr ? 'بريد' : 'Email'}
-                </a>
-                {csm.phone && (
-                  <a href={`tel:${csm.phone}`}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
-                    <Phone className="w-3 h-3" /> {isAr ? 'اتصال' : 'Call'}
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Compact sidebar mode (used in technical support tab)
-  return (
-    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
-          <Shield className="w-3.5 h-3.5 text-white" />
-        </div>
-        <div>
-          <div className="text-sm font-bold text-[#1f2937]">
-            {isAr ? 'مديرو حساب Arctic Wolf' : 'Your Arctic Wolf Team'}
-          </div>
-          <div className="text-xs text-[#9ca3af]">
-            {isAr ? 'مديرو الحساب المخصصون لك' : 'Dedicated Vendor Account Manager' + (csms.length > 1 ? 's' : '')}
-          </div>
-        </div>
-      </div>
-      <div className="space-y-3">
-        {csms.map((csm, i) => (
-          <div key={i} className={`${csms.length > 1 ? 'pb-3 border-b border-[#f3f4f6] last:border-0 last:pb-0' : ''}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-[#e8f0fb] flex items-center justify-center text-xs font-bold text-[#2d6ca2]">
-                {csm.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-              </div>
-              <span className="text-sm font-semibold text-[#1f2937]">{csm.name}</span>
-            </div>
-            <div className="flex flex-wrap gap-2 ml-10">
-              <a href={`mailto:${csm.email}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
-                <Mail className="w-3 h-3" /> {isAr ? 'إرسال بريد' : 'Email'}
+          <div className="space-y-2 text-sm">
+            <a href={`mailto:${csm.email}`} className="flex items-center gap-2 text-[#6b7280] hover:text-[#2d6ca2] transition-colors">
+              <Mail className="w-4 h-4 text-[#2d6ca2]" /> {csm.email}
+            </a>
+            {csm.phone && (
+              <a href={`tel:${csm.phone}`} className="flex items-center gap-2 text-[#6b7280] hover:text-[#2d6ca2] transition-colors">
+                <Phone className="w-4 h-4 text-[#1a3a5c]" /> {csm.phone}
               </a>
-              {csm.phone && (
-                <a href={`tel:${csm.phone}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
-                  <Phone className="w-3 h-3" /> {isAr ? 'اتصال' : 'Call'}
-                </a>
-              )}
-            </div>
+            )}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
+    </>
+  );
+
+  return (
+    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-5 flex flex-col gap-4">
+      {inner}
     </div>
   );
 }
@@ -2159,11 +2108,11 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
             {/* MY PRODUCTS TAB */}
             {activeTab === 'products' && (
               <div className="flex flex-col gap-4 sm:gap-5">
-                {/* Top row: product grid + right sidebar (account manager + chatbot) */}
+                {/* Top row: product grid + right sidebar (account manager + AW CSM) */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
-                  {/* Left: 3x3 tile grid */}
+                  {/* Left: 3x3 tile grid — natural height, no stretching */}
                   <div className="lg:col-span-2">
-                    <div className="grid grid-cols-3 gap-2 sm:gap-3" style={{ gridAutoRows: '1fr' }}>
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                       {ALL_CATEGORIES.map(cat => {
                         const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
                         return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
@@ -2171,40 +2120,37 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                     </div>
                   </div>
 
-                  {/* Right: account manager + chatbot */}
+                  {/* Right: Account Manager + AW CSM (same card style, no chatbot here) */}
                   <div className="flex flex-col gap-3 sm:gap-4">
-                    {/* Account Manager */}
                     {customer.accountOwner && (
                       <AccountManagerCard owner={customer.accountOwner} />
                     )}
-
-                    {/* Ask Broad Peak AI */}
-                    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '360px' }}>
-                      <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
-                          <Shield className="w-3 h-3 text-white" />
-                        </div>
-                        <span className="text-sm font-semibold text-[#1f2937]">{t('askBroadPeakAI')}</span>
-                      </div>
-                      <div className="flex-1 min-h-0">
-                        <ChatBot domain={domain} accountName={customer.accountName}
-                          accountOwner={customer.accountOwner}
-                          onHighlight={(cats) => setHighlightedCategories(cats)}
-                          onOpenCategory={(cat) => {
-                            const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
-                            setSelectedCategory(entry);
-                          }}
-                        />
-                      </div>
-                    </div>
+                    {customer.awCsms && customer.awCsms.length > 0 &&
+                      customer.grid.some(g => (g.category === 'MDR/SOC' || g.category === 'GRC') && g.status === 'active') && (
+                      <AwCsmCard csms={customer.awCsms} isAr={isAr} />
+                    )}
                   </div>
                 </div>
 
-                {/* AW CSM card — full width, only when AW is active AND CSMs exist */}
-                {customer.awCsms && customer.awCsms.length > 0 &&
-                  customer.grid.some(g => (g.category === 'MDR/SOC' || g.category === 'GRC') && g.status === 'active') && (
-                  <AwCsmCard csms={customer.awCsms} isAr={isAr} fullWidth />
-                )}
+                {/* Ask Broad Peak AI — full width, double depth */}
+                <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '720px' }}>
+                  <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
+                      <Shield className="w-3 h-3 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-[#1f2937]">{t('askBroadPeakAI')}</span>
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    <ChatBot domain={domain} accountName={customer.accountName}
+                      accountOwner={customer.accountOwner}
+                      onHighlight={(cats) => setHighlightedCategories(cats)}
+                      onOpenCategory={(cat) => {
+                        const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
+                        setSelectedCategory(entry);
+                      }}
+                    />
+                  </div>
+                </div>
 
                 {/* Cyber Risk Score — full width at bottom */}
                 <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
