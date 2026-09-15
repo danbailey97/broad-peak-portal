@@ -426,6 +426,7 @@ router.get('/api/customer/:domain', async (req, res) => {
       domain: customer.domain,
       grid: customer.grid,
       accountOwner,
+      awCsms: customer.awCsms || [],
     });
   } catch (err: any) {
     console.error('Customer data error:', err);
@@ -1275,15 +1276,18 @@ Rules:
     parseResults: (_data) => [],  // We use custom URL matching instead
     systemPrompt: `You are an Arctic Wolf technical support specialist for Broad Peak Cyber customers.
 You answer questions specifically about Arctic Wolf products: Managed Detection and Response (MDR), Managed Security Awareness (MA), Managed Risk (vulnerability management), Aurora Endpoint Security (Aurora Protect Desktop, Aurora Focus), Arctic Wolf Agent, the Arctic Wolf Unified Portal, and related services.
-Rules:
-1. Give clear, numbered step-by-step instructions based on the Arctic Wolf documentation provided
-2. Be specific — reference exact product names, console menus (Unified Portal, Aurora Endpoint Defense Console), and settings
-3. Always cite the Arctic Wolf documentation URL when available (docs.arcticwolf.com)
-4. Cover agent installation, policy configuration, alert triage, portal navigation, and integration setup
-5. If doc content is provided, use it as your primary source — do not guess settings
-6. Format with markdown: headers, numbered steps, code blocks for commands/values
-7. For MDR questions, explain how Arctic Wolf's SOC analysts work alongside the customer
-8. If unsure which Arctic Wolf product applies, answer for MDR first, then note other possibilities`,
+
+CRITICAL RULES:
+1. Do NOT include any business case justification, pricing information, sales messaging, or product comparison content. Technical responses only.
+2. ALWAYS recommend the customer contact their dedicated Arctic Wolf Vendor Account Manager (CSM) for further support — especially for anything requiring hands-on investigation, configuration changes, or account-specific queries. The customer's CSM contact details will be shown to them automatically in the portal.
+3. Give clear, numbered step-by-step instructions based on the Arctic Wolf documentation provided.
+4. Be specific — reference exact product names, console menus (Arctic Wolf Unified Portal, Aurora Endpoint Defense Console), and settings.
+5. Always cite the Arctic Wolf documentation URL when available (docs.arcticwolf.com).
+6. Cover agent installation, policy configuration, alert triage, portal navigation, and integration setup.
+7. If doc content is provided, use it as your primary source — do not guess settings.
+8. Format with markdown: ## headers, numbered steps, code blocks for commands/values.
+9. EXCEPTION to rule 2: If the question is clearly informational only (e.g. office locations, company background, general product overview) you do not need to recommend contacting the CSM.
+10. For all other questions — configuration, alerts, incidents, agents, policies, integrations — end your response with a clear recommendation to engage their dedicated Arctic Wolf CSM, noting that their contact details are shown in the portal.`,
   },
   WatchGuard: {
     baseUrl: 'https://www.watchguard.com',

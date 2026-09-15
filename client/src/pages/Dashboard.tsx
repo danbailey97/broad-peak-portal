@@ -13,7 +13,8 @@ interface ProductEntry { name: string; vendor: string; startedAt?: string | null
 interface RelevantProduct { id: string; name: string; vendor: string; categories: string[]; }
 interface CategoryEntry { category: string; status: 'active' | 'expired' | 'not_owned'; products: ProductEntry[]; expiresAt: string | null; startedAt?: string | null; }
 interface AccountOwner { name: string; email: string; phone?: string; photo?: string; calendly?: string; welcome_video?: string; }
-interface CustomerData { accountName: string; domain: string; grid: CategoryEntry[]; accountOwner?: AccountOwner; }
+interface AwCsm { name: string; email: string; phone: string; }
+interface CustomerData { accountName: string; domain: string; grid: CategoryEntry[]; accountOwner?: AccountOwner; awCsms?: AwCsm[]; }
 interface Message { role: 'user' | 'assistant'; content: string; relevantCategories?: string[]; relevantProducts?: RelevantProduct[]; needsHuman?: boolean; }
 interface ResearchDoc { id: string; title: string; filename: string; url: string; uploadedAt: string; }
 
@@ -436,6 +437,53 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
   );
 }
 
+
+
+// Arctic Wolf CSM contact card — shown below Account Manager when customer has AW subscription
+function AwCsmCard({ csms, isAr }: { csms: AwCsm[]; isAr: boolean }) {
+  if (!csms || csms.length === 0) return null;
+  return (
+    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+          <Shield className="w-3.5 h-3.5 text-white" />
+        </div>
+        <div>
+          <div className="text-sm font-bold text-[#1f2937]">
+            {isAr ? 'مديرو حساب Arctic Wolf' : 'Your Arctic Wolf Team'}
+          </div>
+          <div className="text-xs text-[#9ca3af]">
+            {isAr ? 'مديرو الحساب المخصصون لك' : 'Dedicated Vendor Account Manager' + (csms.length > 1 ? 's' : '')}
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {csms.map((csm, i) => (
+          <div key={i} className={`${csms.length > 1 ? 'pb-3 border-b border-[#f3f4f6] last:border-0 last:pb-0' : ''}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-[#e8f0fb] flex items-center justify-center text-xs font-bold text-[#2d6ca2]">
+                {csm.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+              </div>
+              <span className="text-sm font-semibold text-[#1f2937]">{csm.name}</span>
+            </div>
+            <div className="flex flex-wrap gap-2 ml-10">
+              <a href={`mailto:${csm.email}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
+                <Mail className="w-3 h-3" /> {isAr ? 'إرسال بريد' : 'Email'}
+              </a>
+              {csm.phone && (
+                <a href={`tel:${csm.phone}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
+                  <Phone className="w-3 h-3" /> {isAr ? 'اتصال' : 'Call'}
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface ChatActionButtonsProps {
   isAr: boolean;
@@ -1197,7 +1245,7 @@ function VendorTicketButton({ isAr, domain, accountName, vendor, question, answe
   );
 }
 
-function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: string; accountName: string; accountOwner?: AccountOwner }) {
+function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { domain: string; accountName: string; accountOwner?: AccountOwner; awCsms?: AwCsm[] }) {
   const { t, lang, isAr } = useLang();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
@@ -1887,6 +1935,45 @@ function TechnicalSupportTab({ domain, accountName, accountOwner }: { domain: st
                         domain={domain}
                       />
                     )}
+                    {/* Arctic Wolf CSM contact buttons — shown on every AW support response */}
+                    {isLast && !loading && msg.content.length > 10 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (
+                      <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-2">
+                        <p className="text-xs font-semibold text-[#1a3a5c]">
+                          {awCsms.length === 1
+                            ? (isAr
+                                ? `${awCsms[0].name} هو مدير حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم`
+                                : `${awCsms[0].name} is your Arctic Wolf Vendor Account Manager — we recommend contacting them for further support`)
+                            : (isAr
+                                ? 'فريق حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم'
+                                : 'Your Arctic Wolf Vendor Account Managers — we recommend contacting them for further support')}
+                        </p>
+                        <div className="space-y-2">
+                          {awCsms.map((csm: AwCsm, idx: number) => (
+                            <div key={idx} className="flex flex-col gap-1.5">
+                              {awCsms.length > 1 && (
+                                <span className="text-xs font-medium text-[#374151]">{csm.name}</span>
+                              )}
+                              <div className="flex flex-wrap gap-1.5">
+                                <a href={`mailto:${csm.email}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
+                                  style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+                                  <Mail className="w-3 h-3" />
+                                  {awCsms.length === 1 ? (isAr ? `إرسال بريد لـ ${csm.name}` : `Email ${csm.name}`) : (isAr ? 'بريد إلكتروني' : 'Email')}
+                                </a>
+                                {csm.phone && (
+                                  <a href={`tel:${csm.phone}`}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
+                                    style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+                                    <Phone className="w-3 h-3" />
+                                    {awCsms.length === 1 ? (isAr ? `الاتصال بـ ${csm.name}` : `Call ${csm.name}`) : (isAr ? 'اتصال' : 'Call')}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2041,6 +2128,12 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                     <AccountManagerCard owner={customer.accountOwner} />
                   )}
 
+                  {/* Arctic Wolf CSM contacts — shown when AW subscription is active */}
+                  {customer.awCsms && customer.awCsms.length > 0 &&
+                    customer.grid.some(g => (g.category === 'MDR/SOC' || g.category === 'GRC') && g.status === 'active') && (
+                    <AwCsmCard csms={customer.awCsms} isAr={isAr} />
+                  )}
+
                   {/* Ask Broad Peak AI */}
                   <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '360px' }}>
                     <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
@@ -2123,7 +2216,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
               </div>
             )}
 
-            {activeTab === 'support' && <TechnicalSupportTab domain={domain} accountName={customer.accountName} accountOwner={customer.accountOwner} />}
+            {activeTab === 'support' && <TechnicalSupportTab domain={domain} accountName={customer.accountName} accountOwner={customer.accountOwner} awCsms={customer.awCsms || []} />}
             {activeTab === 'news' && <NewsTab domain={domain} />}
             {activeTab === 'resources' && <ResourcesTab domain={domain} />}
             {activeTab === 'ce-readiness' && (

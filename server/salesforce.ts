@@ -32,6 +32,12 @@ export interface AccountOwner {
   welcome_video?: string | null;
 }
 
+export interface AwCsm {
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export interface CustomerData {
   accountName: string;
   domain: string;
@@ -39,6 +45,7 @@ export interface CustomerData {
   hasProducts: boolean;
   opportunityCount: number;
   accountOwner?: AccountOwner;
+  awCsms?: AwCsm[];  // Arctic Wolf Vendor Account Managers (up to 3)
 }
 
 /**
