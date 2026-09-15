@@ -440,8 +440,56 @@ function ContactActionButtons({ accountOwner, accountName, relevantCategories }:
 
 
 // Arctic Wolf CSM contact card — shown below Account Manager when customer has AW subscription
-function AwCsmCard({ csms, isAr }: { csms: AwCsm[]; isAr: boolean }) {
+function AwCsmCard({ csms, isAr, fullWidth }: { csms: AwCsm[]; isAr: boolean; fullWidth?: boolean }) {
   if (!csms || csms.length === 0) return null;
+
+  // Full-width mode: horizontal layout with CSMs side by side
+  if (fullWidth) {
+    return (
+      <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+            <Shield className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-[#1f2937]">
+              {isAr ? 'مديرو حساب Arctic Wolf' : 'Your Arctic Wolf Team'}
+            </div>
+            <div className="text-xs text-[#9ca3af]">
+              {isAr ? 'مديرو الحساب المخصصون لك' : 'Dedicated Vendor Account Manager' + (csms.length > 1 ? 's' : '')}
+            </div>
+          </div>
+        </div>
+        <div className={`grid gap-4 ${csms.length > 1 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
+          {csms.map((csm, i) => (
+            <div key={i} className="flex items-center gap-3 bg-[#f8fafd] rounded-xl p-3 border border-[#e8f0fb]">
+              <div className="w-10 h-10 rounded-full bg-[#e8f0fb] flex items-center justify-center text-sm font-bold text-[#2d6ca2] shrink-0">
+                {csm.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#1f2937] truncate">{csm.name}</div>
+                <div className="text-xs text-[#6b7280] truncate">{csm.email}</div>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <a href={`mailto:${csm.email}`}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
+                  <Mail className="w-3 h-3" /> {isAr ? 'بريد' : 'Email'}
+                </a>
+                {csm.phone && (
+                  <a href={`tel:${csm.phone}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#e8f0fb] text-[#2d6ca2] hover:bg-[#d1e5f7] transition-colors">
+                    <Phone className="w-3 h-3" /> {isAr ? 'اتصال' : 'Call'}
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Compact sidebar mode (used in technical support tab)
   return (
     <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl p-4">
       <div className="flex items-center gap-2 mb-3">
@@ -2110,83 +2158,88 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
           <>
             {/* MY PRODUCTS TAB */}
             {activeTab === 'products' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
-                {/* Left: 3x3 tile grid — stretches to fill sidebar height */}
-                <div className="lg:col-span-2 lg:self-stretch">
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 h-full" style={{ gridAutoRows: '1fr' }}>
-                    {ALL_CATEGORIES.map(cat => {
-                      const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
-                      return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
-                    })}
+              <div className="flex flex-col gap-4 sm:gap-5">
+                {/* Top row: product grid + right sidebar (account manager + chatbot) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+                  {/* Left: 3x3 tile grid */}
+                  <div className="lg:col-span-2">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3" style={{ gridAutoRows: '1fr' }}>
+                      {ALL_CATEGORIES.map(cat => {
+                        const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
+                        return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right: account manager + chatbot */}
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    {/* Account Manager */}
+                    {customer.accountOwner && (
+                      <AccountManagerCard owner={customer.accountOwner} />
+                    )}
+
+                    {/* Ask Broad Peak AI */}
+                    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '360px' }}>
+                      <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
+                          <Shield className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-sm font-semibold text-[#1f2937]">{t('askBroadPeakAI')}</span>
+                      </div>
+                      <div className="flex-1 min-h-0">
+                        <ChatBot domain={domain} accountName={customer.accountName}
+                          accountOwner={customer.accountOwner}
+                          onHighlight={(cats) => setHighlightedCategories(cats)}
+                          onOpenCategory={(cat) => {
+                            const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
+                            setSelectedCategory(entry);
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Right: account manager + chatbot + risk score summary */}
-                <div className="flex flex-col gap-3 sm:gap-4">
-                  {/* Account Manager */}
-                  {customer.accountOwner && (
-                    <AccountManagerCard owner={customer.accountOwner} />
-                  )}
+                {/* AW CSM card — full width, only when AW is active AND CSMs exist */}
+                {customer.awCsms && customer.awCsms.length > 0 &&
+                  customer.grid.some(g => (g.category === 'MDR/SOC' || g.category === 'GRC') && g.status === 'active') && (
+                  <AwCsmCard csms={customer.awCsms} isAr={isAr} fullWidth />
+                )}
 
-                  {/* Arctic Wolf CSM contacts — shown when AW subscription is active */}
-                  {customer.awCsms && customer.awCsms.length > 0 &&
-                    customer.grid.some(g => (g.category === 'MDR/SOC' || g.category === 'GRC') && g.status === 'active') && (
-                    <AwCsmCard csms={customer.awCsms} isAr={isAr} />
-                  )}
-
-                  {/* Ask Broad Peak AI */}
-                  <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl flex flex-col" style={{ height: '360px' }}>
-                    <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb] flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full gradient-cta flex items-center justify-center">
-                        <Shield className="w-3 h-3 text-white" />
-                      </div>
-                      <span className="text-sm font-semibold text-[#1f2937]">{t('askBroadPeakAI')}</span>
-                    </div>
-                    <div className="flex-1 min-h-0">
-                      <ChatBot domain={domain} accountName={customer.accountName}
-                        accountOwner={customer.accountOwner}
-                        onHighlight={(cats) => setHighlightedCategories(cats)}
-                        onOpenCategory={(cat) => {
-                          const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
-                          setSelectedCategory(entry);
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Cyber Risk Score Summary */}
-                  <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
-                    <div className="h-1" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-lg bg-[#8b5cf612] flex items-center justify-center">
-                            <TrendingUp className="w-3.5 h-3.5 text-[#8b5cf6]" />
-                          </div>
-                          <span className="text-sm font-semibold text-[#1f2937]">{t('cyberRiskScore')}</span>
+                {/* Cyber Risk Score — full width at bottom */}
+                <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+                  <div className="h-1" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-[#8b5cf612] flex items-center justify-center">
+                          <TrendingUp className="w-3.5 h-3.5 text-[#8b5cf6]" />
                         </div>
-                        <button onClick={() => setActiveTab('risk-score')}
-                          className="text-xs text-[#4494D1] hover:underline font-medium">
-                          {latestRiskScore ? t('retake') : t('takeAssessmentLink')}
-                        </button>
+                        <span className="text-sm font-semibold text-[#1f2937]">{t('cyberRiskScore')}</span>
                       </div>
+                      <button onClick={() => setActiveTab('risk-score')}
+                        className="text-xs text-[#4494D1] hover:underline font-medium">
+                        {latestRiskScore ? t('retake') : t('takeAssessmentLink')}
+                      </button>
+                    </div>
 
-                      {latestRiskScore ? (() => {
-                        const score = latestRiskScore.score;
-                        const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : score >= 40 ? '#f97316' : '#ef4444';
-                        const bgColor = score >= 80 ? '#f0fdf4' : score >= 60 ? '#fffbeb' : score >= 40 ? '#fff7ed' : '#fef2f2';
-                        const date = new Date(latestRiskScore.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                        return (
-                          <div>
-                            <div className="flex items-end gap-3 mb-3">
-                              <div className="text-5xl font-bold leading-none" style={{ color }}>{score}</div>
-                              <div className="text-sm text-[#6b7280] mb-1">/ 100</div>
-                              <div className="ml-auto text-right">
-                                <div className="text-sm font-semibold" style={{ color }}>{latestRiskScore.label.split('·')[0].trim()}</div>
-                                <div className="text-xs text-[#9ca3af]">Last assessed {date}</div>
-                              </div>
+                    {latestRiskScore ? (() => {
+                      const score = latestRiskScore.score;
+                      const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : score >= 40 ? '#f97316' : '#ef4444';
+                      const bgColor = score >= 80 ? '#f0fdf4' : score >= 60 ? '#fffbeb' : score >= 40 ? '#fff7ed' : '#fef2f2';
+                      const rdate = new Date(latestRiskScore.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                      return (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                          <div className="flex items-end gap-3 shrink-0">
+                            <div className="text-5xl font-bold leading-none" style={{ color }}>{score}</div>
+                            <div className="text-sm text-[#6b7280] mb-1">/ 100</div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="text-sm font-semibold" style={{ color }}>{latestRiskScore.label.split('·')[0].trim()}</div>
+                              <div className="text-xs text-[#9ca3af]">Last assessed {rdate}</div>
                             </div>
-                            <div className="h-2 rounded-full bg-[#f3f4f6] overflow-hidden mb-3">
+                            <div className="h-2 rounded-full bg-[#f3f4f6] overflow-hidden mb-2">
                               <div className="h-2 rounded-full transition-all" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${color}99, ${color})` }} />
                             </div>
                             <div className="rounded-xl p-3 text-xs" style={{ background: bgColor, border: `1px solid ${color}30` }}>
@@ -2196,12 +2249,14 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                               <span className="text-[#6b7280] ms-1">{t('clickRetake')}</span>
                             </div>
                           </div>
-                        );
-                      })() : (
-                        <div className="text-center py-4">
-                          <div className="w-12 h-12 rounded-full bg-[#f3f4f6] flex items-center justify-center mx-auto mb-2">
-                            <Shield className="w-5 h-5 text-[#9ca3af]" />
-                          </div>
+                        </div>
+                      );
+                    })() : (
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-[#f3f4f6] flex items-center justify-center shrink-0">
+                          <Shield className="w-5 h-5 text-[#9ca3af]" />
+                        </div>
+                        <div className="flex-1">
                           <p className="text-sm text-[#6b7280] mb-3">{t('noRiskAssessment')}</p>
                           <button onClick={() => setActiveTab('risk-score')}
                             className="text-sm font-semibold text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
@@ -2209,8 +2264,8 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                             {t('takeAssessment')}
                           </button>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
