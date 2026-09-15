@@ -1848,7 +1848,56 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                         </>
                       )}
                     </div>
-                    {/* Satisfaction buttons — only on last assistant message when not loading and has content */}
+                    {/* AI Prompt Generator — shown on every non-bullwall assistant message that has content */}
+                    {isLast && !loading && msg.content.length > 40 && msg.content !== '__BULLWALL_NO_KB__' && i > 0 && (
+                      <GeneratePromptSection
+                        isAr={isAr}
+                        vendor={selectedVendor || ''}
+                        question={userQ}
+                        answer={msg.content}
+                        domain={domain}
+                      />
+                    )}
+                    {/* Arctic Wolf CSM contact buttons — shown on every AW support response */}
+                    {isLast && !loading && msg.content.length > 10 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (
+                      <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-2">
+                        <p className="text-xs font-semibold text-[#1a3a5c]">
+                          {awCsms.length === 1
+                            ? (isAr
+                                ? `${awCsms[0].name} هو مدير حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم`
+                                : `${awCsms[0].name} is your Arctic Wolf Vendor Account Manager — we recommend contacting them for further support`)
+                            : (isAr
+                                ? 'فريق حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم'
+                                : 'Your Arctic Wolf Vendor Account Managers — we recommend contacting them for further support')}
+                        </p>
+                        <div className="space-y-2">
+                          {awCsms.map((csm: AwCsm, idx: number) => (
+                            <div key={idx} className="flex flex-col gap-1.5">
+                              {awCsms.length > 1 && (
+                                <span className="text-xs font-medium text-[#374151]">{csm.name}</span>
+                              )}
+                              <div className="flex flex-wrap gap-1.5">
+                                <a href={`mailto:${csm.email}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
+                                  style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+                                  <Mail className="w-3 h-3" />
+                                  {awCsms.length === 1 ? (isAr ? `إرسال بريد لـ ${csm.name}` : `Email ${csm.name}`) : (isAr ? 'بريد إلكتروني' : 'Email')}
+                                </a>
+                                {csm.phone && (
+                                  <a href={`tel:${csm.phone}`}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
+                                    style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
+                                    <Phone className="w-3 h-3" />
+                                    {awCsms.length === 1 ? (isAr ? `الاتصال بـ ${csm.name}` : `Call ${csm.name}`) : (isAr ? 'اتصال' : 'Call')}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Satisfaction buttons — at the very bottom, after AI prompt and CSM buttons */}
                     {isLast && !loading && msg.content.length > 40 && msg.content !== '__BULLWALL_NO_KB__' && i > 0 && (
                       <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
                         {ticketState === 'idle' && (
@@ -1859,11 +1908,14 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f0fdf4] border border-[#86efac] text-[#166534] hover:bg-[#dcfce7] transition-colors">
                               <ThumbsUp className="w-3.5 h-3.5" /> {t('happyWithResponse')}
                             </button>
+                            {/* Hide 'Speak to a Human' when there are AW CSMs to contact instead */}
+                            {!(awCsms && awCsms.length > 0) && (
                             <button
                               onClick={() => { setTicketState('human-form'); setHumanTicketSubject(`[${selectedVendor}] ${userQ.slice(0, 80)}`); setHumanTicketDesc(''); }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fff7ed] border border-[#fed7aa] text-[#9a3412] hover:bg-[#ffedd5] transition-colors">
                               <UserRound className="w-3.5 h-3.5" /> {t('speakToHuman')}
                             </button>
+                            )}
                           </div>
                         )}
                         {ticketState === 'human-form' && (
@@ -1920,55 +1972,6 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                             {t('ticketRaised')}
                           </div>
                         )}
-                      </div>
-                    )}
-                    {/* AI Prompt Generator — shown on every non-bullwall assistant message that has content */}
-                    {isLast && !loading && msg.content.length > 40 && msg.content !== '__BULLWALL_NO_KB__' && i > 0 && (
-                      <GeneratePromptSection
-                        isAr={isAr}
-                        vendor={selectedVendor || ''}
-                        question={userQ}
-                        answer={msg.content}
-                        domain={domain}
-                      />
-                    )}
-                    {/* Arctic Wolf CSM contact buttons — shown on every AW support response */}
-                    {isLast && !loading && msg.content.length > 10 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (
-                      <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-2">
-                        <p className="text-xs font-semibold text-[#1a3a5c]">
-                          {awCsms.length === 1
-                            ? (isAr
-                                ? `${awCsms[0].name} هو مدير حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم`
-                                : `${awCsms[0].name} is your Arctic Wolf Vendor Account Manager — we recommend contacting them for further support`)
-                            : (isAr
-                                ? 'فريق حساب Arctic Wolf الخاص بك — نوصي بالتواصل معهم للحصول على مزيد من الدعم'
-                                : 'Your Arctic Wolf Vendor Account Managers — we recommend contacting them for further support')}
-                        </p>
-                        <div className="space-y-2">
-                          {awCsms.map((csm: AwCsm, idx: number) => (
-                            <div key={idx} className="flex flex-col gap-1.5">
-                              {awCsms.length > 1 && (
-                                <span className="text-xs font-medium text-[#374151]">{csm.name}</span>
-                              )}
-                              <div className="flex flex-wrap gap-1.5">
-                                <a href={`mailto:${csm.email}`}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
-                                  style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
-                                  <Mail className="w-3 h-3" />
-                                  {awCsms.length === 1 ? (isAr ? `إرسال بريد لـ ${csm.name}` : `Email ${csm.name}`) : (isAr ? 'بريد إلكتروني' : 'Email')}
-                                </a>
-                                {csm.phone && (
-                                  <a href={`tel:${csm.phone}`}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
-                                    style={{ background: 'linear-gradient(135deg,#1a3a5c,#2d6ca2)' }}>
-                                    <Phone className="w-3 h-3" />
-                                    {awCsms.length === 1 ? (isAr ? `الاتصال بـ ${csm.name}` : `Call ${csm.name}`) : (isAr ? 'اتصال' : 'Call')}
-                                  </a>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
                       </div>
                     )}
                   </div>
