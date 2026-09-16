@@ -2179,7 +2179,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
             {activeTab === 'products' && (
               <div className="flex flex-col gap-4 sm:gap-5">
                 {/* Top row: product grid + right sidebar (account manager + AW CSM) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
                   {/* Left: 3x3 tile grid — natural height, no stretching */}
                   <div className="lg:col-span-2">
                     <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -2191,7 +2191,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                   </div>
 
                   {/* Right: Account Manager + AW CSM + Risk Score */}
-                  <div className="flex flex-col gap-3 sm:gap-4">
+                  <div className="flex flex-col gap-3 sm:gap-4 h-full">
                     {customer.accountOwner && (
                       <AccountManagerCard owner={customer.accountOwner} />
                     )}
@@ -2199,8 +2199,8 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                       customer.grid.some(g => (g.category === 'MDR/SOC' || g.category === 'GRC') && g.status === 'active') && (
                       <AwCsmCard csms={customer.awCsms} isAr={isAr} />
                     )}
-                    {/* Cyber Risk Score — in right sidebar below AW CSM */}
-                    <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+                    {/* Cyber Risk Score — in right sidebar below AW CSM, grows to fill remaining space */}
+                    <div className="flex-1 bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
                       <div className="h-1" style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981, #f59e0b, #ef4444, #06b6d4)' }} />
                       <div className="p-4">
                         <div className="flex items-center justify-between mb-3">
