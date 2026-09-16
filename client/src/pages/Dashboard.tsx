@@ -932,10 +932,13 @@ const DATASHEETS = [
   { vendor: 'Druva', product: 'Endpoint Data Protection', category: 'Backup', url: 'https://www.druva.com/content/dam/druvaincprogram/collateral/datasheet/datasheet-endpoint-data-protection-and-cyber-resilience.pdf' },
   { vendor: 'Druva', product: 'SaaS Apps & Endpoints', category: 'Backup', url: 'https://www.druva.com/content/dam/druvaincprogram/collateral/datasheet/datasheet-saas-apps-endpoints.pdf' },
   // ── Arctic Wolf ──────────────────────────────────────────────────────────
-  { vendor: 'Arctic Wolf', product: 'Managed Detection & Response', category: 'MDR', url: 'https://cybersecurity.arcticwolf.com/rs/840-OSQ-661/images/AW_Managed_Detection_Response_Datasheet.pdf' },
-  { vendor: 'Arctic Wolf', product: 'Managed Risk', category: 'Managed Risk', url: 'https://cybersecurity.arcticwolf.com/rs/840-OSQ-661/images/AW_Managed_Risk_Service_Datasheet.pdf' },
+  { vendor: 'Arctic Wolf', product: 'Managed Detection & Response (MDR)', category: 'MDR', url: 'https://cybersecurity.arcticwolf.com/rs/840-OSQ-661/images/AW_Managed_Detection_Response_Datasheet.pdf' },
+  { vendor: 'Arctic Wolf', product: 'Aurora Vulnerability Management', category: 'Aurora Products', url: 'https://arcticwolf.com/resource/aw/aurora-vulnerability-management-datasheet' },
+  { vendor: 'Arctic Wolf', product: 'Aurora Attack Surface Management', category: 'Aurora Products', url: 'https://arcticwolf.pathfactory.com/_pfcdn/assets/10926/contents/1175339/59c99097-fe01-40a7-9d3d-c6b48cd884b4.pdf' },
+  { vendor: 'Arctic Wolf', product: 'Aurora Endpoint Security', category: 'Aurora Products', url: 'https://arcticwolf.com/resource/aw/aurora-endpoint-security-datasheet' },
+  { vendor: 'Arctic Wolf', product: 'Cloud Security Posture Management (CSPM)', category: 'Aurora Products', url: 'https://media.howard.com/docs/downloads/aw_cloud_security_posture_management.pdf' },
   { vendor: 'Arctic Wolf', product: 'Managed Security Awareness', category: 'Security Awareness', url: 'https://arcticwolf.com/resource/aw/arctic-wolf-managed-security-awareness-datasheet' },
-  { vendor: 'Arctic Wolf', product: 'Incident Response', category: 'Incident Response', url: 'https://arcticwolf.com/solutions/incident-response-retainer/' },
+  { vendor: 'Arctic Wolf', product: 'Incident360 Retainer (Incident Response)', category: 'Incident Response', url: 'https://arcticwolf.com/solutions/incident-response-retainer/' },
   // ── CyberSmart ───────────────────────────────────────────────────────────
   { vendor: 'CyberSmart', product: 'Cyber Essentials', category: 'Compliance', url: 'https://cybersmart.co.uk/products/cyber-essentials/' },
   { vendor: 'CyberSmart', product: 'Cyber Essentials Plus', category: 'Compliance', url: 'https://cybersmart.co.uk/products/cyber-essentials-plus/' },
