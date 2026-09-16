@@ -1881,7 +1881,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                       />
                     )}
                     {/* Arctic Wolf CSM contact buttons — shown on every AW support response */}
-                    {isLast && !loading && msg.content.length > 10 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (() => {
+                    {isLast && !loading && msg.content.length > 10 && i > 0 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (() => {
                       const csmNames = awCsms.map((c: AwCsm) => c.name);
                       const namesStr = csmNames.length === 1
                         ? csmNames[0]
