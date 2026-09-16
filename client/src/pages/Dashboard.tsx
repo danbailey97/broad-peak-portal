@@ -1883,14 +1883,20 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
                       />
                     )}
                     {/* Arctic Wolf CSM contact buttons — shown on every AW support response */}
-                    {isLast && !loading && msg.content.length > 10 && i > 0 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (() => {
+                    {isLast && !loading && msg.content.length > 10 && selectedVendor === 'Arctic Wolf' && awCsms && awCsms.length > 0 && (() => {
                       const csmNames = awCsms.map((c: AwCsm) => c.name);
                       const namesStr = csmNames.length === 1
                         ? csmNames[0]
                         : csmNames.slice(0, -1).join(', ') + ' and ' + csmNames[csmNames.length - 1];
                       const managerWord = isAr ? 'مديرو نجاح العملاء' : (awCsms.length === 1 ? 'Customer Success Manager' : 'Customer Success Managers');
-                      const introEn = `${namesStr} ${awCsms.length === 1 ? 'is' : 'are'} your dedicated Arctic Wolf ${managerWord} — from what you've asked we recommend contacting them for further support as soon as possible.`;
-                      const introAr = `${namesStr} ${awCsms.length === 1 ? 'هو' : 'هم'} ${managerWord} المخصص${awCsms.length === 1 ? '' : 'ون'} من Arctic Wolf — بناءً على ما سألت عنه، نوصي بالتواصل معهم للحصول على مزيد من الدعم في أقرب وقت ممكن.`;
+                      // Greeting (i === 0): shorter intro without "from what you've asked"
+                      // Response (i > 0): full intro with recommendation to contact CSM
+                      const introEn = i === 0
+                        ? `${namesStr} ${awCsms.length === 1 ? 'is' : 'are'} your dedicated Arctic Wolf ${managerWord}. Feel free to contact them directly using the buttons below.`
+                        : `${namesStr} ${awCsms.length === 1 ? 'is' : 'are'} your dedicated Arctic Wolf ${managerWord} — from what you've asked we recommend contacting them for further support as soon as possible.`;
+                      const introAr = i === 0
+                        ? `${namesStr} ${awCsms.length === 1 ? 'هو' : 'هم'} ${managerWord} المخصص${awCsms.length === 1 ? '' : 'ون'} من Arctic Wolf. لا تتردد في التواصل معهم مباشرةً عبر الأزرار أدناه.`
+                        : `${namesStr} ${awCsms.length === 1 ? 'هو' : 'هم'} ${managerWord} المخصص${awCsms.length === 1 ? '' : 'ون'} من Arctic Wolf — بناءً على ما سألت عنه، نوصي بالتواصل معهم للحصول على مزيد من الدعم في أقرب وقت ممكن.`;
                       return (
                         <div className="border-t border-[#f3f4f6] px-4 py-3 space-y-3">
                           {/* Intro text */}
