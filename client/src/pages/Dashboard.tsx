@@ -849,7 +849,7 @@ function NewsTab({ domain }: { domain: string }) {
           <h2 className="text-lg font-bold text-[#1f2937]">{t('vendorResourceLibraries')}</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {VENDOR_NEWS.map(v => {
+          {[...VENDOR_NEWS].sort((a, b) => a.vendor.localeCompare(b.vendor)).map(v => {
             const meta = VENDOR_LOGOS[v.vendor] || { logo: '', bg: '#4494D1', taglineKey: 'tagline_barracuda' };
             return (
               <a key={v.vendor} href={v.url} target="_blank" rel="noopener noreferrer"
@@ -980,7 +980,7 @@ function ResourcesTab({ domain }: { domain: string }) {
       <div>
         <h2 className="text-lg font-bold text-[#1f2937] mb-5">{t('vendorDatasheets')}</h2>
         <div className="space-y-8">
-          {Object.entries(grouped).map(([vendor, cats]) => (
+          {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([vendor, cats]) => (
             <div key={vendor} className="bg-white border border-[#e5e7eb] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] overflow-hidden">
               {/* Vendor header */}
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[#f3f4f6]" style={{ background: 'linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%)' }}>
