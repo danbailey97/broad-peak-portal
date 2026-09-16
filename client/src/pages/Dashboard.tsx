@@ -597,7 +597,7 @@ function ChatBot({ domain, accountName, accountOwner, onHighlight, onOpenCategor
   const prevLang = useRef(lang);
   const ALL_VENDORS = ['Barracuda', 'Keepit', 'Arctic Wolf', 'Boxphish', 'BullWall', 'CyberSmart', 'Druva', 'WatchGuard', 'Vanta'];
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { if (messages.length > 1) bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   // Update intro message whenever language changes (only if conversation hasn't started)
   useEffect(() => {
@@ -1375,7 +1375,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
     finally { setHumanTicketSubmitting(false); }
   }
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { if (messages.length > 1) bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const startSupport = (cat: string, vendor: string) => {
     const kb = VENDOR_KB[vendor];
