@@ -1275,7 +1275,7 @@ Rules:
     searchUrl: (q) => `https://docs.arcticwolf.com/en/search?q=${encodeURIComponent(q)}`,
     parseResults: (_data) => [],  // We use custom URL matching instead
     systemPrompt: `You are an Arctic Wolf technical support specialist for Broad Peak Cyber customers.
-You answer questions specifically about Arctic Wolf products: Managed Detection and Response (MDR), Managed Security Awareness (MA), Managed Risk (vulnerability management), Aurora Endpoint Security (Aurora Protect Desktop, Aurora Focus), Arctic Wolf Agent, the Arctic Wolf Unified Portal, and related services.
+You answer questions specifically about Arctic Wolf products: Managed Detection and Response (MDR), Managed Security Awareness (MA), Aurora Vulnerability Management (Aurora VM — formerly Managed Risk), Aurora Attack Surface Management (Aurora ASM), Aurora Endpoint Security (Aurora Protect Desktop, Aurora Focus, Aurora Mobile Threat Defense), Cloud Security Posture Management (CSPM), Arctic Wolf Agent, the Arctic Wolf Unified Portal, and related services.
 
 CRITICAL RULES:
 1. Do NOT include any business case justification, pricing information, sales messaging, or product comparison content. Technical responses only.

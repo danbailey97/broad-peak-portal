@@ -122,10 +122,12 @@ const VENDOR_PRODUCTS: Record<string, { id: string; label: string; hint: string 
     { id: 'firewall', label: 'CloudGen Firewall', hint: 'Cloud-managed next-gen firewall' },
   ],
   'Arctic Wolf': [
-    { id: 'mdr', label: 'MDR / Managed Detection & Response', hint: '24/7 SOC monitoring & incident response' },
+    { id: 'mdr', label: 'Managed Detection & Response (MDR)', hint: '24/7 SOC monitoring & incident response' },
     { id: 'ma', label: 'Managed Security Awareness', hint: 'Phishing simulations & staff training' },
-    { id: 'risk', label: 'Managed Risk', hint: 'Vulnerability scanning & risk reporting' },
+    { id: 'aurora-vm', label: 'Aurora Vulnerability Management', hint: 'Vulnerability scanning & risk reporting' },
+    { id: 'aurora-asm', label: 'Aurora Attack Surface Management', hint: 'External attack surface discovery & monitoring' },
     { id: 'aurora', label: 'Aurora Endpoint Security', hint: 'Endpoint detection & prevention agent' },
+    { id: 'cspm', label: 'Cloud Security Posture Management (CSPM)', hint: 'Cloud configuration & compliance monitoring' },
   ],
   Keepit: [
     { id: 'm365', label: 'Microsoft 365 Backup', hint: 'Exchange, SharePoint, OneDrive, Teams' },
