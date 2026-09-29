@@ -98,7 +98,18 @@ def customer_block(c, prev):
           else '<span style="color:#b91c1c;font-weight:600">Still on temporary password</span>')
     last = dubai(c["allTime"]["lastSeen"]) if c["allTime"]["lastSeen"] else "Never"
 
+    users = c.get("users", [])
+    active = [u for u in users if u.get("lastLogin")]
+    users_html = "".join(
+        f'<div style="font-size:13px;color:#374151;margin:3px 0"><b>{e(u.get("name") or u["email"])}</b> '
+        f'<span style="color:#6b7280">{e(u["email"])}</span> · {u.get("logins",0)} sign-in(s) this week · '
+        f'{"password set" if u.get("passwordSet") else "temporary password"}'
+        f' · last seen {dubai(u["lastLogin"])}</div>' for u in active)
+    if users:
+        users_html += f'<div style="font-size:12px;color:#9ca3af;margin-top:4px">{len(active)} of {len(users)} registered contacts have signed in.</div>'
+
     body = "".join([
+        section("People using the portal", users_html),
         section("Areas used", areas_html),
         section("Technical support by vendor", vend_html),
         section("Technical support questions", items(ev, {"support_question"})),
