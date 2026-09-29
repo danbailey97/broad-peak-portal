@@ -1,3 +1,4 @@
+import { DEMO_EMAIL, DEMO_NAME, DEMO_PASSWORD, DEMO_DOMAIN, TEST_USERS, demoTickets, isDemo } from './demo';
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
@@ -252,13 +253,14 @@ router.post('/api/login', async (req, res) => {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Please enter your full work email address (e.g. name@company.com)' });
 
   // Only Contacts on the customer's Salesforce Account may sign in
-  const contact = db.prepare('SELECT * FROM portal_contacts WHERE email = ?').get(email) as any;
+  const demo = email === DEMO_EMAIL;
+  const contact = demo ? { domain: DEMO_DOMAIN, name: DEMO_NAME } : (db.prepare('SELECT * FROM portal_contacts WHERE email = ?').get(email) as any) || TEST_USERS[email] || null;
   if (!contact) return res.status(401).json({ error: 'This email address is not registered for portal access. Please contact your Broad Peak account manager.' });
 
-  const passwordOk = await verifyPassword(email, password);
+  const passwordOk = demo ? password === DEMO_PASSWORD : await verifyPassword(email, password);
   if (!passwordOk) return res.status(401).json({ error: 'Invalid email or password' });
 
-  if (isTotpEnabled(email)) {
+  if (!demo && isTotpEnabled(email)) {
     if (!totpCode) return res.status(202).json({ requires2FA: true });
     if (!verifyTotp(email, String(totpCode))) return res.status(401).json({ error: 'Invalid authenticator code' });
   }
@@ -269,7 +271,7 @@ router.post('/api/login', async (req, res) => {
     const token = `cust_${uuid()}`;
     const sessDomain = normDomain(customer.domain) || contact.domain;
     db.prepare('INSERT OR REPLACE INTO customer_sessions (token, domain, created_at, user_email) VALUES (?, ?, ?, ?)').run(token, sessDomain, new Date().toISOString(), email);
-    const mustChangePassword = !hasCustomPassword(email);
+    const mustChangePassword = demo ? false : !hasCustomPassword(email);
     logActivity(sessDomain, 'login', mustChangePassword ? 'temporary password' : '', email);
     res.json({ token, domain: customer.domain, accountName: customer.accountName, mustChangePassword, userEmail: email, userName: contact.name || email });
   } catch (err: any) {
@@ -318,6 +320,7 @@ router.post('/api/activity', (req: any, res: any) => {
 router.post('/api/auth/set-initial-password', async (req: any, res: any) => {
   const row = sessionRow(req);
   if (!row || !row.user_email) return res.status(401).json({ error: 'Session expired — please sign in again' });
+  if (row.user_email === DEMO_EMAIL) return res.status(403).json({ error: 'Password changes are disabled on the demo account' });
   const { newPassword } = req.body || {};
   if (!newPassword || newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
   if (newPassword === CUSTOMER_PASSWORD) return res.status(400).json({ error: 'Please choose a password different from the temporary one' });
@@ -345,6 +348,7 @@ router.post('/api/admin/seed-contacts', (req: any, res: any) => {
 // ── Admin: list portal users (Salesforce contacts + password/2FA/last login status) ──
 router.get('/api/admin/portal-users', requireAdmin, (req: any, res: any) => {
   const rows = db.prepare('SELECT email, name, domain, account_name, synced_at FROM portal_contacts ORDER BY account_name, name').all() as any[];
+  for (const [email, u] of Object.entries(TEST_USERS)) rows.push({ email, name: u.name, domain: u.domain, account_name: `${u.accountName} (test user)`, synced_at: null });
   const last = db.prepare("SELECT MAX(ts) t FROM activity_log WHERE user_email = ? AND event = 'login'");
   res.json(rows.map(r => ({ ...r, passwordSet: hasCustomPassword(r.email), twoFactor: isTotpEnabled(r.email), lastLogin: (last.get(r.email) as any)?.t || null })));
 });
@@ -352,7 +356,7 @@ router.get('/api/admin/portal-users', requireAdmin, (req: any, res: any) => {
 // ── Admin: reset a user's password back to the temporary one ──
 router.post('/api/admin/portal-users/reset-password', requireAdmin, (req: any, res: any) => {
   const email = String(req.body?.email || '').toLowerCase().trim();
-  const c = db.prepare('SELECT domain FROM portal_contacts WHERE email = ?').get(email) as any;
+  const c = (db.prepare('SELECT domain FROM portal_contacts WHERE email = ?').get(email) as any) || TEST_USERS[email];
   if (!c) return res.status(404).json({ error: 'User not found' });
   clearPassword(email);
   disableTotp(email);
@@ -1761,6 +1765,7 @@ router.post('/api/auth/reset-password', async (req, res) => {
 function requireUser(req: any, res: any): string | null {
   const email = sessionUser(req);
   if (!email) { res.status(401).json({ error: 'Session expired — please sign in again' }); return null; }
+  if (email === DEMO_EMAIL && req.method !== 'GET') { res.status(403).json({ error: 'Password and 2FA changes are disabled on the demo account' }); return null; }
   return email;
 }
 
@@ -1862,6 +1867,7 @@ const FD_PRIORITY: Record<number,string> = {1:'Low',2:'Medium',3:'High',4:'Urgen
 // GET /api/tickets?domain=gigglingsquid.com  — returns tickets whose requester email domain matches
 router.get('/api/tickets', requireAuth, async (req, res) => {
   const domain = (req.query.domain as string || '').toLowerCase().trim();
+  if (isDemo(domain) || isDemo(sessionUser(req))) return res.json({ ok: true, tickets: demoTickets() });
   if (!domain) return res.status(400).json({ ok: false, error: 'domain required' });
   try {
     // Fetch all tickets newest-first (up to 100; most portals will have far fewer per account)
@@ -1917,6 +1923,13 @@ router.get('/api/tickets', requireAuth, async (req, res) => {
 router.post('/api/tickets', requireAuth, async (req, res) => {
   const { subject, description, priority, type, domain, customerName, lang, notHappy, accountManagerEmail } = req.body;
   if (!subject || !description) return res.status(400).json({ ok: false, error: 'subject and description required' });
+  if (isDemo(sessionUser(req)) || isDemo(domain)) {
+    // Demo account: never create a real Freshdesk ticket
+    const now = new Date().toISOString();
+    const id = 900100 + Math.floor(Math.random() * 800);
+    return res.json({ ok: true, demo: true, ticketId: id, ticket: { id, subject, status: 'Open', statusCode: 2, priority: 'Medium', priorityCode: 2,
+      createdAt: now, updatedAt: now, requesterName: DEMO_NAME, requesterEmail: DEMO_EMAIL, type: type || 'Question', tags: ['demo'] } });
+  }
   try {
     const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
 

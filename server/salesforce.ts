@@ -1,3 +1,4 @@
+import { DEMO_DOMAIN, demoCustomer } from './demo';
 /**
  * salesforce.ts - Cache-first Salesforce data layer
  * 
@@ -55,6 +56,7 @@ export interface CustomerData {
 export async function getCustomerByDomain(emailDomain: string): Promise<CustomerData | null> {
   // Normalise: strip www., lowercase, handle full email addresses
   const domain = normaliseDomain(emailDomain);
+  if (domain === DEMO_DOMAIN) return demoCustomer() as any;
 
   // Try exact match first
   const row = db.prepare('SELECT data FROM sf_cache WHERE domain = ?').get(domain) as any;
