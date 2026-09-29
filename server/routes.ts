@@ -170,7 +170,7 @@ import { fetch as directFetch, Agent as DirectAgent } from 'undici';
 import nodemailer from 'nodemailer';
 import db from './db.js';
 import { getCustomerByDomain, getAllCustomers, upsertCustomerCache, getCacheStats } from './salesforce.js';
-import { verifyPassword, setPassword, generateResetToken, consumeResetToken, verifyTotp, enableTotp, disableTotp, getTotpQR, getTotpStatus, isTotpEnabled } from './auth.js';
+import { hasCustomPassword, verifyPassword, setPassword, generateResetToken, consumeResetToken, verifyTotp, enableTotp, disableTotp, getTotpQR, getTotpStatus, isTotpEnabled } from './auth.js';
 import { PRODUCTS, ALL_CATEGORIES, ALL_VENDORS, VENDOR_INFO, findRelevantProducts, getVendorsByCategory } from './vendors.js';
 
 const router = express.Router();
@@ -191,6 +191,53 @@ const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 // ── Auth constants ────────────────────────────────────────────
 const CUSTOMER_PASSWORD = process.env.CUSTOMER_PASSWORD || 'Setup187!!';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'BPAdmin2024!';
+
+// ── Activity tracking ─────────────────────────────────────────
+function normDomain(d: any): string | null {
+  if (!d) return null;
+  return String(d).replace(/^@/, '').toLowerCase().trim().replace(/^www\./, '') || null;
+}
+function sessionDomain(req: any): string | null {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  if (token.startsWith('cust_')) {
+    const row = db.prepare('SELECT domain FROM customer_sessions WHERE token = ?').get(token) as any;
+    if (row) return row.domain;
+    // Tokens issued before tracking existed: fall back to the domain in the request
+    return normDomain(req.body?.domain || req.query?.domain);
+  }
+  return null; // admin / anonymous calls are not customer activity
+}
+function logActivity(domain: string, event: string, detail: any = '') {
+  try {
+    db.prepare('INSERT INTO activity_log (domain, event, detail, ts) VALUES (?, ?, ?, ?)')
+      .run(domain, event, String(detail ?? '').slice(0, 400), new Date().toISOString());
+  } catch (e) { console.error('activity log error', e); }
+}
+const TRACKED: Record<string, (req: any) => [string, string] | null> = {
+  'POST /api/chat': r => ['ai_chat_question', r.body?.question],
+  'POST /api/support-chat': r => ['support_question', `${r.body?.vendor}${r.body?.product ? ' / ' + r.body.product : ''}: ${r.body?.question}`],
+  'POST /api/tickets': r => [
+    r.body?.notHappy ? 'feedback_not_happy' : String(r.body?.subject || '').startsWith('[Resolved]') ? 'feedback_happy' : 'ticket_raised',
+    r.body?.subject],
+  'POST /api/support-ticket': r => ['ticket_raised', r.body?.subject],
+  'POST /api/enquiry': r => ['enquiry_sent', r.body?.subject || r.body?.message || ''],
+  'POST /api/assessments': r => ['assessment_submitted', `${r.body?.type}${r.body?.score != null ? ' (score ' + r.body.score + ')' : ''}`],
+  'POST /api/generate-prompt': r => ['ai_prompt_generated', `${r.body?.vendor}: ${r.body?.question}`],
+  'POST /api/auth/change-password': () => ['password_changed', ''],
+  'POST /api/auth/2fa-enable': () => ['2fa_enabled', ''],
+};
+router.use((req: any, res: any, next: any) => {
+  const fn = TRACKED[`${req.method} ${req.path}`];
+  if (fn) {
+    res.on('finish', () => {
+      if (res.statusCode >= 400) return;
+      const d = sessionDomain(req);
+      const ev = fn(req);
+      if (d && ev) logActivity(d, ev[0], ev[1]);
+    });
+  }
+  next();
+});
 
 // ── Customer login ────────────────────────────────────────────
 router.post('/api/login', async (req, res) => {
@@ -216,10 +263,15 @@ router.post('/api/login', async (req, res) => {
     if (!customer) return res.status(401).json({ error: 'No account found for this domain. Please contact your Broad Peak account manager.' });
 
     const token = `cust_${uuid()}`;
+    const sessDomain = normDomain(customer.domain) || cleanDomain;
+    db.prepare('INSERT OR REPLACE INTO customer_sessions (token, domain, created_at) VALUES (?, ?, ?)').run(token, sessDomain, new Date().toISOString());
+    const mustChangePassword = !hasCustomPassword(domain.toLowerCase().trim());
+    logActivity(sessDomain, 'login', mustChangePassword ? 'default password' : '');
     res.json({
       token,
       domain: customer.domain,
       accountName: customer.accountName,
+      mustChangePassword,
     });
   } catch (err: any) {
     console.error('Login error:', err);
@@ -251,6 +303,68 @@ function requireAdmin(req: any, res: any, next: any) {
   if (!row) return res.status(401).json({ error: 'Unauthorised' });
   next();
 }
+
+// ── Client-side activity events (tab views, resource opens, contact clicks) ──
+const CLIENT_EVENTS = new Set(['tab_view', 'support_vendor_open', 'support_product_selected', 'datasheet_open', 'vendor_library_open', 'newsletter_open', 'csm_contact', 'account_manager_contact', 'password_prompt_skipped', 'category_open']);
+router.post('/api/activity', (req: any, res: any) => {
+  const d = sessionDomain(req);
+  const { event, detail } = req.body || {};
+  if (!d) return res.status(401).json({ ok: false });
+  if (!CLIENT_EVENTS.has(event)) return res.status(400).json({ ok: false, error: 'Unknown event' });
+  logActivity(d, event, detail);
+  res.json({ ok: true });
+});
+
+// ── First-login password set (session must belong to a domain still on the default password) ──
+router.post('/api/auth/set-initial-password', async (req: any, res: any) => {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  const row = token.startsWith('cust_') ? db.prepare('SELECT domain FROM customer_sessions WHERE token = ?').get(token) as any : null;
+  if (!row) return res.status(401).json({ error: 'Session expired — please sign in again' });
+  const { newPassword, loginDomain } = req.body || {};
+  const key = String(loginDomain || row.domain).toLowerCase().trim();
+  if (normDomain(key) !== row.domain) return res.status(403).json({ error: 'Domain mismatch' });
+  if (!newPassword || newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  if (newPassword === CUSTOMER_PASSWORD) return res.status(400).json({ error: 'Please choose a password different from the temporary one' });
+  if (hasCustomPassword(key)) return res.status(409).json({ error: 'Password already set — use Security Settings to change it' });
+  await setPassword(key, newPassword);
+  logActivity(row.domain, 'password_changed', 'first login');
+  res.json({ ok: true });
+});
+
+// ── Admin: activity report (used by the weekly report job) ──
+router.get('/api/admin/activity', (req: any, res: any) => {
+  if ((req.headers['x-seed-secret'] || '') !== SEED_SECRET) return res.status(401).json({ error: 'Unauthorised' });
+  const domains = String(req.query.domains || '').split(',').map(normDomain).filter(Boolean) as string[];
+  const since = String(req.query.since || new Date(Date.now() - 7 * 864e5).toISOString());
+  const until = String(req.query.until || new Date().toISOString());
+  const out: any = { since, until, customers: [] };
+  for (const d of domains) {
+    const rows = db.prepare('SELECT event, detail, ts FROM activity_log WHERE domain = ? AND ts >= ? AND ts < ? ORDER BY ts ASC').all(d, since, until) as any[];
+    const allTime = db.prepare('SELECT COUNT(*) c, MIN(ts) first, MAX(ts) last FROM activity_log WHERE domain = ?').get(d) as any;
+    const counts: Record<string, number> = {};
+    const tabs: Record<string, number> = {};
+    const vendors: Record<string, number> = {};
+    const days = new Set<string>();
+    for (const r of rows) {
+      counts[r.event] = (counts[r.event] || 0) + 1;
+      days.add(r.ts.slice(0, 10));
+      if (r.event === 'tab_view') tabs[r.detail] = (tabs[r.detail] || 0) + 1;
+      if (r.event === 'support_question' || r.event === 'support_vendor_open') {
+        const v = String(r.detail || '').split(/[:/]/)[0].trim();
+        if (v) vendors[v] = (vendors[v] || 0) + 1;
+      }
+    }
+    out.customers.push({
+      domain: d,
+      passwordChanged: hasCustomPassword(d),
+      totals: { events: rows.length, logins: counts.login || 0, activeDays: days.size },
+      counts, tabs, vendors,
+      allTime: { events: allTime.c, firstSeen: allTime.first, lastSeen: allTime.last },
+      events: rows.slice(-300),
+    });
+  }
+  res.json(out);
+});
 
 // ── Admin: seed Salesforce cache ──────────────────────────────
 const SEED_SECRET = process.env.SEED_SECRET || 'bpseed2026';

@@ -96,7 +96,7 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
     const attemptLogin = async (retriesLeft: number): Promise<void> => {
       try {
         const data = await login(domain.replace(/^@/, ''), password);
-        onLogin(data);
+        onLogin({ ...data, loginDomain: domain.replace(/^@/, '').toLowerCase().trim() });
       } catch (err: any) {
         const msg = err.message || '';
         if (msg.includes('requires2FA')) {
@@ -129,7 +129,7 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
     setLoading(true);
     try {
       const data = await login(pendingDomain, password, totpCode);
-      onLogin(data);
+      onLogin({ ...data, loginDomain: pendingDomain });
     } catch (err: any) {
       setError(err.message || 'Invalid code');
     } finally {

@@ -47,6 +47,11 @@ export async function verifyPassword(domain: string, password: string): Promise<
   return bcrypt.compare(password, row.password_hash);
 }
 
+export function hasCustomPassword(domain: string): boolean {
+  const row = getAuthRow(domain);
+  return !!(row && row.password_hash);
+}
+
 // ── Password change ───────────────────────────────────────────────────────────
 export async function setPassword(domain: string, newPassword: string): Promise<void> {
   const hash = await bcrypt.hash(newPassword, 12);

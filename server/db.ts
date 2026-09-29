@@ -84,6 +84,23 @@ db.exec(`
   );
 `);
 
+// Customer sessions (token -> domain) and portal activity log
+db.exec(`
+  CREATE TABLE IF NOT EXISTS customer_sessions (
+    token TEXT PRIMARY KEY,
+    domain TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS activity_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain TEXT NOT NULL,
+    event TEXT NOT NULL,
+    detail TEXT,
+    ts TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_activity_domain_ts ON activity_log(domain, ts);
+`);
+
 // Safe migrations for columns added after initial deployment
 try { db.exec('ALTER TABLE account_managers ADD COLUMN welcome_video_path TEXT'); } catch { /* already exists */ }
 

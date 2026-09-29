@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { apiFetch, getToken } from '../lib/api';
+import { apiFetch, getToken, track } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { LogOut, Shield, Database, Network, Globe, Eye, Search, BookOpen, Clipboard, Star, AlertTriangle, ChevronRight, X, Send, Loader2, ExternalLink, Phone, Mail, Calendar, FileText, Lock, Wifi, Cpu, GraduationCap, ShieldAlert, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, CheckCircle, UserRound, Ticket, Plus, Video, Settings } from 'lucide-react';
 import SecuritySettings from './SecuritySettings';
@@ -816,7 +816,7 @@ function NewsTab({ domain }: { domain: string }) {
         {newsletters?.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {newsletters.map((n: any) => (
-              <a key={n.id} href={`/uploads/${n.filename}`} target="_blank" rel="noopener noreferrer"
+              <a key={n.id} href={`/uploads/${n.filename}`} onClick={() => track('newsletter_open', n.title)} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-4 p-4 bg-white border border-[#e5e7eb] hover:border-[#C65793] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all group">
                 <div className="w-10 h-10 rounded-xl gradient-cta flex items-center justify-center flex-shrink-0">
                   <FileText className="w-5 h-5 text-white" />
@@ -852,7 +852,7 @@ function NewsTab({ domain }: { domain: string }) {
           {[...VENDOR_NEWS].sort((a, b) => a.vendor.localeCompare(b.vendor)).map(v => {
             const meta = VENDOR_LOGOS[v.vendor] || { logo: '', bg: '#4494D1', taglineKey: 'tagline_barracuda' };
             return (
-              <a key={v.vendor} href={v.url} target="_blank" rel="noopener noreferrer"
+              <a key={v.vendor} href={v.url} onClick={() => track('vendor_library_open', v.vendor)} target="_blank" rel="noopener noreferrer"
                 className="flex flex-col bg-white border border-[#e5e7eb] hover:border-[#4494D1] rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(68,148,209,0.15)] transition-all group overflow-hidden">
                 {/* Coloured header with logo */}
                 <div className="flex items-center justify-center h-20 px-4" style={{ background: meta.bg + '18', borderBottom: '1px solid ' + meta.bg + '22' }}>
@@ -1000,7 +1000,7 @@ function ResourcesTab({ domain }: { domain: string }) {
                     <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${VENDOR_COLORS[vendor] || 'text-[#6b7280]'}`}>{cat}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {sheets.map(s => (
-                        <a key={s.product} href={s.url} target="_blank" rel="noopener noreferrer"
+                        <a key={s.product} href={s.url} onClick={() => track('datasheet_open', `${vendor}: ${s.product}`)} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-3 p-3 bg-[#fafafa] hover:bg-white border border-[#e5e7eb] hover:border-[#4494D1] rounded-xl transition-all group">
                           <FileText className="w-4 h-4 text-[#9ca3af] group-hover:text-[#4494D1] flex-shrink-0" />
                           <span className="text-sm text-[#1f2937] leading-snug">{s.product}</span>
@@ -1381,6 +1381,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
   useEffect(() => { if (messages.length > 1) bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const startSupport = (cat: string, vendor: string) => {
+    track('support_vendor_open', `${vendor} (${cat})`);
     const kb = VENDOR_KB[vendor];
     setSelectedCat(cat);
     setSelectedVendor(vendor);
@@ -1780,7 +1781,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
               {VENDOR_PRODUCTS[selectedVendor!].map(p => (
                 <button
                   key={p.id}
-                  onClick={() => setSelectedProduct(p.label)}
+                  onClick={() => { setSelectedProduct(p.label); track('support_product_selected', `${selectedVendor}: ${p.label}`); }}
                   title={p.hint}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
                     selectedProduct === p.label
@@ -2079,12 +2080,79 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
 }
 
 // ─── MAIN DASHBOARD ─────────────────────────────────────────────────────────
-export default function Dashboard({ domain, onLogout }: { domain: string; onLogout: () => void }) {
+
+function FirstLoginPasswordModal({ loginDomain, onDone }: { loginDomain: string; onDone: () => void }) {
+  const { isAr, dir } = useLang() as any;
+  const [pwd, setPwd] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [err, setErr] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setErr('');
+    if (pwd.length < 8) return setErr(isAr ? 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل' : 'Password must be at least 8 characters');
+    if (pwd !== confirm) return setErr(isAr ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match');
+    setSaving(true);
+    try {
+      const r = await apiFetch('/api/auth/set-initial-password', { method: 'POST', body: JSON.stringify({ newPassword: pwd, loginDomain }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) setErr(d.error || 'Could not save password');
+      else setSaved(true);
+    } catch { setErr('Could not save password'); }
+    setSaving(false);
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" dir={dir} data-testid="modal-first-login-password">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="gradient-cta px-6 py-5">
+          <div className="flex items-center gap-2 text-white">
+            <Lock className="w-5 h-5" />
+            <h2 className="text-lg font-bold">{isAr ? 'مرحباً بك في بوابة Broad Peak' : 'Welcome to the Broad Peak Portal'}</h2>
+          </div>
+          <p className="text-white/85 text-sm mt-1">
+            {isAr ? 'لحماية حسابك، يرجى تعيين كلمة مرور خاصة بمؤسستك بدلاً من كلمة المرور المؤقتة.' : 'To keep your account secure, please replace the temporary password with your own.'}
+          </p>
+        </div>
+        {saved ? (
+          <div className="p-6 flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-[#166534] font-semibold"><CheckCircle2 className="w-5 h-5" /> {isAr ? 'تم تحديث كلمة المرور' : 'Password updated'}</div>
+            <p className="text-sm text-[#4b5563]">
+              {isAr ? 'استخدم كلمة المرور الجديدة في المرة القادمة. ملاحظة: كلمة المرور مشتركة لجميع المستخدمين من نطاق مؤسستك، لذا شاركها مع زملائك بأمان.' : 'Use your new password next time you sign in. Note: the password is shared by everyone signing in with your organisation\'s email domain, so share it securely with colleagues who need access.'}
+            </p>
+            <button onClick={onDone} data-testid="button-password-done" className="gradient-cta text-white font-semibold rounded-xl py-2.5">{isAr ? 'متابعة إلى البوابة' : 'Continue to portal'}</button>
+          </div>
+        ) : (
+          <form onSubmit={save} className="p-6 flex flex-col gap-3">
+            <label className="text-xs font-semibold text-[#374151]">{isAr ? 'كلمة المرور الجديدة' : 'New password'}</label>
+            <input type="password" dir="ltr" value={pwd} onChange={e => setPwd(e.target.value)} data-testid="input-new-password"
+              className="border border-[#e5e7eb] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#C65793]" placeholder={isAr ? '8 أحرف على الأقل' : 'At least 8 characters'} />
+            <label className="text-xs font-semibold text-[#374151]">{isAr ? 'تأكيد كلمة المرور' : 'Confirm password'}</label>
+            <input type="password" dir="ltr" value={confirm} onChange={e => setConfirm(e.target.value)} data-testid="input-confirm-password"
+              className="border border-[#e5e7eb] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#C65793]" />
+            {err && <p className="text-xs text-[#b91c1c]" data-testid="text-password-error">{err}</p>}
+            <button type="submit" disabled={saving} data-testid="button-save-password"
+              className="gradient-cta text-white font-semibold rounded-xl py-2.5 mt-1 disabled:opacity-60">
+              {saving ? (isAr ? 'جارٍ الحفظ…' : 'Saving…') : (isAr ? 'حفظ كلمة المرور' : 'Set my password')}
+            </button>
+            <button type="button" onClick={() => { track('password_prompt_skipped'); onDone(); }} data-testid="button-password-later"
+              className="text-xs text-[#6b7280] hover:text-[#1f2937]">
+              {isAr ? 'تذكيري لاحقاً' : 'Remind me next time'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard({ domain, onLogout, mustChangePassword, loginDomain }: { domain: string; onLogout: () => void; mustChangePassword?: boolean; loginDomain?: string }) {
   const { t, dir, isAr } = useLang();
   const [activeTab, setActiveTab] = useState<'products' | 'support' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
   const [selectedCategory, setSelectedCategory] = useState<CategoryEntry | null>(null);
   const [highlightedCategories, setHighlightedCategories] = useState<string[]>([]);
   const [showSecurity, setShowSecurity] = useState(false);
+  const [showPwdPrompt, setShowPwdPrompt] = useState(!!mustChangePassword);
   const [latestRiskScore, setLatestRiskScore] = useState<{ score: number; label: string; submitted_at: string } | null>(null);
 
   // Load latest risk score for this domain
@@ -2106,6 +2174,8 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
     queryFn: () => apiFetch(`/api/customer/${domain}`).then(r => r.json()),
   });
 
+  useEffect(() => { track('tab_view', activeTab); }, [activeTab]);
+
   const tabs = [
     { id: 'products' as const, label: t('myProducts') },
     { id: 'support' as const, label: t('technicalSupport') },
@@ -2119,6 +2189,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
     <div className="min-h-screen flex flex-col bg-[#f0f2f5]" dir={dir}
       style={{ fontFamily: isAr ? "'Cairo', sans-serif" : undefined }}>
       {showSecurity && <SecuritySettings domain={domain} onClose={() => setShowSecurity(false)} />}
+      {showPwdPrompt && <FirstLoginPasswordModal loginDomain={loginDomain || domain} onDone={() => setShowPwdPrompt(false)} />}
       {/* Header */}
       <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
@@ -2188,7 +2259,7 @@ export default function Dashboard({ domain, onLogout }: { domain: string; onLogo
                     <div className="grid grid-cols-3 gap-2 sm:gap-3">
                       {ALL_CATEGORIES.map(cat => {
                         const entry = customer.grid.find(g => g.category === cat) || { category: cat, status: 'not_owned' as const, products: [], expiresAt: null, startedAt: null };
-                        return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); }} highlighted={highlightedCategories.includes(cat)} />;
+                        return <CategoryCard key={cat} entry={entry} onClick={() => { setSelectedCategory(entry); setHighlightedCategories([]); track('category_open', cat); }} highlighted={highlightedCategories.includes(cat)} />;
                       })}
                     </div>
                   </div>

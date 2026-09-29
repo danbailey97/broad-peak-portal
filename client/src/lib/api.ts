@@ -38,3 +38,9 @@ export async function adminLogin(password: string) {
   if (!res.ok) throw new Error((await res.json()).error);
   return res.json();
 }
+
+// Fire-and-forget portal activity event (tab views, resource opens etc.)
+export function track(event: string, detail: string = '') {
+  if (!getToken()) return;
+  apiFetch('/api/activity', { method: 'POST', body: JSON.stringify({ event, detail }) }).catch(() => {});
+}
