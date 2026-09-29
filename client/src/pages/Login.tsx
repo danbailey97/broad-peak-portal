@@ -96,7 +96,7 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
     const attemptLogin = async (retriesLeft: number): Promise<void> => {
       try {
         const data = await login(domain.replace(/^@/, ''), password);
-        onLogin({ ...data, loginDomain: domain.replace(/^@/, '').toLowerCase().trim() });
+        onLogin(data);
       } catch (err: any) {
         const msg = err.message || '';
         if (msg.includes('requires2FA')) {
@@ -129,7 +129,7 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
     setLoading(true);
     try {
       const data = await login(pendingDomain, password, totpCode);
-      onLogin({ ...data, loginDomain: pendingDomain });
+      onLogin(data);
     } catch (err: any) {
       setError(err.message || 'Invalid code');
     } finally {
@@ -145,7 +145,7 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
     try {
       await apiFetch('/api/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ domain: forgotDomain.replace(/^@/, '') }),
+        body: JSON.stringify({ email: forgotDomain.trim().toLowerCase() }),
       });
       setForgotSent(true);
     } catch {
@@ -219,7 +219,7 @@ export default function LoginPage({ onLogin, onAdmin }: { onLogin: (s: any) => v
         {view === 'login' && (
           <Card dir={dir}>
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
-              <InputField label={t('emailDomain')} value={domain} onChange={setDomain}
+              <InputField type="email" label={t('emailDomain')} value={domain} onChange={setDomain}
                 placeholder={t('emailDomainPlaceholder')} hint={t('emailDomainHint')} />
               <div>
                 <div className="flex items-center justify-between mb-1.5">

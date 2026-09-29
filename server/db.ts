@@ -99,7 +99,21 @@ db.exec(`
     ts TEXT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_activity_domain_ts ON activity_log(domain, ts);
+
+  -- People allowed to sign in: Contacts on the customer's Salesforce Account
+  CREATE TABLE IF NOT EXISTS portal_contacts (
+    email TEXT PRIMARY KEY,
+    name TEXT,
+    domain TEXT NOT NULL,
+    account_name TEXT,
+    sf_contact_id TEXT,
+    sf_account_id TEXT,
+    synced_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_portal_contacts_domain ON portal_contacts(domain);
 `);
+try { db.exec('ALTER TABLE customer_sessions ADD COLUMN user_email TEXT'); } catch { /* exists */ }
+try { db.exec('ALTER TABLE activity_log ADD COLUMN user_email TEXT'); } catch { /* exists */ }
 
 // Safe migrations for columns added after initial deployment
 try { db.exec('ALTER TABLE account_managers ADD COLUMN welcome_video_path TEXT'); } catch { /* already exists */ }

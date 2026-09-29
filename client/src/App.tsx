@@ -7,15 +7,15 @@ import { LanguageProvider } from './lib/LanguageContext';
 
 export default function App() {
   const [page, setPage] = useState<'login' | 'dashboard' | 'admin'>('login');
-  const [session, setSession] = useState<{ domain: string; accountName: string; mustChangePassword?: boolean; loginDomain?: string } | null>(null);
+  const [session, setSession] = useState<{ domain: string; accountName: string; mustChangePassword?: boolean; userEmail?: string; userName?: string } | null>(null);
 
   useEffect(() => {
     if (window.location.hash === '#admin') setPage('admin');
   }, []);
 
-  function handleLogin(s: { domain: string; accountName: string; token: string; mustChangePassword?: boolean; loginDomain?: string }) {
+  function handleLogin(s: { domain: string; accountName: string; token: string; mustChangePassword?: boolean; userEmail?: string; userName?: string }) {
     setToken(s.token);
-    setSession({ domain: s.domain, accountName: s.accountName, mustChangePassword: s.mustChangePassword, loginDomain: s.loginDomain || s.domain });
+    setSession({ domain: s.domain, accountName: s.accountName, mustChangePassword: s.mustChangePassword, userEmail: s.userEmail, userName: s.userName });
     setPage('dashboard');
   }
 
@@ -34,7 +34,7 @@ export default function App() {
   return (
     <LanguageProvider>
       {page === 'admin' && <AdminPage onLogout={handleLogout} />}
-      {page === 'dashboard' && session && <Dashboard domain={session.domain} mustChangePassword={!!session.mustChangePassword} loginDomain={session.loginDomain || session.domain} onLogout={handleLogout} />}
+      {page === 'dashboard' && session && <Dashboard domain={session.domain} mustChangePassword={!!session.mustChangePassword} userEmail={session.userEmail || ''} userName={session.userName || ''} onLogout={handleLogout} />}
       {page === 'login' && <LoginPage onLogin={handleLogin} onAdmin={() => { window.location.hash = '#admin'; setPage('admin'); }} />}
     </LanguageProvider>
   );

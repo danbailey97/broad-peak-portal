@@ -24,6 +24,57 @@ function Section({ title, icon: Icon, children, defaultOpen = true }: { title: s
   );
 }
 
+function PortalUsers() {
+  const qc = useQueryClient();
+  const [q, setQ] = useState('');
+  const [msg, setMsg] = useState('');
+  const { data: users = [], isLoading } = useQuery<any[]>({
+    queryKey: ['/api/admin/portal-users'],
+    queryFn: () => apiFetch('/api/admin/portal-users').then(r => r.json()),
+  });
+  async function reset(email: string, name: string) {
+    if (!confirm(`Reset the password for ${name || email}? They will sign in with the temporary password and be asked to set a new one. Their 2FA will also be turned off.`)) return;
+    const r = await apiFetch('/api/admin/portal-users/reset-password', { method: 'POST', body: JSON.stringify({ email }) });
+    setMsg(r.ok ? `Password reset for ${email}. Let them know to sign in with the temporary password.` : 'Reset failed');
+    qc.invalidateQueries({ queryKey: ['/api/admin/portal-users'] });
+  }
+  const list = users.filter(u => !q || `${u.name} ${u.email} ${u.account_name}`.toLowerCase().includes(q.toLowerCase()));
+  const fmt = (t: string | null) => t ? new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+  return (
+    <div className="pt-4 flex flex-col gap-3">
+      <p className="text-xs text-[#6b7280]">Only Contacts with an email on the customer's Salesforce Account can sign in. The list syncs from Salesforce with the daily refresh. {users[0]?.synced_at ? `Last sync: ${fmt(users[0].synced_at)}.` : ''}</p>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, email or account" data-testid="input-user-search"
+        className="border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm" />
+      {msg && <p className="text-xs text-[#166534]" data-testid="text-reset-msg">{msg}</p>}
+      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-xs text-[#6b7280] border-b border-[#e5e7eb]">
+              <th className="py-2 pr-3">Name</th><th className="py-2 pr-3">Email</th><th className="py-2 pr-3">Account</th>
+              <th className="py-2 pr-3">Password</th><th className="py-2 pr-3">2FA</th><th className="py-2 pr-3">Last login</th><th className="py-2"></th></tr></thead>
+            <tbody>
+              {list.map(u => (
+                <tr key={u.email} className="border-b border-[#f3f4f6]" data-testid={`row-user-${u.email}`}>
+                  <td className="py-2 pr-3 font-medium">{u.name}</td>
+                  <td className="py-2 pr-3 text-[#4b5563]">{u.email}</td>
+                  <td className="py-2 pr-3 text-[#4b5563]">{u.account_name}</td>
+                  <td className="py-2 pr-3">{u.passwordSet ? <span className="text-[#166534]">Set</span> : <span className="text-[#9ca3af]">Temporary</span>}</td>
+                  <td className="py-2 pr-3">{u.twoFactor ? 'On' : '—'}</td>
+                  <td className="py-2 pr-3 text-[#4b5563]">{fmt(u.lastLogin)}</td>
+                  <td className="py-2 text-right">{u.passwordSet && (
+                    <button onClick={() => reset(u.email, u.name)} data-testid={`button-reset-${u.email}`}
+                      className="text-xs font-medium text-[#C65793] hover:underline">Reset password</button>)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {list.length === 0 && <p className="text-xs text-[#9ca3af] py-3">No users found.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Admin({ onLogout }: { onLogout: () => void }) {
   const qc = useQueryClient();
 
@@ -136,6 +187,10 @@ export default function Admin({ onLogout }: { onLogout: () => void }) {
         </div>
 
         {/* Account Manager Profiles */}
+        <Section title="Portal Users" icon={Shield} defaultOpen={false}>
+          <PortalUsers />
+        </Section>
+
         <Section title="Account Manager Profiles" icon={Users}>
           <div className="space-y-4 mt-4">
             {/* Existing AMs */}

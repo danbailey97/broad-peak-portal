@@ -47,6 +47,11 @@ export async function verifyPassword(domain: string, password: string): Promise<
   return bcrypt.compare(password, row.password_hash);
 }
 
+// Admin: clear a user's password so they sign in with the temporary one and are prompted to set a new one
+export function clearPassword(key: string): void {
+  db.prepare("UPDATE customer_auth SET password_hash = NULL, reset_token = NULL, reset_expires = NULL, updated_at = datetime('now') WHERE domain = ?").run(key);
+}
+
 export function hasCustomPassword(domain: string): boolean {
   const row = getAuthRow(domain);
   return !!(row && row.password_hash);

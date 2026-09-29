@@ -170,7 +170,7 @@ import { fetch as directFetch, Agent as DirectAgent } from 'undici';
 import nodemailer from 'nodemailer';
 import db from './db.js';
 import { getCustomerByDomain, getAllCustomers, upsertCustomerCache, getCacheStats } from './salesforce.js';
-import { hasCustomPassword, verifyPassword, setPassword, generateResetToken, consumeResetToken, verifyTotp, enableTotp, disableTotp, getTotpQR, getTotpStatus, isTotpEnabled } from './auth.js';
+import { clearPassword, hasCustomPassword, verifyPassword, setPassword, generateResetToken, consumeResetToken, verifyTotp, enableTotp, disableTotp, getTotpQR, getTotpStatus, isTotpEnabled } from './auth.js';
 import { PRODUCTS, ALL_CATEGORIES, ALL_VENDORS, VENDOR_INFO, findRelevantProducts, getVendorsByCategory } from './vendors.js';
 
 const router = express.Router();
@@ -197,20 +197,25 @@ function normDomain(d: any): string | null {
   if (!d) return null;
   return String(d).replace(/^@/, '').toLowerCase().trim().replace(/^www\./, '') || null;
 }
-function sessionDomain(req: any): string | null {
+function sessionRow(req: any): { domain: string; user_email: string | null } | null {
   const token = String(req.headers.authorization || '').replace('Bearer ', '');
-  if (token.startsWith('cust_')) {
-    const row = db.prepare('SELECT domain FROM customer_sessions WHERE token = ?').get(token) as any;
-    if (row) return row.domain;
-    // Tokens issued before tracking existed: fall back to the domain in the request
-    return normDomain(req.body?.domain || req.query?.domain);
-  }
-  return null; // admin / anonymous calls are not customer activity
+  if (!token.startsWith('cust_')) return null;
+  return (db.prepare('SELECT domain, user_email FROM customer_sessions WHERE token = ?').get(token) as any) || null;
 }
-function logActivity(domain: string, event: string, detail: any = '') {
+function sessionDomain(req: any): string | null {
+  const row = sessionRow(req);
+  if (row) return row.domain;
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  // Tokens issued before tracking existed: fall back to the domain in the request
+  return token.startsWith('cust_') ? normDomain(req.body?.domain || req.query?.domain) : null;
+}
+function sessionUser(req: any): string | null {
+  return sessionRow(req)?.user_email || null;
+}
+function logActivity(domain: string, event: string, detail: any = '', userEmail: string | null = null) {
   try {
-    db.prepare('INSERT INTO activity_log (domain, event, detail, ts) VALUES (?, ?, ?, ?)')
-      .run(domain, event, String(detail ?? '').slice(0, 400), new Date().toISOString());
+    db.prepare('INSERT INTO activity_log (domain, event, detail, ts, user_email) VALUES (?, ?, ?, ?, ?)')
+      .run(domain, event, String(detail ?? '').slice(0, 400), new Date().toISOString(), userEmail);
   } catch (e) { console.error('activity log error', e); }
 }
 const TRACKED: Record<string, (req: any) => [string, string] | null> = {
@@ -233,7 +238,7 @@ router.use((req: any, res: any, next: any) => {
       if (res.statusCode >= 400) return;
       const d = sessionDomain(req);
       const ev = fn(req);
-      if (d && ev) logActivity(d, ev[0], ev[1]);
+      if (d && ev) logActivity(d, ev[0], ev[1], sessionUser(req));
     });
   }
   next();
@@ -241,38 +246,32 @@ router.use((req: any, res: any, next: any) => {
 
 // ── Customer login ────────────────────────────────────────────
 router.post('/api/login', async (req, res) => {
-  const { domain, password, totpCode } = req.body;
-  if (!domain || !password) return res.status(400).json({ error: 'Missing domain or password' });
-  const passwordOk = await verifyPassword(domain.toLowerCase().trim(), password);
-  if (!passwordOk) return res.status(401).json({ error: 'Invalid credentials' });
+  const { password, totpCode } = req.body;
+  const email = String(req.body.email || req.body.domain || '').replace(/^@/, '').toLowerCase().trim();
+  if (!email || !password) return res.status(400).json({ error: 'Please enter your work email address and password' });
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Please enter your full work email address (e.g. name@company.com)' });
 
-  // If 2FA is enabled for this domain, check TOTP before issuing token
-  const cleanDomainForTotp = domain.toLowerCase().trim().replace(/^www\./, '');
-  if (isTotpEnabled(cleanDomainForTotp)) {
+  // Only Contacts on the customer's Salesforce Account may sign in
+  const contact = db.prepare('SELECT * FROM portal_contacts WHERE email = ?').get(email) as any;
+  if (!contact) return res.status(401).json({ error: 'This email address is not registered for portal access. Please contact your Broad Peak account manager.' });
+
+  const passwordOk = await verifyPassword(email, password);
+  if (!passwordOk) return res.status(401).json({ error: 'Invalid email or password' });
+
+  if (isTotpEnabled(email)) {
     if (!totpCode) return res.status(202).json({ requires2FA: true });
-    if (!verifyTotp(cleanDomainForTotp, String(totpCode))) {
-      return res.status(401).json({ error: 'Invalid authenticator code' });
-    }
+    if (!verifyTotp(email, String(totpCode))) return res.status(401).json({ error: 'Invalid authenticator code' });
   }
 
-  // Strip any @ prefix
-  const cleanDomain = domain.replace(/^@/, '').toLowerCase().trim();
-
   try {
-    const customer = await getCustomerByDomain(cleanDomain);
-    if (!customer) return res.status(401).json({ error: 'No account found for this domain. Please contact your Broad Peak account manager.' });
-
+    const customer = await getCustomerByDomain(contact.domain);
+    if (!customer) return res.status(401).json({ error: 'No account found for your organisation. Please contact your Broad Peak account manager.' });
     const token = `cust_${uuid()}`;
-    const sessDomain = normDomain(customer.domain) || cleanDomain;
-    db.prepare('INSERT OR REPLACE INTO customer_sessions (token, domain, created_at) VALUES (?, ?, ?)').run(token, sessDomain, new Date().toISOString());
-    const mustChangePassword = !hasCustomPassword(domain.toLowerCase().trim());
-    logActivity(sessDomain, 'login', mustChangePassword ? 'default password' : '');
-    res.json({
-      token,
-      domain: customer.domain,
-      accountName: customer.accountName,
-      mustChangePassword,
-    });
+    const sessDomain = normDomain(customer.domain) || contact.domain;
+    db.prepare('INSERT OR REPLACE INTO customer_sessions (token, domain, created_at, user_email) VALUES (?, ?, ?, ?)').run(token, sessDomain, new Date().toISOString(), email);
+    const mustChangePassword = !hasCustomPassword(email);
+    logActivity(sessDomain, 'login', mustChangePassword ? 'temporary password' : '', email);
+    res.json({ token, domain: customer.domain, accountName: customer.accountName, mustChangePassword, userEmail: email, userName: contact.name || email });
   } catch (err: any) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Authentication error' });
@@ -317,17 +316,47 @@ router.post('/api/activity', (req: any, res: any) => {
 
 // ── First-login password set (session must belong to a domain still on the default password) ──
 router.post('/api/auth/set-initial-password', async (req: any, res: any) => {
-  const token = String(req.headers.authorization || '').replace('Bearer ', '');
-  const row = token.startsWith('cust_') ? db.prepare('SELECT domain FROM customer_sessions WHERE token = ?').get(token) as any : null;
-  if (!row) return res.status(401).json({ error: 'Session expired — please sign in again' });
-  const { newPassword, loginDomain } = req.body || {};
-  const key = String(loginDomain || row.domain).toLowerCase().trim();
-  if (normDomain(key) !== row.domain) return res.status(403).json({ error: 'Domain mismatch' });
+  const row = sessionRow(req);
+  if (!row || !row.user_email) return res.status(401).json({ error: 'Session expired — please sign in again' });
+  const { newPassword } = req.body || {};
   if (!newPassword || newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
   if (newPassword === CUSTOMER_PASSWORD) return res.status(400).json({ error: 'Please choose a password different from the temporary one' });
-  if (hasCustomPassword(key)) return res.status(409).json({ error: 'Password already set — use Security Settings to change it' });
-  await setPassword(key, newPassword);
-  logActivity(row.domain, 'password_changed', 'first login');
+  if (hasCustomPassword(row.user_email)) return res.status(409).json({ error: 'Password already set — use Security Settings to change it' });
+  await setPassword(row.user_email, newPassword);
+  logActivity(row.domain, 'password_changed', 'first login', row.user_email);
+  res.json({ ok: true });
+});
+
+// ── Admin: sync allowed users from Salesforce Contacts (replaces the list) ──
+router.post('/api/admin/seed-contacts', (req: any, res: any) => {
+  if ((req.headers['x-seed-secret'] || '') !== SEED_SECRET) return res.status(401).json({ error: 'Unauthorised' });
+  const contacts = Array.isArray(req.body?.contacts) ? req.body.contacts : [];
+  const valid = contacts.filter((c: any) => c && /@/.test(String(c.email || '')) && c.domain);
+  if (valid.length === 0) return res.status(400).json({ error: 'No valid contacts — refusing to clear the allow-list' });
+  const now = new Date().toISOString();
+  const ins = db.prepare('INSERT OR REPLACE INTO portal_contacts (email, name, domain, account_name, sf_contact_id, sf_account_id, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  db.transaction(() => {
+    db.prepare('DELETE FROM portal_contacts').run();
+    for (const c of valid) ins.run(String(c.email).toLowerCase().trim(), c.name || null, normDomain(c.domain), c.accountName || null, c.sfContactId || null, c.sfAccountId || null, now);
+  })();
+  res.json({ ok: true, contacts: valid.length, skipped: contacts.length - valid.length, syncedAt: now });
+});
+
+// ── Admin: list portal users (Salesforce contacts + password/2FA/last login status) ──
+router.get('/api/admin/portal-users', requireAdmin, (req: any, res: any) => {
+  const rows = db.prepare('SELECT email, name, domain, account_name, synced_at FROM portal_contacts ORDER BY account_name, name').all() as any[];
+  const last = db.prepare("SELECT MAX(ts) t FROM activity_log WHERE user_email = ? AND event = 'login'");
+  res.json(rows.map(r => ({ ...r, passwordSet: hasCustomPassword(r.email), twoFactor: isTotpEnabled(r.email), lastLogin: (last.get(r.email) as any)?.t || null })));
+});
+
+// ── Admin: reset a user's password back to the temporary one ──
+router.post('/api/admin/portal-users/reset-password', requireAdmin, (req: any, res: any) => {
+  const email = String(req.body?.email || '').toLowerCase().trim();
+  const c = db.prepare('SELECT domain FROM portal_contacts WHERE email = ?').get(email) as any;
+  if (!c) return res.status(404).json({ error: 'User not found' });
+  clearPassword(email);
+  disableTotp(email);
+  logActivity(c.domain, 'password_reset_by_admin', '', email);
   res.json({ ok: true });
 });
 
@@ -339,7 +368,7 @@ router.get('/api/admin/activity', (req: any, res: any) => {
   const until = String(req.query.until || new Date().toISOString());
   const out: any = { since, until, customers: [] };
   for (const d of domains) {
-    const rows = db.prepare('SELECT event, detail, ts FROM activity_log WHERE domain = ? AND ts >= ? AND ts < ? ORDER BY ts ASC').all(d, since, until) as any[];
+    const rows = db.prepare('SELECT event, detail, ts, user_email FROM activity_log WHERE domain = ? AND ts >= ? AND ts < ? ORDER BY ts ASC').all(d, since, until) as any[];
     const allTime = db.prepare('SELECT COUNT(*) c, MIN(ts) first, MAX(ts) last FROM activity_log WHERE domain = ?').get(d) as any;
     const counts: Record<string, number> = {};
     const tabs: Record<string, number> = {};
@@ -354,9 +383,16 @@ router.get('/api/admin/activity', (req: any, res: any) => {
         if (v) vendors[v] = (vendors[v] || 0) + 1;
       }
     }
+    const users = (db.prepare('SELECT email, name FROM portal_contacts WHERE domain = ? ORDER BY name').all(d) as any[]).map(u => {
+      const ur = rows.filter(r => r.user_email === u.email);
+      const lastLogin = (db.prepare("SELECT MAX(ts) t FROM activity_log WHERE user_email = ? AND event = 'login'").get(u.email) as any)?.t || null;
+      return { email: u.email, name: u.name, passwordSet: hasCustomPassword(u.email), events: ur.length,
+        logins: ur.filter(r => r.event === 'login').length, lastLogin };
+    });
     out.customers.push({
       domain: d,
-      passwordChanged: hasCustomPassword(d),
+      users,
+      passwordChanged: users.some(u => u.passwordSet),
       totals: { events: rows.length, logins: counts.login || 0, activeDays: days.size },
       counts, tabs, vendors,
       allTime: { events: allTime.c, firstSeen: allTime.first, lastSeen: allTime.last },
@@ -1688,55 +1724,27 @@ router.get('/api/assessments/:id', (req, res) => {
 
 // POST /api/auth/forgot-password — send reset email
 router.post('/api/auth/forgot-password', async (req, res) => {
-  const { domain } = req.body;
-  if (!domain) return res.status(400).json({ error: 'Missing domain' });
-  const cleanDomain = domain.toLowerCase().trim().replace(/^www\./, '');
-
-  // Verify the domain exists
-  try {
-    const customer = await getCustomerByDomain(cleanDomain);
-    if (!customer) {
-      // Don't reveal whether domain exists — always return ok
-      return res.json({ ok: true });
-    }
-
-    const token = generateResetToken(cleanDomain);
-    const resetUrl = `${process.env.PORTAL_URL || 'https://portal.broadpeakcyber.com'}/#/reset-password?token=${token}`;
-
-    // Send email via Outlook (using directFetch to M365 Graph if available, else log)
-    // For now, prepare the email content — frontend will handle display
-    const emailBody = `
-Hello,
-
-A password reset was requested for your Broad Peak Customer Portal account (${cleanDomain}).
-
-Click the link below to reset your password. This link expires in 30 minutes.
-
-${resetUrl}
-
-If you did not request this, please ignore this email or contact support@broadpeakcyber.com.
-
-Best regards,
-Broad Peak Cyber Team
-    `.trim();
-
-    // Send via Outlook connector if available
+  // Reset links are no longer returned to the browser. The request is logged and
+  // raised with Broad Peak support, who reset the user from Admin → Portal Users.
+  const email = String(req.body?.email || req.body?.domain || '').toLowerCase().trim();
+  const contact = email ? db.prepare('SELECT * FROM portal_contacts WHERE email = ?').get(email) as any : null;
+  if (contact) {
+    logActivity(contact.domain, 'password_reset_requested', '', email);
     try {
-      const { sendOutlookEmail } = await import('./email.js').catch(() => ({ sendOutlookEmail: null }));
-      if (sendOutlookEmail) {
-        await (sendOutlookEmail as any)(
-          'support@broadpeakcyber.com',
-          `portal@${cleanDomain}`,
-          'Broad Peak Portal — Password Reset',
-          emailBody
-        );
-      }
-    } catch { /* email optional */ }
-
-    res.json({ ok: true, resetUrl }); // Include URL in response so we can show it if email fails
-  } catch {
-    res.json({ ok: true }); // Always return ok
+      await directFetch(`https://${FD_DOMAIN}.freshdesk.com/api/v2/tickets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Basic ${FD_AUTH}` },
+        body: JSON.stringify({
+          subject: `[Portal] Password reset request — ${contact.name || email} (${contact.account_name || contact.domain})`,
+          description: `${contact.name || email} (${email}) at ${contact.account_name || contact.domain} has asked for their Broad Peak Portal password to be reset.<br><br>To reset: sign in to the portal Admin area → Portal Users → find ${email} → Reset password. They can then sign in with the temporary password and will be asked to set a new one.<br><br>Please confirm the request with the customer before resetting.`,
+          email: 'portal@broadpeakcyber.com', name: 'Broad Peak Portal', priority: 2, status: 2, type: 'Question',
+          tags: ['portal', 'password-reset', contact.domain],
+        }),
+        ...fetchOpts(),
+      });
+    } catch (e) { console.error('reset ticket error', e); }
   }
+  res.json({ ok: true }); // never reveal whether the email is registered
 });
 
 // POST /api/auth/reset-password — consume token and set new password
@@ -1749,61 +1757,58 @@ router.post('/api/auth/reset-password', async (req, res) => {
   res.json({ ok: true });
 });
 
+// All account-security endpoints act on the signed-in person (never a domain from the request body)
+function requireUser(req: any, res: any): string | null {
+  const email = sessionUser(req);
+  if (!email) { res.status(401).json({ error: 'Session expired — please sign in again' }); return null; }
+  return email;
+}
+
 // POST /api/auth/change-password — change password while logged in
 router.post('/api/auth/change-password', requireAuth, async (req, res) => {
-  const { domain, currentPassword, newPassword } = req.body;
-  if (!domain || !currentPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
+  const email = requireUser(req, res); if (!email) return;
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
   if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
-  const cleanDomain = domain.toLowerCase().trim();
-  const ok = await verifyPassword(cleanDomain, currentPassword);
+  if (newPassword === CUSTOMER_PASSWORD) return res.status(400).json({ error: 'Please choose a password different from the temporary one' });
+  const ok = await verifyPassword(email, currentPassword);
   if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
-  await setPassword(cleanDomain, newPassword);
+  await setPassword(email, newPassword);
   res.json({ ok: true });
 });
 
-// GET /api/auth/2fa-status — get 2FA status for domain
 router.get('/api/auth/2fa-status', requireAuth, (req, res) => {
-  const domain = String(req.query.domain || '').toLowerCase().trim();
-  if (!domain) return res.status(400).json({ error: 'Missing domain' });
-  const status = getTotpStatus(domain);
-  res.json(status);
+  const email = requireUser(req, res); if (!email) return;
+  res.json(getTotpStatus(email));
 });
 
-// POST /api/auth/2fa-setup — generate TOTP secret + QR code
 router.post('/api/auth/2fa-setup', requireAuth, async (req, res) => {
-  const { domain } = req.body;
-  if (!domain) return res.status(400).json({ error: 'Missing domain' });
-  const cleanDomain = domain.toLowerCase().trim();
+  const email = requireUser(req, res); if (!email) return;
   try {
-    const { secret, qrDataUrl } = await getTotpQR(cleanDomain);
+    const { secret, qrDataUrl } = await getTotpQR(email);
     res.json({ ok: true, secret, qrDataUrl });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/auth/2fa-enable — verify code then enable 2FA
 router.post('/api/auth/2fa-enable', requireAuth, (req, res) => {
-  const { domain, code } = req.body;
-  if (!domain || !code) return res.status(400).json({ error: 'Missing domain or code' });
-  const ok = enableTotp(domain.toLowerCase().trim(), String(code));
+  const email = requireUser(req, res); if (!email) return;
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'Missing code' });
+  const ok = enableTotp(email, String(code));
   if (!ok) return res.status(400).json({ error: 'Invalid code — please try again' });
   res.json({ ok: true });
 });
 
-// POST /api/auth/2fa-disable — disable 2FA (requires current TOTP or password)
 router.post('/api/auth/2fa-disable', requireAuth, async (req, res) => {
-  const { domain, code, password } = req.body;
-  if (!domain) return res.status(400).json({ error: 'Missing domain' });
-  const cleanDomain = domain.toLowerCase().trim();
-
-  // Verify either a valid TOTP code or current password
+  const email = requireUser(req, res); if (!email) return;
+  const { code, password } = req.body;
   let verified = false;
-  if (code) verified = verifyTotp(cleanDomain, String(code));
-  if (!verified && password) verified = await verifyPassword(cleanDomain, password);
+  if (code) verified = verifyTotp(email, String(code));
+  if (!verified && password) verified = await verifyPassword(email, password);
   if (!verified) return res.status(401).json({ error: 'Please provide a valid authenticator code or your current password' });
-
-  disableTotp(cleanDomain);
+  disableTotp(email);
   res.json({ ok: true });
 });
 

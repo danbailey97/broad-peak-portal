@@ -2081,7 +2081,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
 
 // ─── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 
-function FirstLoginPasswordModal({ loginDomain, onDone }: { loginDomain: string; onDone: () => void }) {
+function FirstLoginPasswordModal({ onDone }: { onDone: () => void }) {
   const { isAr, dir } = useLang() as any;
   const [pwd, setPwd] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -2095,7 +2095,7 @@ function FirstLoginPasswordModal({ loginDomain, onDone }: { loginDomain: string;
     if (pwd !== confirm) return setErr(isAr ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match');
     setSaving(true);
     try {
-      const r = await apiFetch('/api/auth/set-initial-password', { method: 'POST', body: JSON.stringify({ newPassword: pwd, loginDomain }) });
+      const r = await apiFetch('/api/auth/set-initial-password', { method: 'POST', body: JSON.stringify({ newPassword: pwd }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) setErr(d.error || 'Could not save password');
       else setSaved(true);
@@ -2111,14 +2111,14 @@ function FirstLoginPasswordModal({ loginDomain, onDone }: { loginDomain: string;
             <h2 className="text-lg font-bold">{isAr ? 'مرحباً بك في بوابة Broad Peak' : 'Welcome to the Broad Peak Portal'}</h2>
           </div>
           <p className="text-white/85 text-sm mt-1">
-            {isAr ? 'لحماية حسابك، يرجى تعيين كلمة مرور خاصة بمؤسستك بدلاً من كلمة المرور المؤقتة.' : 'To keep your account secure, please replace the temporary password with your own.'}
+            {isAr ? 'لحماية حسابك، يرجى استبدال كلمة المرور المؤقتة بكلمة مرور خاصة بك.' : 'To keep your account secure, please replace the temporary password with your own personal password.'}
           </p>
         </div>
         {saved ? (
           <div className="p-6 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-[#166534] font-semibold"><CheckCircle2 className="w-5 h-5" /> {isAr ? 'تم تحديث كلمة المرور' : 'Password updated'}</div>
             <p className="text-sm text-[#4b5563]">
-              {isAr ? 'استخدم كلمة المرور الجديدة في المرة القادمة. ملاحظة: كلمة المرور مشتركة لجميع المستخدمين من نطاق مؤسستك، لذا شاركها مع زملائك بأمان.' : 'Use your new password next time you sign in. Note: the password is shared by everyone signing in with your organisation\'s email domain, so share it securely with colleagues who need access.'}
+              {isAr ? 'استخدم كلمة المرور الجديدة في المرة القادمة. كلمة المرور خاصة بك وحدك، فلا تشاركها مع أي شخص.' : 'Use your new password next time you sign in. It is personal to you, so please don\'t share it. Colleagues can sign in with their own email address.'}
             </p>
             <button onClick={onDone} data-testid="button-password-done" className="gradient-cta text-white font-semibold rounded-xl py-2.5">{isAr ? 'متابعة إلى البوابة' : 'Continue to portal'}</button>
           </div>
@@ -2146,7 +2146,7 @@ function FirstLoginPasswordModal({ loginDomain, onDone }: { loginDomain: string;
   );
 }
 
-export default function Dashboard({ domain, onLogout, mustChangePassword, loginDomain }: { domain: string; onLogout: () => void; mustChangePassword?: boolean; loginDomain?: string }) {
+export default function Dashboard({ domain, onLogout, mustChangePassword, userEmail, userName }: { domain: string; onLogout: () => void; mustChangePassword?: boolean; userEmail?: string; userName?: string }) {
   const { t, dir, isAr } = useLang();
   const [activeTab, setActiveTab] = useState<'products' | 'support' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
   const [selectedCategory, setSelectedCategory] = useState<CategoryEntry | null>(null);
@@ -2188,8 +2188,8 @@ export default function Dashboard({ domain, onLogout, mustChangePassword, loginD
   return (
     <div className="min-h-screen flex flex-col bg-[#f0f2f5]" dir={dir}
       style={{ fontFamily: isAr ? "'Cairo', sans-serif" : undefined }}>
-      {showSecurity && <SecuritySettings domain={domain} onClose={() => setShowSecurity(false)} />}
-      {showPwdPrompt && <FirstLoginPasswordModal loginDomain={loginDomain || domain} onDone={() => setShowPwdPrompt(false)} />}
+      {showSecurity && <SecuritySettings domain={userEmail || domain} onClose={() => setShowSecurity(false)} />}
+      {showPwdPrompt && <FirstLoginPasswordModal onDone={() => setShowPwdPrompt(false)} />}
       {/* Header */}
       <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
@@ -2197,7 +2197,7 @@ export default function Dashboard({ domain, onLogout, mustChangePassword, loginD
             <img src="/logo-black-text.jpg" alt="Broad Peak Cyber" className="h-8 object-contain" />
           </div>
           <div className="flex items-center gap-3">
-            {customer && <span className="text-sm text-[#6b7280] hidden md:block">{customer.accountName}</span>}
+            {customer && <span className="text-sm text-[#6b7280] hidden md:block" title={userEmail} data-testid="text-user">{userName ? `${userName} · ` : ''}{customer.accountName}</span>}
             <LangToggleDark />
             <button onClick={() => setShowSecurity(true)} data-testid="security-settings-button"
               className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#1f2937] transition-colors"
