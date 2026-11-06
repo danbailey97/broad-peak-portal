@@ -8,6 +8,8 @@ import remarkGfm from 'remark-gfm';
 import CEReadiness from './CEReadiness';
 import CyberRiskScore from './CyberRiskScore';
 import { useLang, LangToggleDark } from '../lib/LanguageContext';
+import ImplementationWizard from './ImplementationWizard';
+import { Rocket } from 'lucide-react';
 
 interface ProductEntry { name: string; vendor: string; startedAt?: string | null; expiresAt?: string | null; }
 interface RelevantProduct { id: string; name: string; vendor: string; categories: string[]; }
@@ -148,6 +150,8 @@ const VENDOR_KB: Record<string, { label: string; url: string | null; hasKB: bool
   CyberSmart: { label: 'CyberSmart Support', url: 'https://support.cybersmart.co.uk/s/', hasKB: true },
   Vanta: { label: 'Vanta Help Center', url: 'https://help.vanta.com', hasKB: true },
 };
+
+const IMPLEMENTATION_VENDORS = ['Keepit', 'Barracuda', 'Arctic Wolf', 'Boxphish', 'Druva', 'WatchGuard', 'BullWall', 'CyberSmart', 'Vanta'];
 
 const VENDOR_RESOURCE_LIBRARY: Record<string, string> = {
   Barracuda: 'https://www.barracuda.com/resources/resource-library',
@@ -1250,6 +1254,7 @@ function VendorTicketButton({ isAr, domain, accountName, vendor, question, answe
 function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { domain: string; accountName: string; accountOwner?: AccountOwner; awCsms?: AwCsm[] }) {
   const { t, lang, isAr } = useLang();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [implVendor, setImplVendor] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1465,6 +1470,10 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
     } finally { setLoading(false); }
   };
 
+  if (implVendor === 'Keepit') {
+    return <ImplementationWizard domain={domain} accountName={accountName} onBack={() => setImplVendor(null)} />;
+  }
+
   if (!selectedCat) {
     return (
       <div className="space-y-6">
@@ -1499,8 +1508,32 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
           </div>
         </div>
 
-        {/* Right: Contact Our Team card — stretches to match category grid height */}
-        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden flex flex-col">
+        {/* Right column: Implementation wizards + Contact Our Team */}
+        <div className="flex flex-col gap-6">
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden" data-testid="implementation-card">
+          <div className="h-1" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
+          <div className="p-5 space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide flex items-center gap-1.5"><Rocket className="w-4 h-4 text-[#9b4da8]" /> {isAr ? 'التنفيذ' : 'Implementation'}</h3>
+              <p className="text-xs text-[#9ca3af] mt-1">{isAr ? 'معالجات إعداد موجّهة مع أوامر Claude CoWork لكل خطوة.' : 'Guided setup wizards with a Claude CoWork prompt for every step.'}</p>
+            </div>
+            <div className="space-y-1.5">
+              {IMPLEMENTATION_VENDORS.map(v => v === 'Keepit' ? (
+                <button key={v} onClick={() => { setImplVendor(v); track('implementation_open', v); }} data-testid="impl-vendor-keepit"
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-[#4494D1] bg-[#4494D108] hover:bg-[#4494D114] text-left transition-colors">
+                  <span className="text-sm font-semibold text-[#1f2937]">Keepit</span>
+                  <span className="flex items-center gap-1 text-xs font-semibold text-[#4494D1]">{isAr ? 'ابدأ' : 'Start'} <ChevronRight className="w-3.5 h-3.5" /></span>
+                </button>
+              ) : (
+                <div key={v} className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-[#f3f4f6] bg-[#fafafa] cursor-not-allowed select-none" aria-disabled="true">
+                  <span className="text-sm text-[#9ca3af]">{v}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f3f4f6] text-[#9ca3af]">{isAr ? 'قيد التطوير' : 'In development'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden flex flex-col flex-1">
           <div className="h-1 flex-shrink-0" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
           <div className="p-5 flex flex-col gap-4 flex-1">
             <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide">{t('contactOurTeamHeader')}</h3>
@@ -1578,6 +1611,7 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
               </div>
             )}
           </div>
+        </div>
         </div>
 
       {/* ── Support Tickets Section — full width, spans all 3 cols ───────── */}
