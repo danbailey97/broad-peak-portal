@@ -1251,10 +1251,47 @@ function VendorTicketButton({ isAr, domain, accountName, vendor, question, answe
   );
 }
 
+function ImplementationTab({ domain, accountName }: { domain: string; accountName: string }) {
+  const { isAr } = useLang();
+  const [implVendor, setImplVendor] = useState<string | null>(null);
+  if (implVendor === 'Keepit') {
+    return <ImplementationWizard domain={domain} accountName={accountName} onBack={() => setImplVendor(null)} />;
+  }
+  return (
+    <div className="space-y-6" data-testid="implementation-tab">
+      <div className="gradient-bg rounded-2xl p-4 sm:p-6 space-y-2">
+        <h2 className="text-white text-lg font-bold flex items-center gap-2"><Rocket className="w-5 h-5" /> {isAr ? 'التنفيذ' : 'Implementation'}</h2>
+        <p className="text-white/90 text-sm leading-relaxed max-w-3xl">{isAr
+          ? 'معالجات إعداد موجّهة مبنية على الوثائق الرسمية لكل مورد. اختر الوحدات التي تقوم بتثبيتها، واتبع خطة مرتبة خطوة بخطوة، واحصل على أمر Claude CoWork لكل خطوة صغيرة حتى تتمكن أداة ذكاء اصطناعي من تنفيذها نيابةً عنك.'
+          : "Guided setup wizards built from each vendor's official documentation. Choose the modules you're installing, follow an ordered step-by-step plan, and get a Claude CoWork prompt for each small step so an AI tool can carry it out for you."}</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-start" data-testid="implementation-card">
+        {IMPLEMENTATION_VENDORS.map(v => v === 'Keepit' ? (
+          <button key={v} onClick={() => { setImplVendor(v); track('implementation_open', v); }} data-testid="impl-vendor-keepit"
+            className="flex flex-col gap-2 p-4 sm:p-5 bg-white border border-[#4494D1] rounded-2xl text-left shadow-[0_1px_4px_rgba(0,0,0,0.10)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-base font-bold text-[#1f2937]">Keepit</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#dcfce7] text-[#166534] font-medium">{isAr ? 'متاح' : 'Available'}</span>
+            </div>
+            <p className="text-xs text-[#6b7280] leading-relaxed">{isAr ? 'نسخ احتياطي لـ Microsoft 365 وEntra ID وGoogle Workspace وSalesforce وغيرها.' : 'SaaS backup for Microsoft 365, Entra ID, Google Workspace, Salesforce and more.'}</p>
+            <span className="mt-auto flex items-center gap-1 text-sm font-semibold text-[#4494D1]">{isAr ? 'ابدأ المعالج' : 'Start wizard'} <ChevronRight className="w-4 h-4" /></span>
+          </button>
+        ) : (
+          <div key={v} className="flex flex-col gap-2 p-4 sm:p-5 bg-[#fafafa] border border-[#eef0f3] rounded-2xl cursor-not-allowed select-none" aria-disabled="true">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-base font-semibold text-[#9ca3af]">{v}</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f3f4f6] text-[#9ca3af]">{isAr ? 'قيد التطوير' : 'In development'}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { domain: string; accountName: string; accountOwner?: AccountOwner; awCsms?: AwCsm[] }) {
   const { t, lang, isAr } = useLang();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
-  const [implVendor, setImplVendor] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1470,10 +1507,6 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
     } finally { setLoading(false); }
   };
 
-  if (implVendor === 'Keepit') {
-    return <ImplementationWizard domain={domain} accountName={accountName} onBack={() => setImplVendor(null)} />;
-  }
-
   if (!selectedCat) {
     return (
       <div className="space-y-6">
@@ -1508,31 +1541,8 @@ function TechnicalSupportTab({ domain, accountName, accountOwner, awCsms }: { do
           </div>
         </div>
 
-        {/* Right column: Implementation wizards + Contact Our Team */}
+        {/* Right column: Contact Our Team */}
         <div className="flex flex-col gap-6">
-        <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden" data-testid="implementation-card">
-          <div className="h-1" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
-          <div className="p-5 space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide flex items-center gap-1.5"><Rocket className="w-4 h-4 text-[#9b4da8]" /> {isAr ? 'التنفيذ' : 'Implementation'}</h3>
-              <p className="text-xs text-[#9ca3af] mt-1">{isAr ? 'معالجات إعداد موجّهة مع أوامر Claude CoWork لكل خطوة.' : 'Guided setup wizards with a Claude CoWork prompt for every step.'}</p>
-            </div>
-            <div className="space-y-1.5">
-              {IMPLEMENTATION_VENDORS.map(v => v === 'Keepit' ? (
-                <button key={v} onClick={() => { setImplVendor(v); track('implementation_open', v); }} data-testid="impl-vendor-keepit"
-                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-[#4494D1] bg-[#4494D108] hover:bg-[#4494D114] text-left transition-colors">
-                  <span className="text-sm font-semibold text-[#1f2937]">Keepit</span>
-                  <span className="flex items-center gap-1 text-xs font-semibold text-[#4494D1]">{isAr ? 'ابدأ' : 'Start'} <ChevronRight className="w-3.5 h-3.5" /></span>
-                </button>
-              ) : (
-                <div key={v} className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-[#f3f4f6] bg-[#fafafa] cursor-not-allowed select-none" aria-disabled="true">
-                  <span className="text-sm text-[#9ca3af]">{v}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f3f4f6] text-[#9ca3af]">{isAr ? 'قيد التطوير' : 'In development'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
         <div className="bg-white border border-[#e5e7eb] shadow-[0_1px_4px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden flex flex-col flex-1">
           <div className="h-1 flex-shrink-0" style={{ background: 'linear-gradient(90deg, #C65793, #9b4da8, #4494D1)' }} />
           <div className="p-5 flex flex-col gap-4 flex-1">
@@ -2182,7 +2192,7 @@ function FirstLoginPasswordModal({ onDone }: { onDone: () => void }) {
 
 export default function Dashboard({ domain, onLogout, mustChangePassword, userEmail, userName }: { domain: string; onLogout: () => void; mustChangePassword?: boolean; userEmail?: string; userName?: string }) {
   const { t, dir, isAr } = useLang();
-  const [activeTab, setActiveTab] = useState<'products' | 'support' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'support' | 'implementation' | 'news' | 'resources' | 'ce-readiness' | 'risk-score'>('products');
   const [selectedCategory, setSelectedCategory] = useState<CategoryEntry | null>(null);
   const [highlightedCategories, setHighlightedCategories] = useState<string[]>([]);
   const [showSecurity, setShowSecurity] = useState(false);
@@ -2213,6 +2223,7 @@ export default function Dashboard({ domain, onLogout, mustChangePassword, userEm
   const tabs = [
     { id: 'products' as const, label: t('myProducts') },
     { id: 'support' as const, label: t('technicalSupport') },
+    { id: 'implementation' as const, label: isAr ? 'التنفيذ' : 'Implementation' },
     { id: 'news' as const, label: t('newsUpdates') },
     { id: 'resources' as const, label: t('resources') },
     { id: 'ce-readiness' as const, label: t('ceReadiness') },
@@ -2379,6 +2390,7 @@ export default function Dashboard({ domain, onLogout, mustChangePassword, userEm
             )}
 
             {activeTab === 'support' && <TechnicalSupportTab domain={domain} accountName={customer.accountName} accountOwner={customer.accountOwner} awCsms={customer.awCsms || []} />}
+            {activeTab === 'implementation' && <ImplementationTab domain={domain} accountName={customer.accountName} />}
             {activeTab === 'news' && <NewsTab domain={domain} />}
             {activeTab === 'resources' && <ResourcesTab domain={domain} />}
             {activeTab === 'ce-readiness' && (
