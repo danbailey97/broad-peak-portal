@@ -8,7 +8,7 @@ interface Saved { opts: ImplOptions; built: boolean; done: string[] }
 const DEFAULT_OPTS: ImplOptions = { modules: [], dc: 'uk-ld', teamsChats: true, largeTenant: false, keyVault: false };
 const SUPPORT_LINE = 'We can help you to find the answer to this question that is specific to your implementation, please contact our support team';
 
-function Bubble({ role, children }: { role: 'assistant' | 'user'; children: React.ReactNode }) {
+export function Bubble({ role, children }: { role: 'assistant' | 'user'; children: React.ReactNode }) {
   if (role === 'user') return (
     <div className="flex justify-end gap-2">
       <div className="max-w-[85%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white" style={{ background: 'linear-gradient(135deg,#C65793,#4494D1)' }}>{children}</div>
@@ -23,7 +23,7 @@ function Bubble({ role, children }: { role: 'assistant' | 'user'; children: Reac
   );
 }
 
-function PromptBlock({ step, prompt, isAr }: { step: ImplStep; prompt: string; isAr: boolean }) {
+export function PromptBlock({ step, prompt, isAr, vendor = 'Keepit' }: { step: ImplStep; prompt: string; isAr: boolean; vendor?: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   if (step.infoOnly) return null;
@@ -31,7 +31,7 @@ function PromptBlock({ step, prompt, isAr }: { step: ImplStep; prompt: string; i
   return (
     <div className="mt-3">
       {!open ? (
-        <button data-testid={`impl-prompt-${step.id}`} onClick={() => { setOpen(true); track('implementation_prompt', `Keepit: ${step.id}`); }}
+        <button data-testid={`impl-prompt-${step.id}`} onClick={() => { setOpen(true); track('implementation_prompt', `${vendor}: ${step.id}`); }}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors shadow-sm">
           <Cpu className="w-3 h-3" /> {isAr ? 'أمر Claude CoWork لهذه الخطوة' : 'Claude CoWork prompt for this step'}
         </button>

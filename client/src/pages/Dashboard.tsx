@@ -9,6 +9,7 @@ import CEReadiness from './CEReadiness';
 import CyberRiskScore from './CyberRiskScore';
 import { useLang, LangToggleDark } from '../lib/LanguageContext';
 import ImplementationWizard from './ImplementationWizard';
+import BarracudaWizard from './BarracudaWizard';
 import { Rocket } from 'lucide-react';
 
 interface ProductEntry { name: string; vendor: string; startedAt?: string | null; expiresAt?: string | null; }
@@ -1257,6 +1258,13 @@ function ImplementationTab({ domain, accountName }: { domain: string; accountNam
   if (implVendor === 'Keepit') {
     return <ImplementationWizard domain={domain} accountName={accountName} onBack={() => setImplVendor(null)} />;
   }
+  if (implVendor === 'Barracuda') {
+    return <BarracudaWizard domain={domain} accountName={accountName} onBack={() => setImplVendor(null)} />;
+  }
+  const IMPL_DESC: Record<string, [string, string]> = {
+    Keepit: ['SaaS backup for Microsoft 365, Entra ID, Google Workspace, Salesforce and more.', 'نسخ احتياطي لـ Microsoft 365 وEntra ID وGoogle Workspace وSalesforce وغيرها.'],
+    Barracuda: ['Email Protection, Cloud-to-Cloud Backup, Cloud Archiving, Data Inspector, SecureEdge, WAF-as-a-Service and XDR — with best-practice configuration choices.', 'حماية البريد الإلكتروني والنسخ الاحتياطي السحابي والأرشفة وData Inspector وSecureEdge وWAF-as-a-Service وXDR — مع خيارات إعداد وفق أفضل الممارسات.'],
+  };
   return (
     <div className="space-y-6" data-testid="implementation-tab">
       <div className="gradient-bg rounded-2xl p-4 sm:p-6 space-y-2">
@@ -1266,14 +1274,14 @@ function ImplementationTab({ domain, accountName }: { domain: string; accountNam
           : "Guided setup wizards built from each vendor's official documentation. Choose the modules you're installing, follow an ordered step-by-step plan, and get a Claude CoWork prompt for each small step so an AI tool can carry it out for you."}</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-start" data-testid="implementation-card">
-        {IMPLEMENTATION_VENDORS.map(v => v === 'Keepit' ? (
-          <button key={v} onClick={() => { setImplVendor(v); track('implementation_open', v); }} data-testid="impl-vendor-keepit"
+        {IMPLEMENTATION_VENDORS.map(v => IMPL_DESC[v] ? (
+          <button key={v} onClick={() => { setImplVendor(v); track('implementation_open', v); }} data-testid={`impl-vendor-${v.toLowerCase()}`}
             className="flex flex-col gap-2 p-4 sm:p-5 bg-white border border-[#4494D1] rounded-2xl text-left shadow-[0_1px_4px_rgba(0,0,0,0.10)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-base font-bold text-[#1f2937]">Keepit</span>
+              <span className="text-base font-bold text-[#1f2937]">{v}</span>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#dcfce7] text-[#166534] font-medium">{isAr ? 'متاح' : 'Available'}</span>
             </div>
-            <p className="text-xs text-[#6b7280] leading-relaxed">{isAr ? 'نسخ احتياطي لـ Microsoft 365 وEntra ID وGoogle Workspace وSalesforce وغيرها.' : 'SaaS backup for Microsoft 365, Entra ID, Google Workspace, Salesforce and more.'}</p>
+            <p className="text-xs text-[#6b7280] leading-relaxed">{isAr ? IMPL_DESC[v][1] : IMPL_DESC[v][0]}</p>
             <span className="mt-auto flex items-center gap-1 text-sm font-semibold text-[#4494D1]">{isAr ? 'ابدأ المعالج' : 'Start wizard'} <ChevronRight className="w-4 h-4" /></span>
           </button>
         ) : (
